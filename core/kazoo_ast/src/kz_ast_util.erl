@@ -169,7 +169,7 @@ siblings_of(App) ->
 dir_to_app_name(Dir) ->
     kz_term:to_atom(filename:basename(Dir), 'true').
 
--spec app_modules(atom()) -> [atom()].
+-spec app_modules(atom()) -> atoms().
 app_modules(App) ->
     case application:get_key(App, 'modules') of
         {'ok', Modules} -> Modules;

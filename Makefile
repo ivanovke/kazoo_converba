@@ -191,10 +191,13 @@ $(FMT):
 fmt: $(FMT)
 	@$(if $(TO_FMT), @$(FMT) $(TO_FMT))
 
-code_checks:
+code_checks: apps_of_app
 	@ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/no_raw_json.escript
 	@$(ROOT)/scripts/check-spelling.bash
 	@$(ROOT)/scripts/kz_diaspora.bash
+
+apps_of_app:
+	@ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/apps_of_app.escript
 
 apis:
 	@ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/generate-schemas.escript
