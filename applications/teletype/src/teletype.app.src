@@ -6,15 +6,21 @@
   {registered, [teletype_cache, teletype_sup, teletype_bindings, teletype_shared_listener]},
   {applications, [ kernel
                  , stdlib
-                 , crypto
 
-                 , kazoo_apps
+                 , kazoo
                  , kazoo_amqp
+                 , kazoo_apps
+                 , kazoo_caches
+                 , kazoo_config
                  , kazoo_data
                  , kazoo_templates
 
+                 , cowlib
+                 , erlydtl
+                 , gen_smtp
                  , lager
                  , poolboy
+
                  ]},
   {mod, {teletype_app, []}}
  ]}.
