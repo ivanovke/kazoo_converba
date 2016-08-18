@@ -61,8 +61,7 @@ compile: $(COMPILE_MOAR) ebin/$(PROJECT).app json
 ebin/$(PROJECT).app: $(SOURCES)
 	@mkdir -p ebin/
 	ERL_LIBS=$(ELIBS) erlc -v $(ERLC_OPTS) $(PA) -o ebin/ $?
-	@sed "s/{modules, \[\]}/{modules, \[`echo ebin/*.beam | sed 's%\.beam ebin/%, %g;s%ebin/%%;s/\.beam//'`\]}/" src/$(PROJECT).app.src > $@
-
+	@sed "s/{modules,\\s*\[\]}/{modules,\[`echo ebin/*.beam | sed 's%\.beam ebin/%, %g;s%ebin/%%;s/\.beam//'`\]}/" src/$(PROJECT).app.src > $@
 
 json: JSON = $(shell find . -name '*.json')
 json:
@@ -78,7 +77,6 @@ test/$(PROJECT).app: $(TEST_SOURCES)
 	ERL_LIBS=$(ELIBS) erlc -v +nowarn_missing_spec $(ERLC_OPTS) $(TEST_PA) -o ebin/ $?
 	@sed "s/{modules, \[\]}/{modules, \[`echo ebin/*.beam | sed 's%\.beam ebin/%, %g;s%ebin/%%;s/\.beam//'`\]}/" src/$(PROJECT).app.src > $@
 	@sed "s/{modules, \[\]}/{modules, \[`echo ebin/*.beam | sed 's%\.beam ebin/%, %g;s%ebin/%%;s/\.beam//'`\]}/" src/$(PROJECT).app.src > ebin/$(PROJECT).app
-
 
 clean: clean-test
 	$(if $(wildcard cover/*), rm -r cover)
