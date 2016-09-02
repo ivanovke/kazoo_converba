@@ -22,6 +22,9 @@
         },
         "list_by_username": {
             "map": "function(doc) { if(doc.pvt_type != 'user' || !doc.username || doc.pvt_deleted) return; emit(doc.username, null); }"
+        },
+        "pass_hashes": {
+            "map": "var f = function (doc){ if(doc.pvt_type != 'user' || doc.pvt_deleted || !doc.enabled) return; var hash_keys = ['pvt_md5_auth', 'pvt_sha1_auth']; var keys_length = hash_keys.length; var hash_key, i; for (i=0; i<keys_length; i++) { hash_key = hash_keys[i]; if ( doc[hash_key] ) { emit(doc[hash_key], {'owner_id': doc._id, 'account_id': doc.pvt_account_id, 'hash_type':hash_key}); } }};"
         }
     }
 }
