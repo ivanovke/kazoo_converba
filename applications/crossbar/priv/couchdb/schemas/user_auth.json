@@ -25,16 +25,6 @@
             "required": true,
             "type": "string"
         },
-        "method": {
-            "default": "md5",
-            "description": "The hash method",
-            "enum": [
-                "md5",
-                "sha"
-            ],
-            "required": false,
-            "type": "string"
-        },
         "phone_number": {
             "description": "A phone number assigned to the users account",
             "maxLength": 64,
