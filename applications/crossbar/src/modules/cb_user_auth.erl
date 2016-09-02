@@ -22,10 +22,9 @@
 
 -include("crossbar.hrl").
 
--define(ACCT_MD5_LIST, <<"users/creds_by_md5">>).
--define(ACCT_SHA1_LIST, <<"users/creds_by_sha">>).
 -define(LIST_BY_RESET_ID, <<"users/list_by_reset_id">>).
 -define(LIST_BY_MTIME, <<"users/list_by_mtime">>).
+-define(LIST_BY_HASH, <<"users/pass_hashes">>).
 -define(DEFAULT_LANGUAGE, <<"en-us">>).
 -define(USER_AUTH_TOKENS, kapps_config:get_integer(?CONFIG_CAT, <<"user_auth_tokens">>, 35)).
 
@@ -214,12 +213,12 @@ create_auth_resp(Context, _AccountId, _AuthToken, _AuthAccountId) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec maybe_authenticate_user(cb_context:context()) -> cb_context:context().
--spec maybe_authenticate_user(cb_context:context(), ne_binary(), ne_binary(), ne_binary() | ne_binaries()) ->
+-spec maybe_authenticate_user(cb_context:context(), ne_binary(), ne_binary() | ne_binaries()) ->
                                      cb_context:context().
 maybe_authenticate_user(Context) ->
     JObj = cb_context:doc(Context),
     Credentials = kz_json:get_value(<<"credentials">>, JObj),
-    Method = kz_json:get_value(<<"method">>, JObj, <<"md5">>),
+
     AccountName = kz_util:normalize_account_name(kz_json:get_value(<<"account_name">>, JObj)),
     PhoneNumber = kz_json:get_ne_value(<<"phone_number">>, JObj),
     AccountRealm = kz_json:get_first_defined([<<"account_realm">>, <<"realm">>], JObj),
@@ -228,62 +227,48 @@ maybe_authenticate_user(Context) ->
             lager:debug("failed to find account DB from realm ~s", [AccountRealm]),
             cb_context:add_system_error('invalid_credentials', Context);
         {'ok', ?NE_BINARY=Account} ->
-            maybe_auth_account(Context, Credentials, Method, Account);
+            maybe_auth_account(Context, Credentials, Account);
         {'ok', Accounts} ->
-            maybe_auth_accounts(Context, Credentials, Method, Accounts)
+            maybe_auth_accounts(Context, Credentials, Accounts)
     end.
 
-maybe_authenticate_user(Context, Credentials, <<"md5">>, ?NE_BINARY=Account) ->
+maybe_authenticate_user(Context, Credentials, ?NE_BINARY=Account) ->
     AccountDb = kz_util:format_account_id(Account, 'encoded'),
-    Context1 = crossbar_doc:load_view(?ACCT_MD5_LIST
+    Context1 = crossbar_doc:load_view(?LIST_BY_HASH
                                      ,[{'key', Credentials}]
                                      ,cb_context:set_account_db(Context, AccountDb)
                                      ),
     case cb_context:resp_status(Context1) of
-        'success' -> load_md5_results(Context1, cb_context:doc(Context1));
+        'success' -> load_results(Context1, cb_context:doc(Context1));
         _Status ->
             lager:debug("credentials do not belong to any user: ~s: ~p"
-                       ,[_Status, cb_context:doc(Context1)]),
+                       ,[_Status, cb_context:doc(Context1)]
+                       ),
             cb_context:add_system_error('invalid_credentials', Context1)
-    end;
-maybe_authenticate_user(Context, Credentials, <<"sha">>, ?NE_BINARY=Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
-    Context1 = crossbar_doc:load_view(?ACCT_SHA1_LIST
-                                     ,[{'key', Credentials}]
-                                     ,cb_context:set_account_db(Context, AccountDb)
-                                     ),
-    case cb_context:resp_status(Context1) of
-        'success' -> load_sha1_results(Context1, cb_context:doc(Context1));
-        _Status ->
-            lager:debug("credentials do not belong to any user"),
-            cb_context:add_system_error('invalid_credentials', Context)
-    end;
-maybe_authenticate_user(Context, _Creds, _Method, _Account) ->
-    lager:debug("invalid creds by method ~s", [_Method]),
-    cb_context:add_system_error('invalid_credentials', Context).
+    end.
 
--spec maybe_auth_account(cb_context:context(), ne_binary(), ne_binary(), ne_binary()) ->
+-spec maybe_auth_account(cb_context:context(), ne_binary(), ne_binary()) ->
                                 cb_context:context().
-maybe_auth_account(Context, Credentials, Method, Account) ->
-    Context1 = maybe_authenticate_user(Context, Credentials, Method, Account),
+maybe_auth_account(Context, Credentials, Account) ->
+    Context1 = maybe_authenticate_user(Context, Credentials, Account),
     case cb_context:resp_status(Context1) of
         'success' ->
             maybe_account_is_expired(Context1, Account);
         _Status -> Context1
     end.
 
--spec maybe_auth_accounts(cb_context:context(), ne_binary(), ne_binary(), ne_binaries()) ->
+-spec maybe_auth_accounts(cb_context:context(), ne_binary(), ne_binaries()) ->
                                  cb_context:context().
-maybe_auth_accounts(Context, _, _, []) ->
+maybe_auth_accounts(Context, _, []) ->
     lager:debug("no account(s) specified"),
     cb_context:add_system_error('invalid_credentials', Context);
-maybe_auth_accounts(Context, Credentials, Method, [Account|Accounts]) ->
-    Context1 = maybe_authenticate_user(Context, Credentials, Method, Account),
+maybe_auth_accounts(Context, Credentials, [Account|Accounts]) ->
+    Context1 = maybe_authenticate_user(Context, Credentials, Account),
     case cb_context:resp_status(Context1) of
         'success' ->
             maybe_account_is_expired(Context1, Account);
         _Status ->
-            maybe_auth_accounts(Context, Credentials, Method, Accounts)
+            maybe_auth_accounts(Context, Credentials, Accounts)
     end.
 
 -spec maybe_account_is_expired(cb_context:context(), ne_binary()) -> cb_context:context().
@@ -314,29 +299,14 @@ maybe_account_is_enabled(Context, Account) ->
             cb_context:add_validation_error(<<"account">>, <<"disabled">>, Cause, Context)
     end.
 
--spec load_sha1_results(cb_context:context(), kz_json:objects() | kz_json:object()) ->
-                               cb_context:context().
-load_sha1_results(Context, [JObj|_]) ->
-    lager:debug("found more that one user with SHA1 creds, using ~s", [kz_doc:id(JObj)]),
+-spec load_results(cb_context:context(), kz_json:objects()) ->
+                          cb_context:context().
+load_results(Context, [JObj]) ->
+    lager:debug("found credentials belong to user ~s", [kz_doc:id(JObj)]),
     cb_context:set_doc(Context, kz_json:get_value(<<"value">>, JObj));
-load_sha1_results(Context, []) ->
-    cb_context:add_system_error('invalid_credentials', Context);
-load_sha1_results(Context, JObj) ->
-    lager:debug("found SHA1 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(Context, kz_json:get_value(<<"value">>, JObj)).
-
--spec load_md5_results(cb_context:context(), kz_json:objects() | kz_json:object()) ->
-                              cb_context:context().
-load_md5_results(Context, [JObj|_]) ->
-    lager:debug("found more that one user with MD5 creds, using ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(Context, kz_json:get_value(<<"value">>, JObj));
-load_md5_results(Context, []) ->
-    lager:debug("failed to find a user with MD5 creds"),
-    cb_context:add_system_error('invalid_credentials', Context);
-load_md5_results(Context, JObj) ->
-    lager:debug("found MD5 credentials belong to user ~s", [kz_doc:id(JObj)]),
-    cb_context:set_doc(Context, kz_json:get_value(<<"value">>, JObj)).
-
+load_results(Context, []) ->
+    lager:debug("failed to find a user with creds"),
+    cb_context:add_system_error('invalid_credentials', Context).
 
 %% @public
 -spec cleanup_reset_ids(ne_binary()) -> 'ok'.
@@ -362,7 +332,6 @@ maybe_delete_doc(AccountDb, ResetIdDoc) ->
             _ = kz_datamgr:del_doc(AccountDb, kz_doc:id(ResetIdDoc)),
             'ok'
     end.
-
 
 %% @private
 -spec maybe_load_user_doc_via_creds(cb_context:context()) -> cb_context:context().
