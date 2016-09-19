@@ -13,6 +13,9 @@
 
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 
+%% -define(DEBUG(_Fmt, _Args), 'ok').
+-define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
+
 fix_project_deps() ->
     Deps = process_project(),
     io:format("processing app files "),
@@ -34,13 +37,21 @@ fix_app_deps(App, Missing, Unneeded) ->
     } = read_app_src(App),
     ConfiguredApps = lists:usort(props:get_value('applications', Properties) -- ['kernel']),
 
-    case ordsets:subtract(ordsets:union(ConfiguredApps, Missing)
-                         ,Unneeded
-                         )
-    of
+    ?DEBUG("app ~p~n conf: ~p~n missing ~p~n unneeded ~p~n"
+          ,[App, ConfiguredApps, Missing, Unneeded]
+          ),
+    Union = ordsets:union(ConfiguredApps, Missing),
+    ?DEBUG("union: ~p~n", [Union]),
+
+    Subtracted = ordsets:subtract(Union, Unneeded),
+    ?DEBUG("sub: ~p~n", [Subtracted]),
+
+    case Subtracted of
         ConfiguredApps ->
+            ?DEBUG("no change needed~n", []),
             io:format(".");
         UpdatedApps ->
+            ?DEBUG("updated apps to ~p~n", [UpdatedApps]),
             io:format("x"),
             write_app_src(App
                          ,{'application'
@@ -51,19 +62,19 @@ fix_app_deps(App, Missing, Unneeded) ->
     end.
 
 read_app_src(App) ->
-    AppBin = kz_util:to_binary(App),
-    File = filename:join([code:lib_dir(App, 'src')
-                         ,<<AppBin/binary, ".app.src">>
-                         ]),
+    File = app_src_filename(App),
     {'ok', [Config]} = file:consult(kz_util:to_list(File)),
     Config.
 
 write_app_src(App, Config) ->
-    AppBin = kz_util:to_binary(App),
-    File = filename:join([code:lib_dir(App, 'src')
-                         ,<<AppBin/binary, ".app.src">>
-                         ]),
+    File = app_src_filename(App),
     file:write_file(File, io_lib:format("~p.~n", [Config])).
+
+app_src_filename(App) ->
+    AppBin = kz_util:to_binary(App),
+    filename:join([code:lib_dir(App, 'src')
+                  ,<<AppBin/binary, ".app.src">>
+                  ]).
 
 process_project() ->
     io:format("processing application dependencies: "),
@@ -80,8 +91,11 @@ process_app(App) ->
 process_app('kazoo_ast', Acc) -> Acc;
 process_app(App, Acc) ->
     case application:get_key(App, 'applications') of
-        'undefined' -> application:load(App), process_app(App, Acc);
+        'undefined' ->
+            application:load(App),
+            process_app(App, Acc);
         {'ok', ExistingApps} ->
+            ?DEBUG("app ~p~n existing: ~p~n", [App, ExistingApps]),
             process_app(App, Acc, ExistingApps)
     end.
 
@@ -90,6 +104,8 @@ process_app(App, Acc, ExistingApps) ->
 
     RemoteModules = remote_calls(App),
     RemoteApps = ordsets:from_list(modules_as_apps(App, RemoteModules)),
+
+    ?DEBUG(" known ~p~nremote apps: ~p~n", [KnownApps, RemoteApps]),
 
     Missing = ordsets:subtract(RemoteApps, KnownApps),
     Unneeded = ordsets:subtract(KnownApps, RemoteApps),
