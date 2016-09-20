@@ -5,6 +5,7 @@
 
         ,fix_project_deps/0
         ,fix_app_deps/1
+        ,dot_file/0 ,dot_file/1
         ]).
 
 -export([remote_calls/1
@@ -15,6 +16,37 @@
 
 %% -define(DEBUG(_Fmt, _Args), 'ok').
 -define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
+
+dot_file() ->
+    Markup = [create_dot_markup(App, remote_apps(App)) || App <- kz_ast_util:project_apps()],
+    create_dot_file("kazoo_project", Markup).
+
+dot_file(App) ->
+    AppDeps = remote_apps(App),
+    create_dot_file(App, create_dot_markup(App, AppDeps)).
+
+create_dot_file(Name, Markup) ->
+    file:write_file(<<"/tmp/", (kz_util:to_binary(Name))/binary, ".dot">>
+                   ,["digraph kast_app_deps {\n"
+                    ,Markup
+                    ,"}\n"
+                    ]
+                   ).
+
+create_dot_markup(App, AppDeps) ->
+    RemoteApps = lists:usort([A || {_Module, A} <- AppDeps]),
+    app_markup(App, RemoteApps).
+
+app_markup(App, RemoteApps) ->
+    M = [ [$", kz_util:to_binary(App), $"
+          ," -> "
+          ,$", kz_util:to_binary(RemoteApp), $"
+          ," [weight=1];\n"
+          ]
+          || RemoteApp <- RemoteApps
+        ],
+    ?DEBUG("adding '~s'~n", [M]),
+    M.
 
 fix_project_deps() ->
     Deps = process_project(),
