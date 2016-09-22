@@ -7,7 +7,6 @@
 -export([main/1]).
 
 main(CommandLineArgs) ->
-    add_ebins(),
     {'ok', Options, Args} = parse_args(CommandLineArgs),
     io:format("cwd: ~p~no: ~p~na: ~p~n", [file:get_cwd(), Options, Args]),
     handle(Options, Args).
@@ -26,15 +25,8 @@ handle(_, _) ->
     print_help().
 
 list_remote_apps(App) ->
-    try kast_app_deps:remote_apps(list_to_atom(App)) of
-        Apps ->
-            io:format("~n~p~n", [lists:keysort(2, Apps)])
-    catch
-        'error':{"no such file or directory",AppFile} ->
-            io:format("failed to find ~s (as part of ~s)~n", [AppFile, App]),
-            add_core_ebins(list_to_atom(App)),
-            list_remote_apps(App)
-    end.
+    Apps =  kast_app_deps:remote_apps(list_to_atom(App)),
+    io:format("~n~p~n", [lists:keysort(2, Apps)]).
 
 
 %%     case kast_app_deps:process_project() of
@@ -74,40 +66,5 @@ parse_args(CommandLineArgs) ->
 
 -spec print_help() -> no_return().
 print_help() ->
-    getopt:usage(option_spec_list(), "apps_of_app", "[args ...]"),
+    getopt:usage(option_spec_list(), "ERL_LIBS=deps/:core/:applications/ ./scripts/apps_of_app.escript", "[args ...]"),
     halt(1).
-
-add_ebins() ->
-    add_deps_ebins(),
-    add_core_ebins().
-
-add_deps_ebins() ->
-    add_deps_ebins(deps()).
-add_deps_ebins(Deps) ->
-    DepsDir = filename:join([filename:dirname(escript:script_name())
-                            ,".." %% root
-                            ,"deps"
-                            ]),
-    _ = [code:add_patha(dep_dir(DepsDir, Dep)) || Dep <- Deps].
-
-add_core_ebins() ->
-    add_core_ebins(core()).
-add_core_ebins(Core) ->
-    CoreDir = filename:join([filename:dirname(escript:script_name())
-                            ,".." %% root
-                            ,"core"
-                            ]),
-
-    _ = [code:add_patha(dep_dir(CoreDir, Dep)) || Dep <- Core].
-
-dep_dir(DepsDir, Dep) ->
-    filename:join([DepsDir
-                  ,atom_to_list(Dep)
-                  ,"ebin"
-                  ]).
-
-deps() ->
-    ['getopt'].
-
-core() ->
-    ['kazoo', 'kazoo_ast'].
