@@ -61,3 +61,7 @@ Key | Description | Type | Default | Required
 `method` | What HTTP method to use when sending the recording | `string('put', 'post')` |   | `false`
 `time_limit` | Time limit, in seconds, for the recording | `integer` | `3600` | `false`
 `url` | The URL to use when sending the recording for storage (stores locally if not included) | `string` |   | `false`
+
+##### Store recordings locally
+
+By default, Kazoo will not attempt to store recordings to the cluster. This can be overridden (to take advantage of the storage plans, for instance) by setting the flag `store_recordings` to `true` in `system_config/media` document.
