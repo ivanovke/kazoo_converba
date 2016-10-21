@@ -1,0 +1,18 @@
+{application, resolved,
+ [
+  {description, "Resolved - An authoritative DNS application for managing the kazoo domains"},
+  {vsn, "4.0.0"},
+  {modules, []},
+  {registered, [resolved_cache, resolved_sup]},
+  {applications, [ kernel
+                 , stdlib
+                 , crypto
+
+                 , kazoo_apps
+                 , kazoo_amqp
+                 , kazoo_data
+
+                 , lager
+                 ]},
+  {mod, {resolved_app, []}}
+ ]}.
