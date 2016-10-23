@@ -49,10 +49,32 @@ start_link() ->
 -spec init(any()) -> sup_init_ret().
 init([]) ->
     kz_util:set_startup(),
-    RestartStrategy = 'one_for_one',
-    MaxRestarts = 5,
-    MaxSecondsBetweenRestarts = 10,
-
-    SupFlags = {RestartStrategy, MaxRestarts, MaxSecondsBetweenRestarts},
-
-    {'ok', {SupFlags, ?CHILDREN}}.
+    UdpServer = {
+        resolved_udp_server
+        ,{resolved_udp_server, start_link, []}
+        ,permanent
+        ,2000
+        ,worker
+        ,[ed_udp_server]
+    },
+    UdpHandlerSup = {
+        resolved_udp_handler_sup
+        ,{resolved_udp_handler_sup, start_link, []}
+        ,permanent, 2000, supervisor
+        ,[resolved_udp_handler_sup]
+    },
+    ZoneSup = {
+        resolved_zone_sup
+        ,{resolved_zone_sup, start_link, []}
+        ,permanent, 2000, supervisor
+        ,[resolved_zone_sup]
+    },
+    ExtensionSup = {
+        resolved_extension_sup
+        ,{resolved_extension_sup, start_link, []}
+        ,permanent, 2000, supervisor
+        ,[resolved_extension_sup]
+    },
+    Children = [UdpServer, UdpHandlerSup, ZoneSup, ExtensionSup],
+    RestartStrategy = {one_for_one, 3600, 4},
+    {ok, {RestartStrategy, Children}}.

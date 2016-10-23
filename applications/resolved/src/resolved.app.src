@@ -14,5 +14,13 @@
 
                  , lager
                  ]},
-  {mod, {resolved_app, []}}
+  {mod, {resolved_app, []}},
+  {env, [
+     {udp_port, 1053},
+     {tcp_port, 1053},
+     {resolvers, [ed_query_resolver]},
+     {master_mode, false},
+     {slave_mode, false},
+     {supermasters, []}
+  ]}
  ]}.
