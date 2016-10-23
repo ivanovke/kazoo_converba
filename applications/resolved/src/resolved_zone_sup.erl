@@ -33,7 +33,7 @@ start_link() ->
 init([]) ->
     ZoneRegistryServer = {resolved_zone_registry_server,
         {resolved_zone_registry_server, start_link, []},
-        permanent, 2000, worker, [ed_zone_registry_server]},
+        permanent, 2000, worker, [resolved_zone_registry_server]},
     ZoneDataSup = {resolved_zone_data_sup,
         {resolved_zone_data_sup, start_link, []},
         permanent, 2000, supervisor, [resolved_zone_data_sup]},
