@@ -18,27 +18,27 @@
 %%%============================================================================
 
 start_link(Packet) ->
-  proc_lib:start_link(?MODULE, init, [[self(), Packet]]).
+    proc_lib:start_link(?MODULE, init, [[self(), Packet]]).
 
 %%%============================================================================
 %%% Callback
 %%%============================================================================
 
 init([Parent, Packet]) ->
-  proc_lib:init_ack(Parent, {ok, self()}),
-  answer_query(Packet),
-  exit(normal).
+    proc_lib:init_ack(Parent, {ok, self()}),
+    answer_query(Packet),
+    exit(normal).
 
 %%%============================================================================
 %%% Internal
 %%%============================================================================
 
 answer_query({udp, Socket, IP, Port, ReqBin}) ->
-  {ok, Query} = inet_dns:decode(ReqBin),
-  {ok, Resolvers} = application:get_env(resolved, resolvers),
-  Resp = lists:foldl(
-  	fun(R, Acc) ->
-  	  R:resolve(Acc)
-  	end, Query, Resolvers),
-  RespBin = inet_dns:encode(Resp),
-  gen_udp:send(Socket, IP, Port, RespBin).
+    {ok, Query} = inet_dns:decode(ReqBin),
+    {ok, Resolvers} = application:get_env(resolved, resolvers),
+    Resp = lists:foldl(
+  	    fun(R, Acc) ->
+  	        R:resolve(Acc)
+  	    end, Query, Resolvers),
+    RespBin = inet_dns:encode(Resp),
+    gen_udp:send(Socket, IP, Port, RespBin).

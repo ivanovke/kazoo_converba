@@ -46,49 +46,49 @@ init([]) ->
   {ok, gb_trees:empty()}.
 
 handle_call({register, ZoneName, Pid}, _From, State) ->
-  case gb_trees:is_defined(ZoneName, State) of
-  	false ->
-  	  error_logger:info_msg("Zone ~p registered.", [ZoneName]),
-  	  {reply, ok, gb_trees:insert(ZoneName, Pid, State)};
-  	true ->
-  	  {reply, {error, zone_already_registered}, State}
-  end;
+    case gb_trees:is_defined(ZoneName, State) of
+  	    false ->
+  	        lager:info("Zone ~p registered.", [ZoneName]),
+  	        {reply, ok, gb_trees:insert(ZoneName, Pid, State)};
+  	    true ->
+  	        {reply, {error, zone_already_registered}, State}
+    end;
 handle_call({deregister, ZoneName}, _From, State) ->
-  case gb_trees:is_defined(ZoneName, State) of
-  	true ->
-  	  error_logger:info_msg("Zone ~p deregistered.", [ZoneName]),
-  	  {reply, ok, gb_trees:delete(ZoneName, State)};
-  	false ->
-  	  {reply, {error, zone_not_registered}, State}
-  end;
+    case gb_trees:is_defined(ZoneName, State) of
+  	    true ->
+  	        lager:info("Zone ~p deregistered.", [ZoneName]),
+  	        {reply, ok, gb_trees:delete(ZoneName, State)};
+  	    false ->
+  	        {reply, {error, zone_not_registered}, State}
+    end;
 handle_call({get, ZoneName}, _From, State) ->
-  case gb_trees:is_defined(ZoneName, State) of
-  	true ->
-  	  {reply, {ok, gb_trees:get(ZoneName,State)}, State};
-  	false ->
-  	  {reply, {error, zone_not_registered}, State}
-  end;
+    case gb_trees:is_defined(ZoneName, State) of
+  	    true ->
+  	        {reply, {ok, gb_trees:get(ZoneName,State)}, State};
+  	    false ->
+  	        {reply, {error, zone_not_registered}, State}
+    end;
 handle_call({find_nearest_zone, DomainName}, _From, State) ->
-  NameTails = resolved_util:tails(string:tokens(DomainName, ".")),
-  Names = lists:map(fun(X) -> string:join(X, ".") end, NameTails),
-  IsZoneNotDefined = fun(Z) -> not gb_trees:is_defined(Z, State) end,
-  Zone = case lists:dropwhile(IsZoneNotDefined, Names) of
-  	[] -> {error, zone_not_found};
-  	[H|_] -> {ok, gb_trees:get(H, State)}
-  end,
-  {reply, Zone, State};
+    NameTails = resolved_util:tails(string:tokens(DomainName, ".")),
+    Names = lists:map(fun(X) -> string:join(X, ".") end, NameTails),
+    IsZoneNotDefined = fun(Z) -> not gb_trees:is_defined(Z, State) end,
+    Zone = case lists:dropwhile(IsZoneNotDefined, Names) of
+  	    [] -> {error, zone_not_found};
+  	    [H|_] -> {ok, gb_trees:get(H, State)}
+    end,
+    {reply, Zone, State};
 handle_call(_Request, _From, State) ->
-  error_logger:error_msg("Unexpected request"),
-  {noreply, State}.
+    lager:error("Unexpected request"),
+    {noreply, State}.
 
 handle_cast(stop, State) ->
-  {stop, normal, State}.
+    {stop, normal, State}.
 
 handle_info(_Info, State) ->
-   {noreply, State}.
+    {noreply, State}.
 
 terminate(_Reason, _State) ->
-  ok.
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+    {ok, State}.

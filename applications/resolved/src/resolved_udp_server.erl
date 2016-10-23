@@ -30,14 +30,14 @@
 %% @end
 %%-----------------------------------------------------------------------------
 start_link(UdpPort) ->
-  gen_server:start_link({local, ?SERVER}, ?MODULE, [UdpPort], []).
+    gen_server:start_link({local, ?SERVER}, ?MODULE, [UdpPort], []).
 
 %% @doc Start the server on default port
 %% @spec start_link() -> {ok, Pid::pid()}
 %% @end
 start_link() ->
-  {ok, Port} = application:get_env(resolved, udp_port),
-  start_link(Port).
+    {ok, Port} = application:get_env(resolved, udp_port),
+    start_link(Port).
 
 %%-----------------------------------------------------------------------------
 %% @doc Stop the server
@@ -45,7 +45,7 @@ start_link() ->
 %% @end
 %%-----------------------------------------------------------------------------
 stop() ->
-  gen_server:cast(?SERVER, stop).
+    gen_server:cast(?SERVER, stop).
 
 
 %%%============================================================================
@@ -54,22 +54,22 @@ stop() ->
 
 
 init([UdpPort]) ->
-  {ok, Sock} = gen_udp:open(UdpPort, [{active, true}, binary]),
-  {ok, #state{sock=Sock}}.
+    {ok, Sock} = gen_udp:open(UdpPort, [{active, true}, binary]),
+    {ok, #state{sock=Sock}}.
 
 handle_call(_Request, _From, State) ->
-  {noreply, State}.
+    {noreply, State}.
 
 handle_cast(stop, State) ->
-  {stop, normal, State}.
+    {stop, normal, State}.
 
 handle_info(UdpMsg, State) ->
-   resolved_udp_handler_sup:handle(UdpMsg),
-   {noreply, State}.
+    resolved_udp_handler_sup:handle(UdpMsg),
+    {noreply, State}.
 
 terminate(_Reason, #state{sock = Sock}) ->
-  gen_udp:close(Sock),
-  ok.
+    gen_udp:close(Sock),
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+    {ok, State}.

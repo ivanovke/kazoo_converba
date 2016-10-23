@@ -117,7 +117,7 @@ load_zone(Q, Zone) ->
 
 match_records(Q, RRTree) ->
     DomainName = get_domain_name(Q),
-    NameTails = resolved_utils:tails(string:tokens(DomainName, ".")),
+    NameTails = resolved_util:tails(string:tokens(DomainName, ".")),
     Names = lists:map(fun(X) -> string:join(X, ".") end, NameTails),
     Q1 = match_records(Q, RRTree, Names),
     enrich_additional_section(Q1, RRTree).
@@ -269,11 +269,11 @@ enrich_additional_section_mx(RRTree, MxRR, ArList, _QD) ->
 
 
 not_implemented_error(Q, Reason) ->
-    error_logger:error_msg("Not implemented (~p) Query: ~p", [Reason, Q]),
+    lager:error("Not implemented (~p) Query: ~p", [Reason, Q]),
     set_response_code(Q, ?NOTIMP).
 
 non_existent_zone(Q) ->
-    error_logger:warning_msg("Zone not found for Query: ~p", [Q]),
+    lager:warning("Zone not found for Query: ~p", [Q]),
     case is_cname_recursive_lookup(Q) of
     	true  -> set_response_code(Q, ?NOERROR);
     	false -> set_response_code(Q, ?REFUSED)
@@ -282,7 +282,7 @@ non_existent_zone(Q) ->
 non_existent_domain(Q, RRTree) ->
     SoaRR = get_soa_rr(RRTree),
     Q1 = Q#dns_rec{nslist=[SoaRR|Q#dns_rec.nslist]},
-    error_logger:info_msg("NXDOMAIN response: ~p", [Q1]),
+    lager:info("NXDOMAIN response: ~p", [Q1]),
     set_response_code(Q1, ?NXDOMAIN).
 
 %%%============================================================================

@@ -38,71 +38,71 @@ flush(Pid) ->
 
 
 init([{ZoneName, ZoneProvider}]) ->
-  case resolved_zone_registry_server:register(ZoneName, self()) of
-    ok -> {ok, #state{zone_name=ZoneName, zone_provider=ZoneProvider}, 0};
-    {error, Reason} -> {stop, Reason}
-  end.
+    case resolved_zone_registry_server:register(ZoneName, self()) of
+        ok -> {ok, #state{zone_name=ZoneName, zone_provider=ZoneProvider}, 0};
+        {error, Reason} -> {stop, Reason}
+    end.
 
 handle_call(get_zone, _From, State) ->
-  {reply, {ok, State#state.rr_tree}, State};
+    {reply, {ok, State#state.rr_tree}, State};
 handle_call(_Request, _From, State) ->
-  {noreply, State}.
+    {noreply, State}.
 
 handle_cast(flush, State) ->
-  {noreply, State, 0}; %% triggers handle_info(timeout, ...
+    {noreply, State, 0}; %% triggers handle_info(timeout, ...
 handle_cast(stop, State) ->
-  {stop, normal, State}.
+    {stop, normal, State}.
 
 handle_info(timeout, #state{zone_provider={M,F,A}}=State) ->
-  error_logger:info_msg("Reloading zone: ~p", [State#state.zone_name]),
-  {ok, RRs} = M:F(A),
-  RRs1 = convert_records_to_lowercase(RRs),
-  RRTree = lists:foldr(
-    fun(RR, Tree) ->
-      Domain = RR#dns_rr.domain,
-      case gb_trees:is_defined(Domain, Tree) of
-        false ->
-          gb_trees:insert(Domain, [RR], Tree);
-        true ->
-          gb_trees:update(Domain, [RR|gb_trees:get(Domain, Tree)], Tree)
-       end
-    end, gb_trees:empty(), RRs1),
-  {ok, RefreshInterval} = get_zone_expiry(RRs1),
-   {noreply, State#state{rr_tree=RRTree}, RefreshInterval};
+    lager:debug("Reloading zone: ~p", [State#state.zone_name]),
+    {ok, RRs} = M:F(A),
+    RRs1 = convert_records_to_lowercase(RRs),
+    RRTree = lists:foldr(
+        fun(RR, Tree) ->
+            Domain = RR#dns_rr.domain,
+            case gb_trees:is_defined(Domain, Tree) of
+            false ->
+            gb_trees:insert(Domain, [RR], Tree);
+            true ->
+            gb_trees:update(Domain, [RR|gb_trees:get(Domain, Tree)], Tree)
+            end
+        end, gb_trees:empty(), RRs1),
+    {ok, RefreshInterval} = get_zone_expiry(RRs1),
+    {noreply, State#state{rr_tree=RRTree}, RefreshInterval};
 handle_info(_Info, State) ->
-   {noreply, State}.
+    {noreply, State}.
 
 terminate(_Reason, #state{zone_name=ZoneName}) ->
-  resolved_zone_registry_server:deregister(ZoneName),
-  ok.
+    resolved_zone_registry_server:deregister(ZoneName),
+    ok.
 
 code_change(_OldVsn, State, _Extra) ->
-  {ok, State}.
+    {ok, State}.
 
 %%%============================================================================
 %%% Internal
 %%%============================================================================
 
 convert_records_to_lowercase(RRs) ->
-  lists:map(fun domain_to_lowercase/1, RRs).
+    lists:map(fun domain_to_lowercase/1, RRs).
 
 domain_to_lowercase(#dns_rr{domain=Domain}=RR) ->
-  RR#dns_rr{domain=string:to_lower(Domain)}.
+    RR#dns_rr{domain=string:to_lower(Domain)}.
 
 get_zone_expiry(RRs) ->
-  case get_zone_expiry_from_soa(RRs) of
-    undefined -> soa_missing;
-    Expiry -> {ok, Expiry * 1000} % convert to milliseconds
-  end.
+    case get_zone_expiry_from_soa(RRs) of
+        undefined -> soa_missing;
+        Expiry -> {ok, Expiry * 1000} % convert to milliseconds
+    end.
 
 get_zone_expiry_from_soa(RRs) ->
-  lists:foldr(
-    fun(RR, Acc) ->
-      case RR#dns_rr.type of
-        soa ->
-          {_Host, _Contact, _Serial, Refresh, _Retry, _Expiry, _Min} =
-            RR#dns_rr.data,
-          Refresh;
-        _ -> Acc
-      end
-    end, undefined, RRs).
+    lists:foldr(
+        fun(RR, Acc) ->
+            case RR#dns_rr.type of
+                soa ->
+                {_Host, _Contact, _Serial, Refresh, _Retry, _Expiry, _Min} =
+                RR#dns_rr.data,
+                Refresh;
+             _ -> Acc
+            end
+        end, undefined, RRs).

@@ -35,29 +35,29 @@ start_link() ->
 %%% behaviour callbacks
 %%%============================================================================
 init([]) ->
-  Children = find_extensions(?EXTENSIONS_PATH),
-  RestartStrategy = {one_for_one, 3600, 4},
-  {ok, {RestartStrategy, Children}}.
+    Children = find_extensions(?EXTENSIONS_PATH),
+    RestartStrategy = {one_for_one, 3600, 4},
+    {ok, {RestartStrategy, Children}}.
 
 find_extensions(Path) ->
-  FilePaths = filelib:wildcard(Path),
-  FileNames = lists:map(fun filename:basename/1, FilePaths),
-  Modules = lists:map(
-  	fun(F) ->
-  		F1 = re:replace(F, ".erl", "", [{return, list}]),
-  		list_to_atom(F1)
-  	end, FileNames),
-  OtpModules = lists:filter(
-  	fun(M) ->
-  		Attrs = M:module_info(attributes),
-  		case proplists:get_value(behaviour, Attrs) of
-  			[gen_server] -> true;
-  			[supervisor] -> true;
-  			_ -> false
-  		end
-  	end, Modules),
-  case OtpModules of
-  	[] -> nop;
-  	_ -> error_logger:info_msg("Found extensions: ~p", [OtpModules])
-  end,
-  [?CHILD(M) || M <- OtpModules].
+    FilePaths = filelib:wildcard(Path),
+    FileNames = lists:map(fun filename:basename/1, FilePaths),
+    Modules = lists:map(
+  	    fun(F) ->
+  		    F1 = re:replace(F, ".erl", "", [{return, list}]),
+  		    list_to_atom(F1)
+  	    end, FileNames),
+    OtpModules = lists:filter(
+  	    fun(M) ->
+  		    Attrs = M:module_info(attributes),
+  		    case proplists:get_value(behaviour, Attrs) of
+  			    [gen_server] -> true;
+  			    [supervisor] -> true;
+  			    _ -> false
+  		    end
+  	    end, Modules),
+    case OtpModules of
+  	    [] -> nop;
+  	    _ -> lager:debug("Found extensions: ~p", [OtpModules])
+    end,
+    [?CHILD(M) || M <- OtpModules].

@@ -25,21 +25,21 @@
 %% @spec start_link() -> {ok, Pid::pid()}
 %%-----------------------------------------------------------------------------
 start_link() ->
-  supervisor:start_link({local, ?SERVER}, ?MODULE, []).
+    supervisor:start_link({local, ?SERVER}, ?MODULE, []).
 
 %%-----------------------------------------------------------------------------
 %% @doc Starts a child worker to perforom a DNS lookup
 %%-----------------------------------------------------------------------------
 register_zone_provider(Args) ->
-  supervisor:start_child(?SERVER, [Args]).
+    supervisor:start_child(?SERVER, [Args]).
 
 
 %%%============================================================================
 %%% behaviour callbacks
 %%%============================================================================
 init([]) ->
-  Server = {resolved_zone_data_server, {resolved_zone_data_server, start_link, []},
-    temporary, 2000, worker, [resolved_zone_data_server]},
-  Children = [Server],
-  RestartStrategy = {simple_one_for_one, 0, 1},
-  {ok, {RestartStrategy, Children}}.
+    Server = {resolved_zone_data_server, {resolved_zone_data_server, start_link, []},
+        temporary, 2000, worker, [resolved_zone_data_server]},
+    Children = [Server],
+    RestartStrategy = {simple_one_for_one, 0, 1},
+    {ok, {RestartStrategy, Children}}.
