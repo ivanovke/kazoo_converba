@@ -34,10 +34,36 @@ get_zone(_Args) ->
             86400            %minimum of a day
             }
         },
-        #dns_rr{domain="sean.sean", type=ns, data="ns1.bot.co.za"},
-        #dns_rr{domain="sean.sean", type=ns, data="ns2.bot.co.za"},
-        #dns_rr{domain="www.sean.sean", type=cname, data="bot.co.za"},
+        #dns_rr{domain="sean.sean", type=ns, data="ns1.sean.sean"},
+        #dns_rr{domain="sean.sean", type=ns, data="ns2.sean.sean"},
+        #dns_rr{domain="www.sean.sean", type=cname, data="sean.sean"},
         #dns_rr{domain="sean.sean", type=a, data={127,0,0,1}},
-        #dns_rr{domain="_udp._sip.sean.sean", type=srv, data="sip1.z1.sean.sean"},
-        #dns_rr{domain="_udp._sip.sean.sean", type=srv, data="sip.z1.sean.sean"}
+        #dns_rr{domain="ns1.sean.sean", type=a, data={127,0,0,1}},
+        #dns_rr{domain="ns2.sean.sean", type=a, data={127,0,0,1}},
+        #dns_rr{domain="sip1.sean.sean", type=a, data={127,0,0,1}},
+        #dns_rr{domain="sip2.sean.sean", type=a, data={127,0,0,1}},
+        #dns_rr{
+            domain="_udp._sip.sean.sean"
+            ,class=in
+            ,type=srv
+            ,ttl=3600
+            ,data={
+                30
+                ,70
+                ,5060
+                ,"sip1.sean.sean"
+            }
+        },
+        #dns_rr{
+            domain="_udp._sip.sean.sean"
+            ,class=in
+            ,type=srv
+            ,ttl=3600
+            ,data={
+                70
+                ,30
+                ,5060
+                ,"sipr21.sean.sean"
+            }
+        }
     ]}.
