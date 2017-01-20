@@ -148,6 +148,8 @@ process_app(App, Acc, ExistingApps) ->
     RemoteModules = remote_calls(App),
     RemoteApps = ordsets:from_list(modules_as_apps(App, RemoteModules)),
 
+    ?DEBUG("remote modules: ~p~n", [RemoteModules]),
+
     ?DEBUG(" known ~p~nremote apps: ~p~n", [KnownApps, RemoteApps]),
 
     Missing = ordsets:subtract(RemoteApps, KnownApps),
@@ -174,7 +176,7 @@ remote_calls(App) ->
 remote_calls_from_module(Module, Acc) ->
     io:format("."),
     {M, AST} = kz_ast_util:module_ast(Module),
-    Fs = kz_ast_util:add_module_ast([], M, AST),
+    #module_ast{functions=Fs} = kz_ast_util:add_module_ast(#module_ast{}, M, AST),
     remote_calls_from_functions(Fs, Acc).
 
 remote_calls_from_functions(Fs, Acc) ->
