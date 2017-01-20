@@ -17,6 +17,8 @@
 -define(SYSTEM_CONFIG_DESCRIPTIONS, kz_ast_util:api_path(<<"descriptions.system_config.json">>)).
 -define(UNKNOWN_DEFAULT, undefined).
 
+-define(IGNORE_SYSTEM_VALUE, <<"_system">>).
+
 -spec to_schema_docs() -> 'ok'.
 to_schema_docs() ->
     kz_json:foreach(fun update_schema/1, process_project()).
