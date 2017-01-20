@@ -17,6 +17,11 @@
 %% -define(DEBUG(_Fmt, _Args), 'ok').
 -define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
 
+-spec dot_file() -> 'ok' |
+                    {'error', file:posix() | 'badarg' | 'terminated' | 'system_limit'}.
+-spec dot_file(atom()) ->
+                      'ok' |
+                      {'error', file:posix() | 'badarg' | 'terminated' | 'system_limit'}.
 dot_file() ->
     Markup = [create_dot_markup(App, remote_apps(App)) || App <- kz_ast_util:project_apps()],
     create_dot_file("kazoo_project", Markup).
@@ -48,6 +53,7 @@ app_markup(App, RemoteApps) ->
     ?DEBUG("adding '~s'~n", [M]),
     M.
 
+-spec fix_project_deps() -> 'ok'.
 fix_project_deps() ->
     Deps = process_project(),
     io:format("processing app files "),
@@ -56,6 +62,7 @@ fix_project_deps() ->
     ],
     io:format(" done.~n").
 
+-spec fix_app_deps(atom()) -> 'ok'.
 fix_app_deps(App) ->
     [fix_app_deps(App, Missing, Unneeded)
      || {_App, Missing, Unneeded} <- process_app(App)
@@ -108,6 +115,9 @@ app_src_filename(App) ->
                   ,<<AppBin/binary, ".app.src">>
                   ]).
 
+-type app_deps() :: {atom(), [atom()], [atom()]}.
+-type apps_deps() :: [app_deps()].
+-spec process_project() -> apps_deps().
 process_project() ->
     io:format("processing application dependencies: "),
     Discrepencies = lists:foldl(fun process_app/2
@@ -117,6 +127,7 @@ process_project() ->
     io:format(" done~n"),
     lists:keysort(1, Discrepencies).
 
+-spec process_app(atom()) -> apps_deps().
 process_app(App) ->
     process_app(App, []).
 
@@ -147,9 +158,11 @@ process_app(App, Acc, ExistingApps) ->
         _ -> [{App, Missing, Unneeded} | Acc]
     end.
 
+-spec remote_apps(atom()) -> [{atom(), atom()}].
 remote_apps(App) ->
     modules_with_apps(App, remote_calls(App)).
 
+-spec remote_calls(atom()) -> [atom()].
 remote_calls(App) ->
     lists:usort(
       lists:foldl(fun remote_calls_from_module/2
@@ -293,6 +306,8 @@ add_remote_module(M, Acc) ->
         'false' -> [M | Acc]
     end.
 
+-spec modules_with_apps(atom(), [atom()]) ->
+                               [{atom(), atom()}].
 modules_with_apps(App, Modules) ->
     lists:usort([{M, AppOf}
                  || M <- Modules,
