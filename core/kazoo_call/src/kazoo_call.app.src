@@ -5,7 +5,7 @@
  ,{vsn, "4.0.0"}
  ,{modules, []}
  ,{registered, []}
- ,{applications, [stdlib]}
  ,{env, []}
  ,{mod, {kazoo_call_app, []}}
+ ,{applications, [stdlib, kazoo_workers]}
  ]}.

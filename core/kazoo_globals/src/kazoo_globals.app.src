@@ -9,10 +9,11 @@
                  , stdlib
 
                  , kazoo
+                 , kazoo_amqp
                  , kazoo_config
                  , kazoo_data
-                 , kazoo_amqp
                  , kazoo_etsmgr
+                 , kazoo_workers
 
                  , syslog
                  , lager

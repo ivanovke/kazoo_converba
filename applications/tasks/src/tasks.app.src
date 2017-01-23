@@ -17,6 +17,8 @@
                  , kazoo_number_manager
                  , kazoo_services
                  , kazoo_tasks
+                 , kazoo_templates
+                 , kazoo_workers
 
                  ,lager
                  ]},

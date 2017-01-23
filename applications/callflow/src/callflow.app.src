@@ -8,14 +8,15 @@
                  , stdlib
                  , crypto
 
-                 , kazoo_apps
                  , kazoo_amqp
                  , kazoo_call
+                 , kazoo_apps
                  , kazoo_data
                  , kazoo_endpoint
+                 , kazoo_media
                  , kazoo_token_buckets
                  , kazoo_voicemail
-                 , kazoo_media
+                 , kazoo_workers
 
                  , lager
                  ]}
