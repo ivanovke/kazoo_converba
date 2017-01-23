@@ -21,6 +21,8 @@ handle(['dot'], [App]) ->
     kast_app_deps:dot_file(list_to_atom(App));
 handle([], [App]) ->
     list_remote_apps(App);
+handle(['project'], []) ->
+    kast_app_deps:fix_project_deps();
 handle(_, _) ->
     print_help().
 
@@ -50,6 +52,7 @@ list_remote_apps(App) ->
 option_spec_list() ->
     [{'help', $?, "help", 'undefined', "Show the program options"}
     ,{'app', $a, "app", 'undefined', "The app to process"}
+    ,{'project', $p, "project", 'undefined', "Process the project"}
     ,{'dot', $d, "dot", 'undefined', "Generate a DOT file"}
     ].
 
