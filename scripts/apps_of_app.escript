@@ -23,6 +23,9 @@ handle([], [App]) ->
     list_remote_apps(App);
 handle(['project'], []) ->
     kast_app_deps:fix_project_deps();
+handle(['module'], [Module]) ->
+    Remote = kast_app_deps:remote_calls_from_module(list_to_atom(Module)),
+    io:format("remote module calls: ~p~n", [lists:sort(Remote)]);
 handle(_, _) ->
     print_help().
 
@@ -51,6 +54,7 @@ list_remote_apps(App) ->
 -spec option_spec_list() -> list().
 option_spec_list() ->
     [{'help', $?, "help", 'undefined', "Show the program options"}
+    ,{'module', $m, "module", 'undefined', "The module to process"}
     ,{'app', $a, "app", 'undefined', "The app to process"}
     ,{'project', $p, "project", 'undefined', "Process the project"}
     ,{'dot', $d, "dot", 'undefined', "Generate a DOT file"}

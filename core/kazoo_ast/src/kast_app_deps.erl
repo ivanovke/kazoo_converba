@@ -9,6 +9,7 @@
         ]).
 
 -export([remote_calls/1
+        ,remote_calls_from_module/1
         ,remote_apps/1
         ]).
 
@@ -172,6 +173,10 @@ remote_calls(App) ->
                  ,kz_ast_util:app_modules(App)
                  )
      ).
+
+-spec remote_calls_from_module(atom()) -> [atom()].
+remote_calls_from_module(Module) ->
+    remote_calls_from_module(Module, []).
 
 remote_calls_from_module(Module, Acc) ->
     io:format("."),
