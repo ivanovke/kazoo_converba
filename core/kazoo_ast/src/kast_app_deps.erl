@@ -32,7 +32,7 @@ dot_file(App) ->
     create_dot_file(App, create_dot_markup(App, AppDeps)).
 
 create_dot_file(Name, Markup) ->
-    file:write_file(<<"/tmp/", (kz_util:to_binary(Name))/binary, ".dot">>
+    file:write_file(<<"/tmp/", (kz_term:to_binary(Name))/binary, ".dot">>
                    ,["digraph kast_app_deps {\n"
                     ,Markup
                     ,"}\n"
@@ -44,9 +44,9 @@ create_dot_markup(App, AppDeps) ->
     app_markup(App, RemoteApps).
 
 app_markup(App, RemoteApps) ->
-    M = [ [$", kz_util:to_binary(App), $"
+    M = [ [$", kz_term:to_binary(App), $"
           ," -> "
-          ,$", kz_util:to_binary(RemoteApp), $"
+          ,$", kz_term:to_binary(RemoteApp), $"
           ," [weight=1];\n"
           ]
           || RemoteApp <- RemoteApps
@@ -103,7 +103,7 @@ fix_app_deps(App, Missing, Unneeded) ->
 
 read_app_src(App) ->
     File = app_src_filename(App),
-    {'ok', [Config]} = file:consult(kz_util:to_list(File)),
+    {'ok', [Config]} = file:consult(kz_term:to_list(File)),
     Config.
 
 write_app_src(App, Config) ->
@@ -111,7 +111,7 @@ write_app_src(App, Config) ->
     file:write_file(File, io_lib:format("~p.~n", [Config])).
 
 app_src_filename(App) ->
-    AppBin = kz_util:to_binary(App),
+    AppBin = kz_term:to_binary(App),
     filename:join([code:lib_dir(App, 'src')
                   ,<<AppBin/binary, ".app.src">>
                   ]).
@@ -343,6 +343,6 @@ app_of(Module) ->
 cleanup_app(App) ->
     case string:tokens(App, "-") of
         ["kernel", _Vsn] -> 'undefined';
-        [AppName, _Vsn] -> kz_util:to_atom(AppName, 'true');
-        _ -> kz_util:to_atom(App, 'true')
+        [AppName, _Vsn] -> kz_term:to_atom(AppName, 'true');
+        _ -> kz_term:to_atom(App, 'true')
     end.
