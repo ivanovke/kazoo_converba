@@ -8,7 +8,7 @@
 -module(teletype_bindings).
 
 -export([start_link/0]).
--export([bind/3
+-export([bind/3, bind/4
         ,flush_mod/1
         ,notification/1
         ]).
@@ -24,8 +24,11 @@ start_link() ->
     'ignore'.
 
 -spec bind(ne_binary(), module(), atom()) -> 'ok'.
+-spec bind(api_binary(), api_binary(), module(), atom()) -> 'ok'.
 bind(EventName, Module, Fun) ->
     bind(<<"notification">>, EventName, Module, Fun).
+bind(EventCategory, EventName, Module, Fun) ->
+    kazoo_bindings:bind(?ROUTING_KEY(EventCategory, EventName), Module, Fun).
 
 -spec flush_mod(module()) -> 'ok'.
 flush_mod(Module) ->
