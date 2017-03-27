@@ -23,6 +23,9 @@ A simple script to query the Erlang VMs process count
 ./scripts/apps-process-count.sh
 10
 #+END_SRC
+** =apps_of_app.escript=
+Interface to the apps_of_app work (untangling the application dependency tree within Kazoo)
+
 ** bump-copyright-year.sh
 Python script to walk the supplied files and bumps the copyright year if appropriate.
 #+BEGIN_SRC shell
@@ -78,7 +81,7 @@ Done
 If there are any calls to non-existant modules, or non-exported functions, you will get errors listed here.
 ** circleci-build-erlang.sh
 Fetches kerl and installs configured Erlang version (used in CircleCI)
-** code_checks.bash
+** =code_checks.bash=
 Checks source code files for various formatting expectations and exits if any are found.
 #+BEGIN_SRC shell
 ./scripts/code_checks.bash applications/crossbar/src/cb_context.erl
@@ -87,8 +90,6 @@ Check for uses of module in lieu of ?MODULE
 Check for TAB characters
 Check for trailing whitespaces
 #+END_SRC
-** =code_checks.bash=
-Checks source code for various style requirements of the project
 ** conn-to-apps.sh
 Opens a remote shell to the kazoo_apps@hostname VM.
 #+BEGIN_SRC shell

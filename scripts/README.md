@@ -15,6 +15,11 @@ A simple script to query the Erlang VMs process count
 ```
 
 
+## `apps_of_app.escript`
+
+Interface to the apps\_of\_app work (untangling the application dependency tree within Kazoo)
+
+
 ## bump-copyright-year.sh
 
 Python script to walk the supplied files and bumps the copyright year if appropriate.
@@ -104,7 +109,7 @@ If there are any calls to non-existant modules, or non-exported functions, you w
 Fetches kerl and installs configured Erlang version (used in CircleCI)
 
 
-## code\_checks.bash
+## `code_checks.bash`
 
 Checks source code files for various formatting expectations and exits if any are found.
 
@@ -115,11 +120,6 @@ Check for uses of module in lieu of ?MODULE
 Check for TAB characters
 Check for trailing whitespaces
 ```
-
-
-## `code_checks.bash`
-
-Checks source code for various style requirements of the project
 
 
 ## conn-to-apps.sh
