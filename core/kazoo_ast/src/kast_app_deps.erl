@@ -182,7 +182,8 @@ remote_calls_from_module(Module, Acc) ->
     io:format("."),
     {M, AST} = kz_ast_util:module_ast(Module),
     #module_ast{functions=Fs} = kz_ast_util:add_module_ast(#module_ast{}, M, AST),
-    remote_calls_from_functions(Fs, Acc).
+    Modules = remote_calls_from_functions(Fs, Acc),
+    lists:delete(M, Modules).
 
 remote_calls_from_functions(Fs, Acc) ->
     lists:foldl(fun remote_calls_from_function/2
