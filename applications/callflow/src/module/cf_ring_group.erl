@@ -97,8 +97,7 @@ attempt_endpoints(Endpoints, Data, Call) ->
               ],
 
     lager:info("attempting ring group of ~b members with strategy ~s", [length(Endpoints), Strategy]),
-    case bridge(Command, Timeout, Call)
-    of
+    case bridge(Command, Timeout, Call) of
         {'ok', _} ->
             lager:info("completed successful bridge to the ring group - call finished normally"),
             'stop';
@@ -198,7 +197,8 @@ resolve_endpoint_ids(Members, EndpointIds, Data, Call) ->
 
 -spec resolve_endpoint_id(kz_json:object(), endpoint_intermediates(), kz_json:object(), kapps_call:call()) ->
                                  endpoint_intermediates().
-resolve_endpoint_id(Member, EndpointIds, Data, Call) ->
+resolve_endpoint_id(Member0, EndpointIds, Data, Call) ->
+    Member = maybe_add_presence_id(Member0, Data),
     Id = kz_doc:id(Member),
     Type = kz_json:get_ne_binary_value(<<"endpoint_type">>, Member, <<"device">>),
     Weight = group_weight(Member, 20),
@@ -219,20 +219,27 @@ resolve_endpoint_id(Member, EndpointIds, Data, Call) ->
             [{Type, Id, Weight, Member}|EndpointIds]
     end.
 
+-spec maybe_add_presence_id(kz_json:object(), kz_json:object()) -> kz_json:object().
+maybe_add_presence_id(Member, Data) ->
+    case kz_json:get_ne_binary_binary(<<"presence_id">>, Data) of
+        'undefined' -> Member;
+        PresenceId -> kz_json:set_value(<<"presence_id">>, PresenceId, Member)
+    end.
+
+
 -spec get_user_endpoint_ids(kz_json:object(), endpoint_intermediates(), ne_binary(), group_weight(), kapps_call:call()) ->
                                    endpoint_intermediates().
 get_user_endpoint_ids(Member, EndpointIds, Id, GroupWeight, Call) ->
-    lists:foldr(
-      fun(EndpointId, Acc) ->
-              case lists:keymember(EndpointId, 2, Acc) of
-                  'true' -> Acc;
-                  'false' ->
-                      [{<<"device">>, EndpointId, GroupWeight, Member} | Acc]
-              end
-      end
+    lists:foldr(fun(EndpointId, Acc) ->
+                        case lists:keymember(EndpointId, 2, Acc) of
+                            'true' -> Acc;
+                            'false' ->
+                                [{<<"device">>, EndpointId, GroupWeight, Member} | Acc]
+                        end
+                end
                ,[{<<"user">>, Id, 'undefined'} | EndpointIds]
                ,kz_attributes:owned_by(Id, <<"device">>, Call)
-     ).
+               ).
 
 -spec get_group_members(kz_json:object(), ne_binary(), group_weight(), kz_json:object(), kapps_call:call()) -> kz_json:objects().
 get_group_members(Member, Id, GroupWeight, Data, Call) ->

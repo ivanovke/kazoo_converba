@@ -18,6 +18,7 @@ Key | Description | Type | Default | Required
 `endpoints.[].weight` | Weight of endpoint, different usage in various strategies | `integer` |   | `false`
 `fail_on_single_reject` | If any leg rejects the call, cancel all other legs | `boolean` |   | `false`
 `ignore_forward` | If true, will ignore SIP redirect requests for call-forwarded devices | `boolean` | `true` | `false`
+`presence_id` | Static presence ID (used instead of SIP username) | `string` |   | `false`
 `repeats` | How many times to retry the ring group | `integer` | `1` | `false`
 `ringback` | Ringback to use | `string` |   | `false`
 `ringtones` |   | `object` |   | `false`

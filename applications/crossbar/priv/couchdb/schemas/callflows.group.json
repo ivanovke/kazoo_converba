@@ -25,6 +25,10 @@
             "description": "Whether to ignore forwarded phones",
             "type": "boolean"
         },
+        "presence_id": {
+            "description": "Static presence ID (used instead of SIP username)",
+            "type": "string"
+        },
         "repeats": {
             "default": 1,
             "description": "How many times to repeat dialing the group",

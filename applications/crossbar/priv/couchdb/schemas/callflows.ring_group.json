@@ -62,6 +62,10 @@
             "required": false,
             "type": "boolean"
         },
+        "presence_id": {
+            "description": "Static presence ID (used instead of SIP username)",
+            "type": "string"
+        },
         "repeats": {
             "default": 1,
             "description": "How many times to retry the ring group",

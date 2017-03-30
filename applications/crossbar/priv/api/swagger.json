@@ -1568,6 +1568,10 @@
                     "description": "Whether to ignore forwarded phones",
                     "type": "boolean"
                 },
+                "presence_id": {
+                    "description": "Static presence ID (used instead of SIP username)",
+                    "type": "string"
+                },
                 "repeats": {
                     "default": 1,
                     "description": "How many times to repeat dialing the group",
@@ -2442,6 +2446,10 @@
                     "description": "If true, will ignore SIP redirect requests for call-forwarded devices",
                     "required": false,
                     "type": "boolean"
+                },
+                "presence_id": {
+                    "description": "Static presence ID (used instead of SIP username)",
+                    "type": "string"
                 },
                 "repeats": {
                     "default": 1,

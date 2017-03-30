@@ -13,6 +13,7 @@ Key | Description | Type | Default | Required
 `fail_on_single_reject` | If any leg rejects the call, cancel all other legs | `boolean` |   | `false`
 `id` | Group ID | `string` |   | `false`
 `ignore_forward` | Whether to ignore forwarded phones | `boolean` | `true` | `false`
+`presence_id` | Static presence ID (used instead of SIP username) | `string` |   | `false`
 `repeats` | How many times to repeat dialing the group | `integer` | `1` | `false`
 `ringback` | Ringback to use | `string` |   | `false`
 `ringtones` |   | `object` |   | `false`
