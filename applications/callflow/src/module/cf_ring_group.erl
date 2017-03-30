@@ -221,11 +221,10 @@ resolve_endpoint_id(Member0, EndpointIds, Data, Call) ->
 
 -spec maybe_add_presence_id(kz_json:object(), kz_json:object()) -> kz_json:object().
 maybe_add_presence_id(Member, Data) ->
-    case kz_json:get_ne_binary_binary(<<"presence_id">>, Data) of
+    case kz_json:get_ne_binary_value(<<"presence_id">>, Data) of
         'undefined' -> Member;
         PresenceId -> kz_json:set_value(<<"presence_id">>, PresenceId, Member)
     end.
-
 
 -spec get_user_endpoint_ids(kz_json:object(), endpoint_intermediates(), ne_binary(), group_weight(), kapps_call:call()) ->
                                    endpoint_intermediates().
