@@ -1,5 +1,12 @@
 site_name: Dev Reference
 
+strict: True
+
+markdown_extensions:
+    - toc:
+        permalink: True
+    - pymdownx.superfences
+
 pages:
 - 'index.md'
 - 'Voice APIs':
