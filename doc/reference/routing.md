@@ -1,4 +1,3 @@
-
 # Rating and Limits
 
 Topic Goal: Describe how Jonny5 and HotOrNot work. This implies also teaching people how authz and authorization work (a flowchart would be AMAZING). Things like how dry run works, etc would be extra-amazing.
@@ -32,12 +31,12 @@ The truth is, billing is a complicated topic. It helps to break it into pieces. 
 * Deposit tracking
 * Accounts Payable / Accounts Receivable
 * Strategies for warning customers
-  * low balances
-  * overdue
-  * expiring credit card
+    * low balances
+    * overdue
+    * expiring credit card
 * Discounts
-  * one time
-  * continuous
+    * one time
+    * continuous
 * Rate decks (global + account based)
 * Actual cost analysis
 
@@ -52,6 +51,7 @@ Kazoo's rating and routing functions are actually quite robust.
 But they are not well documented so it can be easy to get lost in them.
 
 # Rating
+
 ## What a rate document looks like
 
 ```
@@ -77,17 +77,17 @@ But they are not well documented so it can be easy to get lost in them.
 Rating is done by HotOrNot:
 
 1. Searches for rate in global rate deck matching the normalized dialed number
-   * Breaks number into all possible prefixes
-   * +14158867900 => [1, 14, 141, 1415, 14158, ...]
-   * Matches all rate docs with prefixes in the above list
+    * Breaks number into all possible prefixes
+    * +14158867900 => [1, 14, 141, 1415, 14158, ...]
+    * Matches all rate docs with prefixes in the above list
 2. Match rates found against various criteria
-   * Call Direction (inbound, outbound, both)
-   * Options - match route options+flags against rate options list
-     * each route option/flag must exist in rate options list
-   * Routes - match rate regex to dialed number
+    * Call Direction (inbound, outbound, both)
+    * Options - match route options+flags against rate options list
+        * each route option/flag must exist in rate options list
+    * Routes - match rate regex to dialed number
 3. Sort matched rates
-   * Larger prefix first (1415 matches before 141)
-   * Weight parameter if prefix lengths are the same
+    * Larger prefix first (1415 matches before 141)
+    * Weight parameter if prefix lengths are the same
 4. Set various parameters on the call for tracking per-minute costs, if any
 
 -----
@@ -109,6 +109,7 @@ Matching:
 ```
 
 # Limits
+
 ## How Kazoo does limits
 
 Limits are a concept of limiting how many flat-rate (included) calls are available which WON'T actually result in a charge.
@@ -116,29 +117,29 @@ Limits are a concept of limiting how many flat-rate (included) calls are availab
 You can limit based on:
 
 * Inbound
-  * Limit the number of simultaneous inbound calls that can be received
+    * Limit the number of simultaneous inbound calls that can be received
 * Outbound
-  * Limt the number of simultaneous outbound calls that can be made
+    * Limt the number of simultaneous outbound calls that can be made
 * Two-way
-  * Limt the number of simultaneous calls that can be made
+    * Limt the number of simultaneous calls that can be made
 * Resource consuming
-  * Any endpoint the system operators likely pay (upstream carriers generally)
-  * Limit the number of calls that can consume resources (internal calls unaffected)
+    * Any endpoint the system operators likely pay (upstream carriers generally)
+    * Limit the number of calls that can consume resources (internal calls unaffected)
 * Burst
-  * Allows account to consume more trunks than the base number allotted, typically for short intervals
-  * Good for seasonal, customer support, radio shows, call centers, schools, etc
+    * Allows account to consume more trunks than the base number allotted, typically for short intervals
+    * Good for seasonal, customer support, radio shows, call centers, schools, etc
 * Bundled Trunks
-  * Inbound, Outbound, Twoway as well
-  * Limit determined by the number of users or devices (configurable)
-  * `"twoway_bundled":"user"`, for example
+    * Inbound, Outbound, Twoway as well
+    * Limit determined by the number of users or devices (configurable)
+    * `"twoway_bundled":"user"`, for example
 * Prepay
-  * Pay up front, deduct until 0
-  * No simultaneous call limit
+    * Pay up front, deduct until 0
+    * No simultaneous call limit
 * Postpay
-  * Basically prepay that can go negative
+    * Basically prepay that can go negative
 * Allotments
-  * Buckets of minutes per time-period
-    * Monthly, Weekly, Daily, Hourly, Minutely (seriously)
+    * Buckets of minutes per time-period
+        * Monthly, Weekly, Daily, Hourly, Minutely (seriously)
 
 Emergency calls are immediately authorized, as are outbound calls to tollfree numbers.
 
@@ -151,19 +152,19 @@ Each CDR is augmented with two fields showing the trunk usage for the account an
 Both the account making the call and the reseller of the account **must** authz the call.
 
 1. Check `pvt_enabled` in account
-   * if false, permit call
+    * if false, permit call
 2. Check classification of call
-   * if `emergency` or `tollfree_us` (and call direction is `outbound`), permit call
+    * if `emergency` or `tollfree_us` (and call direction is `outbound`), permit call
 3. Check call limits
 4. Check resource-consuming call limits
 5. Check allotments
 6. Check flat rate trunks
-   * Check dialed number against white/black lists
-   * Check inbound/outbound trunks available
-   * Check account burst trunks
+    * Check dialed number against white/black lists
+    * Check inbound/outbound trunks available
+    * Check account burst trunks
 7. Check per-minute funds
-   * Check pre-pay credit
-   * Check post-pay credit
+    * Check pre-pay credit
+    * Check post-pay credit
 
 -----
 
@@ -194,30 +195,30 @@ SUP commands later will help you inspect that cache.
 * Helps with fraud
 * Scales by accounts, so technically infinitely
 * Tracks funny money
-  * Allows external billing systems
-  * Admins can easily apply credits to accounts
+    * Allows external billing systems
+    * Admins can easily apply credits to accounts
 
 -----
 
 ## How to set authz up
 
 * Enable authorization on calls
-   `sup kapps_config set_default ecallmgr authz_enabled true`
-   `sup kapps_config flush ecallmgr`
-   `sup -necallmgr ecallmgr_config flush`
+    `sup kapps_config set_default ecallmgr authz_enabled true`
+    `sup kapps_config flush ecallmgr`
+    `sup -necallmgr ecallmgr_config flush`
 * Authorize local resource usage
-   `sup kapps_config set_default ecallmgr authz_local_resources true`
-   `sup kapps_config flush ecallmgr`
-   `sup -necallmgr ecallmgr_config flush`
+    `sup kapps_config set_default ecallmgr authz_local_resources true`
+    `sup kapps_config flush ecallmgr`
+    `sup -necallmgr ecallmgr_config flush`
 * Dry Run authz attempts (useful when testing authz)
-   `sup kapps_config set_default ecallmgr authz_dry_run true`
-   Still allows a call that would have been denied
+    `sup kapps_config set_default ecallmgr authz_dry_run true`
+    Still allows a call that would have been denied
 * Required a rate to continue call
-  `sup kapps_config set_default ecallmgr {DIRECTION}_rate_required true`
-  If enabled, ensures a rate is found for the leg; otherwise kills the channel
+    `sup kapps_config set_default ecallmgr {DIRECTION}_rate_required true`
+    If enabled, ensures a rate is found for the leg; otherwise kills the channel
 * Default Authz action (if authz request fails)
-  `sup kapps_config set_default ecallmgr authz_default_action deny`
-  Alternative is `allow`
+    `sup kapps_config set_default ecallmgr authz_default_action deny`
+    Alternative is `allow`
 
 -----
 
