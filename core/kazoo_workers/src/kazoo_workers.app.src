@@ -1,6 +1,6 @@
 {application,kazoo_workers,
  [{applications,[kazoo,kazoo_amqp,kazoo_call,kazoo_globals,
-                 kazoo_json,lager,poolboy,stdlib]},
+                 kazoo_stdlib,lager,poolboy,stdlib]},
   {description,"Worker modules for processes to leverage"},
   {vsn,"4.0.0"},
   {modules,[]},
