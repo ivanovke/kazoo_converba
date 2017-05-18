@@ -26,12 +26,30 @@ handle(['project'], []) ->
 handle(['module'], [Module]) ->
     Remote = kast_app_deps:remote_calls_from_module(list_to_atom(Module)),
     io:format("remote module calls: ~p~n", [lists:sort(Remote)]);
+handle(['circle'], []) ->
+    Circles = kast_app_deps:cicles(),
+    print_circles(Circles);
+handle(['circle'], [App]) ->
+    {A, Circles} = kast_app_deps:circles(list_to_atom(App)),
+    print_circles([{A, Circles}]);
 handle(_, _) ->
     print_help().
 
 list_remote_apps(App) ->
     Apps =  kast_app_deps:remote_apps(list_to_atom(App)),
     io:format("~n~p~n", [lists:keysort(2, Apps)]).
+
+print_circles(Circles) ->
+    [print_circle(App, Deps)
+     || {App, Deps} <- Circles,
+        Deps =/= []
+    ],
+    'ok'.
+
+print_circle(App, Deps) ->
+    io:format("app ~s has circular dep with ~s~n"
+             ,[App, kz_binary:join(Deps, <<", ">>)]
+             ).
 
 
 %%     case kast_app_deps:process_project() of
@@ -58,6 +76,7 @@ option_spec_list() ->
     ,{'app', $a, "app", 'undefined', "The app to process"}
     ,{'project', $p, "project", 'undefined', "Process the project"}
     ,{'dot', $d, "dot", 'undefined', "Generate a DOT file"}
+    ,{'circle', $c, "circle", 'undefined', "Calculate circle dependencies"}
     ].
 
 -spec parse_args(string()) -> {'ok', list(), list()}.

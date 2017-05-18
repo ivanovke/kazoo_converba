@@ -6,6 +6,7 @@
         ,fix_project_deps/0
         ,fix_app_deps/1
         ,dot_file/0 ,dot_file/1
+        ,circles/0, circles/1
         ]).
 
 -export([remote_calls/1
@@ -32,12 +33,14 @@ dot_file(App) ->
     create_dot_file(App, create_dot_markup(App, AppDeps)).
 
 create_dot_file(Name, Markup) ->
-    file:write_file(<<"/tmp/", (kz_term:to_binary(Name))/binary, ".dot">>
-                   ,["digraph kast_app_deps {\n"
-                    ,Markup
-                    ,"}\n"
-                    ]
-                   ).
+    Filename = <<"/tmp/", (kz_term:to_binary(Name))/binary, ".dot">>,
+    'ok' = file:write_file(Filename
+                          ,["digraph kast_app_deps {\n"
+                           ,Markup
+                           ,"}\n"
+                           ]
+                          ),
+    io:format("wrote DOT file to ~s~n", [Filename]).
 
 create_dot_markup(App, AppDeps) ->
     RemoteApps = lists:usort([A || {_Module, A} <- AppDeps]),
@@ -70,12 +73,14 @@ fix_app_deps(App) ->
     ],
     'ok'.
 
+-spec configured_dep_apps(atom()) -> [atom()].
+configured_dep_apps(App) ->
+    {'application', App, Properties} = read_app_src(App),
+    lists:usort(props:get_value('applications', Properties) -- ['kernel','stdlib']).
+
 fix_app_deps(App, Missing, Unneeded) ->
-    {'application'
-    ,App
-    ,Properties
-    } = read_app_src(App),
-    ConfiguredApps = lists:usort(props:get_value('applications', Properties) -- ['kernel']),
+
+    ConfiguredApps = configured_dep_apps(App),
 
     ?DEBUG("app ~p~n conf: ~p~n missing ~p~n unneeded ~p~n"
           ,[App, ConfiguredApps, Missing, Unneeded]
@@ -92,6 +97,8 @@ fix_app_deps(App, Missing, Unneeded) ->
             io:format(".");
         UpdatedApps ->
             ?DEBUG("updated apps to ~p~n", [UpdatedApps]),
+            {'application', App, Properties} = read_app_src(App),
+
             io:format("x"),
             write_app_src(App
                          ,{'application'
@@ -115,6 +122,52 @@ app_src_filename(App) ->
     filename:join([code:lib_dir(App, 'src')
                   ,<<AppBin/binary, ".app.src">>
                   ]).
+
+-spec circles() -> [{atom(), [atom()]}].
+circles() ->
+    [circles(App)
+     || App <- kz_ast_util:project_apps()
+    ].
+
+-spec circles(atom()) -> {atom(), [atom()]}.
+circles(App) ->
+    io:format("finding circular deps for ~s: ", [App]),
+    RemoteApps = remote_app_list(App),
+    ?DEBUG("app ~p has remote apps ~p~n", [App, RemoteApps]),
+    CircularDeps = circular_deps(App, RemoteApps),
+    ?DEBUG("app ~p has circular deps ~p~n", [App, CircularDeps]),
+    {App, CircularDeps}.
+
+-spec remote_app_list(atom()) -> [atom()].
+remote_app_list(App) ->
+    lists:usort([A || {_Module, A} <- remote_apps(App)]).
+
+-spec circular_deps(atom(), any()) -> [atom()].
+circular_deps(App, RemoteApps) ->
+    lists:foldl(fun(Dep, Acc) -> circles_fold(App, Dep, Acc) end
+               ,[]
+               ,RemoteApps
+               ).
+
+circles_fold(App, Dep, Acc) ->
+    is_kazoo_app(Dep)
+        andalso ?DEBUG("dep ~p (of ~p) has remote apps ~p~n"
+                      ,[Dep, App, remote_app_list(Dep)]
+                      ),
+    case is_kazoo_app(Dep)
+        andalso [A || A <- remote_app_list(Dep), A =:= App]
+    of
+        'false' -> ?DEBUG("dep ~p (of ~p) is not a kazoo app~n", [Dep, App]), Acc;
+        [] -> Acc;
+        _ -> [Dep|Acc]
+    end.
+
+-spec is_kazoo_app(atom() | file:filename() | {'error', 'bad_name'}) -> boolean().
+is_kazoo_app({'error', 'bad_name'}) -> 'false';
+is_kazoo_app(App) when is_atom(App) ->
+    is_kazoo_app(code:lib_dir(App));
+is_kazoo_app(Path) when is_list(Path) ->
+    'nomatch' =/= re:run(Path, "(core|applications)/").
 
 -type app_deps() :: {atom(), [atom()], [atom()]}.
 -type apps_deps() :: [app_deps()].
@@ -182,8 +235,15 @@ remote_calls_from_module(Module, Acc) ->
     io:format("."),
     {M, AST} = kz_ast_util:module_ast(Module),
     #module_ast{functions=Fs} = kz_ast_util:add_module_ast(#module_ast{}, M, AST),
-    Modules = remote_calls_from_functions(Fs, Acc),
-    lists:delete(M, Modules).
+    try remote_calls_from_functions(Fs, Acc) of
+        Modules -> lists:delete(M, Modules)
+    catch
+        _E:R ->
+            ST = erlang:get_stacktrace(),
+            io:format("process module '~s' failed: ~s: ~p~n", [Module, _E, R]),
+            [io:format("st: ~p~n", [S]) || S <- ST],
+            throw(R)
+    end.
 
 remote_calls_from_functions(Fs, Acc) ->
     lists:foldl(fun remote_calls_from_function/2

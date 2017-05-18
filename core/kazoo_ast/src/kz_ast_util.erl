@@ -180,7 +180,6 @@ app_modules(App) ->
             end
     end.
 
-
 -define(TABLE_ROW(Key, Description, Type, Default, Required)
        ,[kz_binary:join([Key, Description, Type, Default, Required]
                        ,<<" | ">>
