@@ -298,6 +298,8 @@ remote_calls_from_expression(?BC(Expr, Qualifiers), Acc) ->
     remote_calls_from_expressions([Expr | Qualifiers], Acc);
 remote_calls_from_expression(?LC_BIN_GENERATOR(Pattern, Expr), Acc) ->
     remote_calls_from_expressions([Pattern, Expr], Acc);
+remote_calls_from_expression(?NAMED_ANON(_Name, Clauses), Acc) ->
+    remote_calls_from_clauses(Clauses, Acc);
 remote_calls_from_expression(?ANON(Clauses), Acc) ->
     remote_calls_from_clauses(Clauses, Acc);
 remote_calls_from_expression(?GEN_FUN_ARGS(?ANON(Clauses), Args), Acc) ->

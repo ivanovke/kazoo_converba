@@ -193,6 +193,8 @@ process_expression(?LC_BIN_GENERATOR(Pattern, Expr)=Expression, Config) ->
     process_expressions([Pattern, Expr], callback_expression(Expression, Config));
 process_expression(?ANON(Clauses)=Expression, Config) ->
     process_clauses(Clauses, callback_expression(Expression, Config));
+process_expression(?NAMED_ANON(_Name, Clauses)=Expression, Config) ->
+    process_clauses(Clauses, callback_expression(Expression, Config));
 process_expression(?GEN_FUN_ARGS(?ANON(Clauses), Args)=Expression, Config) ->
     process_clauses(Clauses
                    ,process_expressions(Args, callback_expression(Expression, Config))
