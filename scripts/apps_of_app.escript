@@ -46,9 +46,13 @@ print_circles(Circles) ->
     ],
     'ok'.
 
+print_circle(App, [Dep]) ->
+    io:format("app ~s has circular a dep: ~s~n"
+             ,[App, Dep]
+             );
 print_circle(App, Deps) ->
-    io:format("app ~s has circular dep with ~s~n"
-             ,[App, kz_binary:join(Deps, <<", ">>)]
+    io:format("app ~s has circular deps: '~s'~n"
+             ,[App, kz_binary:join(Deps, <<"', '">>)]
              ).
 
 
