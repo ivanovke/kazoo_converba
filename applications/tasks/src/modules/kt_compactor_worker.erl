@@ -255,7 +255,8 @@ get_db_disk_and_data(_Conn, _Unencoded, 3=_N) ->
 get_db_disk_and_data(Conn, Unencoded, N) ->
     N > 0
         andalso lager:debug("getting db info re-attempt ~p", [N]),
-    case kz_couch_db:db_info(Conn, encode_db(Unencoded)) of
+    Encoded = encode_db(Unencoded),
+    case kz_couch_db:db_info(Conn, Encoded) of
         {'ok', Info} ->
             {kz_json:get_integer_value(<<"disk_size">>, Info)
             ,kz_json:get_integer_value([<<"other">>, <<"data_size">>], Info)
@@ -265,13 +266,13 @@ get_db_disk_and_data(Conn, Unencoded, N) ->
             'ok' = timer:sleep(?MILLISECONDS_IN_SECOND),
             get_db_disk_and_data(Conn, Unencoded, N+1);
         {'error', 'not_found'} ->
-            lager:debug("db '~s' not found, skipping", [Unencoded]),
+            lager:debug("db '~s' not found, skipping", [Encoded]),
             'not_found';
         {'error', 'db_not_found'} ->
-            lager:debug("shard '~s' not found, skipping", [Unencoded]),
+            lager:debug("shard '~s' not found, skipping", [Encoded]),
             'not_found';
         {'error', _E} ->
-            lager:debug("failed to lookup info: ~p", [_E]),
+            lager:debug("failed to lookup info on ~s ~p: ~p", [Encoded, _E]),
             'undefined'
     end.
 
@@ -341,6 +342,7 @@ node_shards(Node, Unencoded, DbInfo) ->
     ].
 
 -spec encode_db(ne_binary()) -> ne_binary().
+encode_db(<<"shards%2", _/binary>>=Db) -> Db;
 encode_db(Database) ->
     kz_http_util:urlencode(Database).
 
