@@ -63,8 +63,13 @@ retry504s(Fun, Cnt) ->
             {'ok', kz_json:decode(Body)};
         {'error', {'bad_response',{204, _Headers, _Body}}} ->
             {'ok', kz_json:new()};
+        {'error', {'bad_response',{415, _Headers, _Body}}} ->
+            kazoo_stats:increment_counter(<<"bigcouch-other-error">>),
+            lager:debug("bad content type: ~s", [_Body]),
+            {'error', 'bad_content_type'};
         {'error', {'bad_response',{_Code, _Headers, _Body}}=Response} ->
             kazoo_stats:increment_counter(<<"bigcouch-other-error">>),
+
             lager:critical("response code ~b not expected : ~p", [_Code, _Body]),
             {'error', format_error(Response)};
         {'error', Other}=Error when is_binary(Other) ->
@@ -279,6 +284,7 @@ format_error('timeout') -> 'timeout';
 format_error('conflict') -> 'conflict';
 format_error('not_found') -> 'not_found';
 format_error('db_not_found') -> 'db_not_found';
+format_error('bad_content_type') -> 'bad_content_type';
 format_error({'error', 'connect_timeout'}) -> 'connect_timeout';
 format_error({'http_error', _, Msg}) -> Msg;
 format_error({'error', Error}) -> Error;
