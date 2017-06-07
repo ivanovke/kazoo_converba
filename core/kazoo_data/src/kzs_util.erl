@@ -30,6 +30,7 @@ db_classification(<<"dbs">>) -> 'external';
 db_classification(<<"_nodes">>) -> 'external';
 db_classification(<<"_replicator">>) -> 'external';
 db_classification(<<"_global_changes">>) -> 'external';
+db_classification(<<"shards%2", _/binary>>) -> 'external';
 db_classification(<<"ts">>) -> 'deprecated';
 db_classification(<<"crossbar_schemas">>) -> 'deprecated';
 db_classification(<<"registrations">>) -> 'deprecated';
