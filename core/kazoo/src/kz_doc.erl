@@ -265,7 +265,7 @@ stub_attachments(JObj, Default) ->
     A = kz_json:get_value(?KEY_ATTACHMENTS, JObj, kz_json:new()),
     case A =:= kz_json:new() of
         true -> Default;
-        false -> A3
+        false -> A
     end.
 
 -spec external_attachments(kz_json:object()) -> api_object().
