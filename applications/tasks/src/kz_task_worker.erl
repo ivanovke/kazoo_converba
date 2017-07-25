@@ -205,6 +205,8 @@ is_task_successful(MappedRow
                 [{#{}=NewMappedRowOrMappedRows, NewIterValue}] ->
                     {Columns,Written} = store_return(State, MappedRow, NewMappedRowOrMappedRows),
                     {'true', Columns, Written, NewIterValue};
+                [{'ok', NewIterValue}] ->
+                    {'true', State#state.columns, 1, NewIterValue};
                 [{Error, NewIterValue}] ->
                     lager:error("~p", [Error]),
                     {Columns,Written} = store_return(State, MappedRow, Error),
@@ -223,7 +225,7 @@ is_task_successful(MappedRow
                     {'false', Columns, Written, NewIterValue}
             end;
         Fields ->
-            PPFields = kz_binary:join(Fields, $\s),
+            PPFields = kz_binary:join(Fields, <<$\s>>),
             lager:error("verifier ~s failed on ~p", [PPFields, maps:with(Fields, MappedRow)]),
             {Columns,Written} = store_return(State, MappedRow, <<"bad field(s) ", PPFields/binary>>),
             %% Stop on crashes, but only skip typefailed rows.
