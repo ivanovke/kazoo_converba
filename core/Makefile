@@ -30,4 +30,4 @@ first:
 	$(MAKE) -C kazoo_data/ $(ACTION)
 
 $(MAKEDIRS): first
-	$(MAKE) -C $(@D) $(ACTION)
+	$(MAKE) -j -C $(@D) $(ACTION)
