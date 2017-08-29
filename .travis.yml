@@ -8,8 +8,12 @@ notifications:
       - "irc.freenode.org#2600hz-dev"
 
 otp_release:
-  - 18.2
-  - 19.1
+  - 18.3
+  - 19.3
+
+env:
+  - USING_REBAR3=true
+  - USING_REBAR3=false
 
 sudo: required
 
@@ -24,10 +28,20 @@ cache:
 before_install:
   - set -e
 
+install:
+  - if [[ "$USING_REBAR3" = 'true' ]]; then wget https://s3.amazonaws.com/rebar3/rebar3 && chmod +x ./rebar3; fi
+  - export PATH="$PATH:$PWD"
+
 script:
-  - ERLC_OPTS='-DPROPER' make compile-test
-  - make eunit
+  - |
+    if [[ "$USING_REBAR3" = 'true' ]]; then
+      rebar3 eunit --cover
+      rebar3 cover
+    else
+      ERLC_OPTS='-DPROPER' make compile-test
+      make eunit
+    fi
 # To run tests yourself: make compile-test && make test
 
 after_success:
-  - if [[ "$TRAVIS_REPO_SLUG" == '2600hz/kazoo' ]]; then make coverage-report; fi
+  - if [[ "$TRAVIS_REPO_SLUG" = '2600hz/kazoo' ]] && [[ "$USING_REBAR3" = 'false' ]]; then make coverage-report; fi
