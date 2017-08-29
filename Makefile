@@ -13,7 +13,7 @@ compile: ACTION = all
 compile: deps $(KAZOODIRS)
 
 $(KAZOODIRS):
-	$(MAKE) -C $(@D) $(ACTION)
+	$(MAKE) -j -C $(@D) $(ACTION)
 
 clean: ACTION = clean
 clean: $(KAZOODIRS)
@@ -65,7 +65,7 @@ deps/Makefile: .erlang.mk
 	cp $(ROOT)/make/Makefile.deps deps/Makefile
 
 core:
-	$(MAKE) -C core/ all
+	$(MAKE) -j -C core/ all
 
 apps:
 	$(MAKE) -j -C applications/ all
