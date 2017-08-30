@@ -7,5 +7,5 @@
  ,{registered, []}
  ,{env, []}
  ,{mod, {kazoo_call_app, []}}
- ,{applications, [stdlib, kazoo_workers]}
+ ,{applications, [stdlib]}
  ]}.

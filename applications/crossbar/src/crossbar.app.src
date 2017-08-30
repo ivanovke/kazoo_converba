@@ -14,7 +14,7 @@
                  , kazoo_apps
                  , kazoo_auth
                  , kazoo_templates
-                 , kazoo_workers
+                 
 
                  , lager
                  , ranch

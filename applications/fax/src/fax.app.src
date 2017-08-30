@@ -18,7 +18,7 @@
                  , kazoo_modb
                  , kazoo_oauth
                  , kazoo_templates
-                 , kazoo_workers
+                 
 
                  , cowboy
                  , escalus
