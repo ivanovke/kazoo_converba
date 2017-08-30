@@ -475,7 +475,7 @@ refresh_views(AccountMODb) ->
     lager:debug("refresh views on modb ~p", [AccountMODb]),
     EncodedMODb = kz_util:format_account_modb(AccountMODb, 'encoded'),
     Views = get_modb_views(),
-    _ = kapps_util:update_views(EncodedMODb, Views, 'true'),
+    _ = kz_datamgr:db_view_update(EncodedMODb, Views, 'true'),
     'ok'.
 
 -spec get_modb_views() -> kz_proplist().

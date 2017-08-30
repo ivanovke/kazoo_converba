@@ -82,7 +82,7 @@ start_worker({AccountId, FirstOfMonth, LastOfMonth}, Server) ->
             migration_result(Server, AccountId, FirstOfMonth, LastOfMonth);
         {'error', 'not_found'} ->
             Views = kapps_maintenance:get_all_account_views(),
-            _ = kapps_util:update_views(Db, Views, 'true'),
+            _ = kz_datamgr:db_view_update(Db, Views, 'true'),
             start_worker({AccountId, FirstOfMonth, LastOfMonth}, Server);
         {'error', R} ->
             ?ERROR("    [~s] failed to fetch legacy voicemail message: ~p", [AccountId, R]),
@@ -123,7 +123,7 @@ manual_migrate_loop(AccountId, LoopCount) ->
             end;
         {'error', 'not_found'} ->
             Views = kapps_maintenance:get_all_account_views(),
-            _ = kapps_util:update_views(Db, Views, 'true'),
+            _ = kz_datamgr:db_view_update(Db, Views, 'true'),
             manual_migrate_loop(AccountId, LoopCount);
         {'error', _R} ->
             ?ERROR("    [~s] failed to fetch legacy voicemail message: ~p", [AccountId, _R]),

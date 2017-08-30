@@ -38,7 +38,7 @@
 -export([get_call_termination_reason/1]).
 -export([get_view_json/1, get_view_json/2]).
 -export([get_views_json/2]).
--export([update_views/2, update_views/3]).
+
 -export([add_aggregate_device/2]).
 -export([rm_aggregate_device/2]).
 -export([get_destination/3]).
@@ -262,7 +262,7 @@ get_all_accounts() -> get_all_accounts(?REPLICATE_ENCODING).
 
 get_all_accounts(Encoding) ->
     {'ok', Dbs} = kz_datamgr:db_list([{'startkey', <<"account/">>}
-                                     ,{'endkey', <<"account/\ufff0">>}
+                                     ,{'endkey', <<"account0">>}
                                      ]),
     [kz_util:format_account_id(Db, Encoding)
      || Db <- Dbs, is_account_db(Db)
@@ -301,7 +301,6 @@ is_account_mod(Db) ->
 -spec is_account_db(ne_binary()) -> boolean().
 is_account_db(Db) ->
     kz_datamgr:db_classification(Db) =:= 'account'.
-
 
 -type getby_return() :: {'ok', ne_binary()} |
                         {'multiples', ne_binaries()} |
@@ -498,20 +497,6 @@ get_view_json(Path) ->
     {'ok', Bin} = file:read_file(Path),
     JObj = kz_json:decode(Bin),
     {kz_doc:id(JObj), JObj}.
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec update_views(ne_binary(), kz_datamgr:views_listing()) -> boolean().
-update_views(Db, Views) ->
-    update_views(Db, Views, 'false').
-
--spec update_views(ne_binary(), kz_datamgr:views_listing(), boolean()) -> boolean().
-update_views(Db, Views, ShouldRemove) ->
-    kz_term:is_true(kz_datamgr:db_view_update(Db, Views, ShouldRemove)).
 
 %%--------------------------------------------------------------------
 %% @private

@@ -42,6 +42,6 @@ refresh() ->
 refresh(<<Account/binary>>) ->
     AccountDb = kz_util:format_account_id(Account, 'encoded'),
     Views = kapps_util:get_views_json('conference', "views"),
-    kapps_util:update_views(AccountDb, Views);
+    kz_datamgr:db_view_update(AccountDb, Views);
 refresh(Account) ->
     refresh(kz_term:to_binary(Account)).

@@ -1410,7 +1410,7 @@ set_trial_expires(JObj) ->
 load_initial_views(Context)->
     [{FirstId, _}|_] = Views = kapps_maintenance:get_all_account_views(),
     {LastId, _} = lists:last(Views),
-    kapps_util:update_views(cb_context:account_db(Context), Views, 'true'),
+    kz_datamgr:db_view_update(cb_context:account_db(Context), Views, 'true'),
     _ = kazoo_number_manager_maintenance:update_number_services_view(cb_context:account_db(Context)),
     ensure_views(Context, [FirstId, LastId]).
 
