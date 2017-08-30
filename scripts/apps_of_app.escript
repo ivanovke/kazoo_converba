@@ -27,7 +27,7 @@ handle(['module'], [Module]) ->
     Remote = kast_app_deps:remote_calls_from_module(list_to_atom(Module)),
     io:format("remote module calls: ~p~n", [lists:sort(Remote)]);
 handle(['circle'], []) ->
-    Circles = kast_app_deps:cicles(),
+    Circles = kast_app_deps:circles(),
     print_circles(Circles);
 handle(['circle'], [App]) ->
     {A, Circles} = kast_app_deps:circles(list_to_atom(App)),
