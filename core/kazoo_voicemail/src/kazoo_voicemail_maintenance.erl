@@ -66,12 +66,12 @@ migrate(AccountId, Box) ->
 %%--------------------------------------------------------------------
 -spec recover_messages_all() -> 'ok'.
 recover_messages_all() ->
-    MODbs = kapps_util:get_all_account_mods(),
+    MODbs = kazoo_modbs:list_all(),
     recover_messages(MODbs, length(MODbs)).
 
 -spec recover_messages_month(ne_binary(), ne_binary()) -> 'ok'.
 recover_messages_month(Year, Month) ->
-    MODbs = [MODb || MODb <- kapps_util:get_all_account_mods()
+    MODbs = [MODb || MODb <- kazoo_modbs:list_all()
                          ,modb_filter(MODb, Year, Month)
             ],
     recover_messages(MODbs, length(MODbs)).

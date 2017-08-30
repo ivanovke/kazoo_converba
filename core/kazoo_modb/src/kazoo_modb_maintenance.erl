@@ -72,7 +72,7 @@ delete_modbs(Year, Month, ShouldArchive) when is_integer(Year),
             io:format("request to delete the current MODB (~p~p) denied~n", [Year, Month]);
         {CurrYear, CurrMonth, _} when (CurrYear * 12 + CurrMonth) > (Year * 12 + Month) ->
             io:format("deleting all MODBs equal to or older than ~p/~p~n", [Year, Month]),
-            delete_older_modbs(Year, Month, kapps_util:get_all_account_mods(), ShouldArchive);
+            delete_older_modbs(Year, Month, kazoo_modbs:list_all(), ShouldArchive);
         {_CurrYear, _CurrMonth, _} ->
             io:format("request to delete future MODBs (~p~p) denied~n", [Year, Month])
     end.
@@ -103,7 +103,7 @@ delete_modb(?MATCH_MODB_SUFFIX_ENCODED(_,_,_) = AccountModb, ShouldArchive) ->
 -spec archive_modbs() -> 'no_return'.
 -spec archive_modbs(text()) -> 'no_return'.
 archive_modbs() ->
-    do_archive_modbs(kapps_util:get_all_account_mods(), 'undefined').
+    do_archive_modbs(kazoo_modbs:list_all(), 'undefined').
 archive_modbs(AccountId) ->
     do_archive_modbs(kapps_util:get_account_mods(AccountId), kz_term:to_binary(AccountId)).
 

@@ -426,7 +426,7 @@ cleanup_voicemail_media(Account) ->
 
 -spec cleanup_orphan_modbs() -> 'ok'.
 cleanup_orphan_modbs() ->
-    AccountMODbs = kapps_util:get_all_account_mods('encoded'),
+    AccountMODbs = kazoo_modbs:list_all('encoded'),
     AccountIds = kapps_util:get_all_accounts('raw'),
     DeleteOrphaned = fun (AccountMODb) ->
                              kazoo_modb:maybe_delete(AccountMODb, AccountIds)
