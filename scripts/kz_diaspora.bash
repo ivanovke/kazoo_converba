@@ -279,6 +279,7 @@ dedupe() {
 
 kapps_util() {
     replace kapps_util get_all_account_mods kazoo_modbs list_all
+    replace kapps_util get_account_mods kazoo_modbs list_account
 }
 
 echo "ensuring kz_term is used"

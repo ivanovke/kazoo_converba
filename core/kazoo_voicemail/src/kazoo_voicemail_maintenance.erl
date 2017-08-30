@@ -78,12 +78,12 @@ recover_messages_month(Year, Month) ->
 
 -spec recover_messages_account(ne_binary()) -> 'ok'.
 recover_messages_account(Account) ->
-    MODbs = kapps_util:get_account_mods(Account),
+    MODbs = kazoo_modbs:list_account(Account),
     recover_messages(MODbs, length(MODbs)).
 
 -spec recover_messages_account(ne_binary(), ne_binary(), ne_binary()) -> 'ok'.
 recover_messages_account(Account, Year, Month) ->
-    MODbs = [MODb || MODb <- kapps_util:get_account_mods(Account)
+    MODbs = [MODb || MODb <- kazoo_modbs:list_account(Account)
                          ,modb_filter(MODb, Year, Month)
             ],
     recover_messages(MODbs, length(MODbs)).

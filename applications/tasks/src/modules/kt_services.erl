@@ -98,7 +98,7 @@ action(<<"descendant_quantities">>) ->
 -spec descendant_quantities(kz_tasks:extra_args(), kz_tasks:iterator()) -> kz_tasks:iterator().
 descendant_quantities(#{account_id := AccountId}, init) ->
     Descendants = kapps_util:account_descendants(AccountId),
-    DescendantsMoDBs = lists:flatmap(fun kapps_util:get_account_mods/1, Descendants),
+    DescendantsMoDBs = lists:flatmap(fun kazoo_modbs:list_account/1, Descendants),
     lager:debug("found ~p descendants & ~p MoDBs in total"
                ,[length(Descendants), length(DescendantsMoDBs)]),
     {ok, DescendantsMoDBs};

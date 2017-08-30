@@ -105,7 +105,7 @@ delete_modb(?MATCH_MODB_SUFFIX_ENCODED(_,_,_) = AccountModb, ShouldArchive) ->
 archive_modbs() ->
     do_archive_modbs(kazoo_modbs:list_all(), 'undefined').
 archive_modbs(AccountId) ->
-    do_archive_modbs(kapps_util:get_account_mods(AccountId), kz_term:to_binary(AccountId)).
+    do_archive_modbs(kazoo_modbs:list_account(AccountId), kz_term:to_binary(AccountId)).
 
 -spec do_archive_modbs(ne_binaries(), api_binary()) -> 'no_return'.
 do_archive_modbs(MODbs, AccountId) ->
