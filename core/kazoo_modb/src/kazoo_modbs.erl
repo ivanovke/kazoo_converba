@@ -8,7 +8,9 @@
 %%%-------------------------------------------------------------------
 -module(kazoo_modbs).
 
--export([list_all/0, list_all/1]).
+-export([list_all/0, list_all/1
+        ,list_account/1, list_account/2
+        ]).
 
 -include("kazoo_modb.hrl").
 
@@ -27,4 +29,19 @@ list_all(Encoding) ->
     [kz_util:format_account_modb(Db, Encoding)
      || Db <- Databases,
         'modb' =:= kz_datamgr:db_classification(Db)
+    ].
+
+
+-spec list_account(ne_binary()) -> ne_binaries().
+-spec list_account(ne_binary(), kz_util:account_format()) -> ne_binaries().
+list_account(Account) ->
+    list_account(Account, ?REPLICATE_ENCODING).
+
+list_account(Account, Encoding) ->
+    AccountId = kz_util:format_account_id(Account, 'unencoded'),
+
+    [kz_util:format_account_modb(MODb, Encoding)
+     || MODb <- kz_datamgr:db_list([{'startkey', <<AccountId/binary, "-">>}
+                                   ,{'endkey', <<AccountId/binary, ".">>}
+                                   ])
     ].

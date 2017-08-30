@@ -16,8 +16,6 @@
         ,get_all_accounts/1
         ,get_all_accounts_and_mods/0
         ,get_all_accounts_and_mods/1
-        ,get_account_mods/1
-        ,get_account_mods/2
         ]).
 -export([is_account_db/1
         ,is_account_mod/1
@@ -295,38 +293,6 @@ format_db(Db, Encoding, [{Predicate, Formatter}|Fs]) ->
         'true' -> Formatter(Db, Encoding);
         'false' -> format_db(Db, Encoding, Fs)
     end.
-
--spec get_account_mods(ne_binary()) -> ne_binaries().
--spec get_account_mods(ne_binary(), kz_util:account_format()) -> ne_binaries().
-get_account_mods(Account) ->
-    get_account_mods(Account, ?REPLICATE_ENCODING).
-
-get_account_mods(Account, Encoding) ->
-    AccountId = kz_util:format_account_id(Account, Encoding),
-    [MOD
-     || MOD <- kazoo_modbs:list_all(Encoding),
-        is_account_mod(MOD),
-        is_matched_account_mod(Encoding, MOD, AccountId)
-    ].
-
--spec is_matched_account_mod(kz_util:account_format(), ne_binary(), ne_binary()) -> boolean().
-is_matched_account_mod('unencoded'
-                      ,?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, _, _)
-                      ,?MATCH_ACCOUNT_UNENCODED(A, B, Rest)
-                      ) ->
-    'true';
-is_matched_account_mod('encoded'
-                      ,?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, _, _)
-                      ,?MATCH_ACCOUNT_ENCODED(A, B, Rest)
-                      ) ->
-    'true';
-is_matched_account_mod('raw'
-                      ,?MATCH_MODB_SUFFIX_RAW(A, B, Rest, _, _)
-                      ,?MATCH_ACCOUNT_RAW(A, B, Rest)
-                      ) ->
-    'true';
-is_matched_account_mod(_, _, _) ->
-    'false'.
 
 -spec is_account_mod(ne_binary()) -> boolean().
 is_account_mod(Db) ->
