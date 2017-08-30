@@ -16,8 +16,6 @@
         ,get_all_accounts/1
         ,get_all_accounts_and_mods/0
         ,get_all_accounts_and_mods/1
-        ,get_all_account_mods/0
-        ,get_all_account_mods/1
         ,get_account_mods/1
         ,get_account_mods/2
         ]).
@@ -298,18 +296,6 @@ format_db(Db, Encoding, [{Predicate, Formatter}|Fs]) ->
         'false' -> format_db(Db, Encoding, Fs)
     end.
 
--spec get_all_account_mods() -> ne_binaries().
--spec get_all_account_mods(kz_util:account_format()) -> ne_binaries().
-get_all_account_mods() ->
-    get_all_account_mods(?REPLICATE_ENCODING).
-
-get_all_account_mods(Encoding) ->
-    {'ok', Databases} = kz_datamgr:db_info(),
-    [kz_util:format_account_modb(Db, Encoding)
-     || Db <- Databases,
-        is_account_mod(Db)
-    ].
-
 -spec get_account_mods(ne_binary()) -> ne_binaries().
 -spec get_account_mods(ne_binary(), kz_util:account_format()) -> ne_binaries().
 get_account_mods(Account) ->
@@ -318,7 +304,7 @@ get_account_mods(Account) ->
 get_account_mods(Account, Encoding) ->
     AccountId = kz_util:format_account_id(Account, Encoding),
     [MOD
-     || MOD <- get_all_account_mods(Encoding),
+     || MOD <- kazoo_modbs:list_all(Encoding),
         is_account_mod(MOD),
         is_matched_account_mod(Encoding, MOD, AccountId)
     ].
