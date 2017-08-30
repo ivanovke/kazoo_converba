@@ -277,6 +277,10 @@ dedupe() {
     replace kapps_util get_event_type kz_util get_event_type
 }
 
+kapps_util() {
+    replace kapps_util get_all_account_mods kazoo_modbs list_all
+}
+
 echo "ensuring kz_term is used"
 kz_util_to_term
 echo "ensuring kz_binary is used"
@@ -297,7 +301,9 @@ echo "ensuring kz_media_recording to kzc_recording"
 kz_media_recording_to_kzc_recording
 echo "ensuring includes from kazoo are moved to kazoo_stdlib"
 kz_includes
-echo 'ensuring utility calls are not duplicated all over the place'
+echo "ensuring utility calls are not duplicated all over the place"
 dedupe
+echo "breaking out kapps_util functions"
+kapps_util
 
 popd >/dev/null
