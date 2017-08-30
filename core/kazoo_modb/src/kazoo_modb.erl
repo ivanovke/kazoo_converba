@@ -8,8 +8,6 @@
 %%%-------------------------------------------------------------------
 -module(kazoo_modb).
 
--include("kazoo_modb.hrl").
-
 -export([get_results/3]).
 -export([open_doc/2, open_doc/3, open_doc/4]).
 -export([save_doc/2, save_doc/3, save_doc/4]).
@@ -25,6 +23,8 @@
 -export([get_range/3, get_range/4]).
 -export([get_year_month_sequence/3, get_year_month_sequence/4]).
 -export([strip_modb_options/1]).
+
+-include("kazoo_modb.hrl").
 
 -type view_option() :: {'year', kz_year()} |
                        {'month', kz_month()} |
