@@ -1,4 +1,4 @@
--module(kazoo_voicemail_supervisor).
+-module(kazoo_voicemail_sup).
 -behaviour(supervisor).
 
 -export([start_link/0
