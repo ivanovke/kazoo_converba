@@ -368,7 +368,7 @@ do_get_accounts_by(What, CacheKey, View) ->
     ViewOptions = [{'key', What}],
     case kz_datamgr:get_results(?KZ_ACCOUNTS_DB, View, ViewOptions) of
         {'ok', [JObj]} ->
-            AccountDb = kz_json:get_value([<<"value">>, <<"account_db">>], JObj),
+            <<_/binary>> = AccountDb = kz_json:get_ne_binary_value([<<"value">>, <<"account_db">>], JObj),
             _ = cache(CacheKey, [AccountDb]),
             {'ok', AccountDb};
         {'ok', [_|_]=JObjs} ->
