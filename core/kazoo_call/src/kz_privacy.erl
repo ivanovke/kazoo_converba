@@ -16,7 +16,7 @@
         ,should_block_anonymous/1
         ]).
 
--include("kazoo_endpoint.hrl").
+-include_lib("kazoo_stdlib/include/kz_types.hrl").
 
 -define(PRIVACY_CAT, <<"privacy">>).
 -define(KEY_PRIVACY_MODE, <<"privacy_mode">>).
