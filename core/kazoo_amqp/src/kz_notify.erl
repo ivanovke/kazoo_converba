@@ -11,7 +11,10 @@
 -export([system_alert/2, system_alert/3, system_alert/4]).
 -export([detailed_alert/3, detailed_alert/4, detailed_alert/5]).
 
--include("kazoo_apps.hrl").
+-include_lib("kazoo_stdlib/include/kz_types.hrl").
+
+-define(APP_NAME, <<"kz_notify">>).
+-define(APP_VERSION, <<"4.0.0">>).
 
 -spec system_alert(atom() | string() | binary(), [any()]) -> 'ok'.
 system_alert(Format, Args) ->
