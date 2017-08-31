@@ -166,7 +166,7 @@ build_originate(Endpoints, CallId, UnbridgedOnly, Call) ->
                                 {'timeout', kz_json:objects()} |
                                 {'error', any()}.
 send_originate_req([], _Call) ->
-    lager:debug("no origination proprs, skipping"),
+    lager:debug("no origination props, skipping"),
     {'error', 'no_endpoints'};
 send_originate_req(OriginateProps, _Call) ->
     kz_amqp_worker:call_collect(OriginateProps
@@ -175,10 +175,8 @@ send_originate_req(OriginateProps, _Call) ->
                                ,20 * ?MILLISECONDS_IN_SECOND
                                ).
 
--spec is_resp(kz_json:objects() | kz_json:object()) -> boolean().
+-spec is_resp(kz_json:objects()) -> boolean().
 is_resp([JObj|_]) ->
-    is_resp(JObj);
-is_resp(JObj) ->
     kapi_resource:originate_resp_v(JObj).
 
 -spec is_originate_uuid(kz_json:object(), api_binary()) -> boolean().
