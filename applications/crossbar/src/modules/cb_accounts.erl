@@ -1619,6 +1619,9 @@ delete_mod_dbs(AccountId, Year, Month) ->
             delete_mod_dbs(AccountId, PrevYear, PrevMonth);
         'false' ->
             lager:debug("failed to delete account mod: ~s", [Db]),
+            'true';
+        {'error', _E} ->
+            lager:debug("failed to delete account mod: ~s: ~p", [Db, _E]),
             'true'
     end.
 
