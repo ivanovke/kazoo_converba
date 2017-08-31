@@ -273,7 +273,7 @@ raw_account_modb(?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, Year, Month)) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec get_all_accounts() -> ne_binaries().
--spec get_all_accounts(kz_util:account_format()) -> ne_binaries().
+-spec get_all_accounts(?MODULE:account_format()) -> ne_binaries().
 get_all_accounts() -> get_all_accounts(?REPLICATE_ENCODING).
 
 get_all_accounts(Encoding) ->
@@ -286,7 +286,7 @@ get_all_accounts(Encoding) ->
     ].
 
 -spec get_all_accounts_and_mods() -> ne_binaries().
--spec get_all_accounts_and_mods(kz_util:account_format()) -> ne_binaries().
+-spec get_all_accounts_and_mods(?MODULE:account_format()) -> ne_binaries().
 get_all_accounts_and_mods() ->
     get_all_accounts_and_mods(?REPLICATE_ENCODING).
 
@@ -297,10 +297,10 @@ get_all_accounts_and_mods(Encoding) ->
                                                    ]),
     [format_db(Db, Encoding) || Db <- Dbs].
 
--spec format_db(ne_binary(), kz_util:account_format()) -> ne_binary().
+-spec format_db(ne_binary(), ?MODULE:account_format()) -> ne_binary().
 format_db(Db, Encoding) ->
-    Fs = [{fun is_account_db/1, fun kz_util:format_account_id/2}
-         ,{fun is_account_mod/1, fun kz_util:format_account_modb/2}
+    Fs = [{fun is_account_db/1, fun ?MODULE:format_account_id/2}
+         ,{fun is_account_mod/1, fun ?MODULE:format_account_modb/2}
          ],
     format_db(Db, Encoding, Fs).
 
