@@ -329,8 +329,6 @@ compare_template_system_config([{Key, FileTemplate}|Props], JObj) ->
 
 compare_template_system_config('undefined', _, _) ->
     io:format("default template is undefined~n");
-compare_template_system_config(_, 'undefined', _) ->
-    io:format("doc template is undefined~n");
 compare_template_system_config(_, _, 'undefined') ->
     io:format("file template is undefined~n");
 compare_template_system_config(DefaultTemplates, DocTemplate, FileTemplate) ->
