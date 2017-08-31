@@ -31,6 +31,7 @@
 -define(CHILDREN, [?CACHE_ARGS(?CACHE_NAME, ?CACHE_PROPS)
                   ,?WORKER('knm_search')
                   ,?WORKER('knm_maint_listener')
+                  ,?WORKER('kazoo_number_manager_maintenance')
                   ]).
 
 %% ===================================================================

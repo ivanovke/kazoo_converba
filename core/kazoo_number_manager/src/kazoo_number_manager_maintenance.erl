@@ -28,6 +28,7 @@
         ]).
 -export([migrate/0, migrate/1
         ,migrate_unassigned_numbers/0, migrate_unassigned_numbers/1
+        ,start_link/0
         ]).
 -export([generate_numbers/4]).
 -export([delete/1]).
@@ -294,6 +295,11 @@ fix_number(Num, AuthBy, AccountDb) ->
               ,{batch_run, false}
               ],
     knm_number:update(Num, Routines, Options).
+
+-spec start_link() -> 'ignore'.
+start_link() ->
+    kazoo_bindings:bind(<<"migrate_to_4_0">>, ?MODULE, 'migrate'),
+    'ignore'.
 
 -spec migrate() -> 'ok'.
 migrate() ->
