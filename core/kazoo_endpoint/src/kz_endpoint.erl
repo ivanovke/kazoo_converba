@@ -883,7 +883,7 @@ maybe_start_metaflow(Call, Endpoint) ->
                         ,kz_json:get_ne_binary_value(<<"listen_on">>, JObj)
                         ]
                        ),
-            kapps_util:amqp_pool_send(API, fun kapi_metaflow:publish_binding/1)
+            kz_amqp_worker:cast(API, fun kapi_metaflow:publish_binding/1)
     end.
 
 -type ep_routine() :: fun((kz_json:object(), kz_json:object(), kapps_call:call()) ->

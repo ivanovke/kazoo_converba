@@ -422,19 +422,18 @@ default_eavesdrop_req(Context) ->
 
 -spec eavesdrop_req(cb_context:context(), kz_proplist()) -> cb_context:context().
 eavesdrop_req(Context, Prop) ->
-    case kapps_util:amqp_pool_request(props:filter_undefined(Prop)
-                                     ,fun kapi_resource:publish_eavesdrop_req/1
-                                     ,fun kapi_resource:eavesdrop_resp_v/1
-                                     ,2 * ?MILLISECONDS_IN_SECOND
-                                     )
+    case kz_amqp_worker:call(props:filter_undefined(Prop)
+                            ,fun kapi_resource:publish_eavesdrop_req/1
+                            ,fun kapi_resource:eavesdrop_resp_v/1
+                            ,2 * ?MILLISECONDS_IN_SECOND
+                            )
     of
         {'ok', Resp} -> crossbar_util:response(filter_response_fields(Resp), Context);
         {'error', 'timeout'} ->
-            cb_context:add_system_error(
-              'timeout'
+            cb_context:add_system_error('timeout'
                                        ,kz_json:from_list([{<<"cause">>, <<"eavesdrop failed to start">>}])
                                        ,Context
-             );
+                                       );
         {'error', E} -> crossbar_util:response('error', <<"error">>, 500, E, Context)
     end.
 
@@ -742,10 +741,10 @@ fetch_ranged_queue_stats(Context, From, To, 'false') ->
 
 -spec fetch_from_amqp(cb_context:context(), kz_proplist()) -> cb_context:context().
 fetch_from_amqp(Context, Req) ->
-    case kapps_util:amqp_pool_request(Req
-                                     ,fun kapi_acdc_stats:publish_current_calls_req/1
-                                     ,fun kapi_acdc_stats:current_calls_resp_v/1
-                                     )
+    case kz_amqp_worker:call(Req
+                            ,fun kapi_acdc_stats:publish_current_calls_req/1
+                            ,fun kapi_acdc_stats:current_calls_resp_v/1
+                            )
     of
         {'error', _E} ->
             lager:debug("failed to recv resp from AMQP: ~p", [_E]),

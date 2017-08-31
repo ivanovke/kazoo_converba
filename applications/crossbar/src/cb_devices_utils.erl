@@ -74,11 +74,10 @@ get_all_acl_ips() ->
           ,{<<"Msg-ID">>, kz_binary:rand_hex(16)}
            | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    Resp = kapps_util:amqp_pool_request(
-             props:filter_undefined(Req)
-                                       ,fun kapi_sysconf:publish_get_req/1
-                                       ,fun kapi_sysconf:get_resp_v/1
-            ),
+    Resp = kz_amqp_worker:call(props:filter_undefined(Req)
+                              ,fun kapi_sysconf:publish_get_req/1
+                              ,fun kapi_sysconf:get_resp_v/1
+                              ),
     case Resp of
         {'error', _} -> [];
         {'ok', JObj} ->

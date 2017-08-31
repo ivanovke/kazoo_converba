@@ -699,7 +699,7 @@ send_command(Command, ControlQ, CallId) ->
     Props = Command ++ [{<<"Call-ID">>, CallId}
                         | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                        ],
-    kapps_util:amqp_pool_send(Props, fun(P) -> kapi_dialplan:publish_command(ControlQ, P) end).
+    kz_amqp_worker:cast(Props, fun(P) -> kapi_dialplan:publish_command(ControlQ, P) end).
 
 -spec add_server_id(api_terms(), ne_binary()) -> api_terms().
 add_server_id(API, Q) when is_list(API) ->

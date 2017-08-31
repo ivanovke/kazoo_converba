@@ -49,7 +49,7 @@ logout_agent(AccountId, AgentId) ->
                ,{<<"Agent-ID">>, AgentId}
                 | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_logout/1).
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_logout/1).
 
 -define(KEYS, [<<"Waiting">>, <<"Handled">>, <<"Processed">>, <<"Abandoned">>]).
 
@@ -135,10 +135,10 @@ current_calls(AccountId, Props) ->
 
 get_and_show(AccountId, QueueId, Req) ->
     kz_util:put_callid(<<"acdc_maint.", AccountId/binary, ".", QueueId/binary>>),
-    case kapps_util:amqp_pool_collect(Req
-                                     ,fun kapi_acdc_stats:publish_current_calls_req/1
-                                     ,'acdc'
-                                     )
+    case kz_amqp_worker:call_collect(Req
+                                    ,fun kapi_acdc_stats:publish_current_calls_req/1
+                                    ,'acdc'
+                                    )
     of
         {_, []} ->
             io:format("no call stats returned for account ~s (queue ~s)~n", [AccountId, QueueId]);
@@ -444,7 +444,7 @@ agent_login(AcctId, AgentId) ->
                ,{<<"Agent-ID">>, AgentId}
                 |  kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_login/1),
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_login/1),
     lager:info("published login update for agent").
 
 -spec agent_logout(ne_binary(), ne_binary()) -> 'ok'.
@@ -455,7 +455,7 @@ agent_logout(AcctId, AgentId) ->
                ,{<<"Agent-ID">>, AgentId}
                 |  kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_logout/1),
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_logout/1),
     lager:info("published logout update for agent").
 
 -spec agent_pause(ne_binary(), ne_binary()) -> 'ok'.
@@ -471,7 +471,7 @@ agent_pause(AcctId, AgentId, Timeout) ->
                ,{<<"Timeout">>, kz_term:to_integer(Timeout)}
                 | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_pause/1),
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_pause/1),
     lager:info("published pause for agent").
 
 -spec agent_resume(ne_binary(), ne_binary()) -> 'ok'.
@@ -482,7 +482,7 @@ agent_resume(AcctId, AgentId) ->
                ,{<<"Agent-ID">>, AgentId}
                 |  kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_resume/1),
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_resume/1),
     lager:info("published resume for agent").
 
 -spec agent_queue_login(ne_binary(), ne_binary(), ne_binary()) -> 'ok'.
@@ -494,7 +494,7 @@ agent_queue_login(AcctId, AgentId, QueueId) ->
                ,{<<"Queue-ID">>, QueueId}
                 |  kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_login_queue/1),
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_login_queue/1),
     lager:info("published login update for agent").
 
 -spec agent_queue_logout(ne_binary(), ne_binary(), ne_binary()) -> 'ok'.
@@ -506,5 +506,5 @@ agent_queue_logout(AcctId, AgentId, QueueId) ->
                ,{<<"Queue-ID">>, QueueId}
                 |  kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                ]),
-    kapps_util:amqp_pool_send(Update, fun kapi_acdc_agent:publish_logout_queue/1),
+    kz_amqp_worker:cast(Update, fun kapi_acdc_agent:publish_logout_queue/1),
     lager:info("published logout update for agent").

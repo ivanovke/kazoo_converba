@@ -285,6 +285,10 @@ kapps_util() {
     replace kapps_util get_all_accounts_and_mods kz_util get_all_accounts_and_mods
     replace kapps_util is_account_db kz_util is_account_db
     replace kapps_util is_account_mod kz_util is_account_mod
+    replace kapps_util amqp_pool_send kz_amqp_worker cast
+    replace kapps_util amqp_pool_request kz_amqp_worker call
+    replace kapps_util amqp_pool_request_custom kz_amqp_worker call_custom
+    replace kapps_util amqp_pool_collect kz_amqp_worker call_collect
 }
 
 echo "ensuring kz_term is used"

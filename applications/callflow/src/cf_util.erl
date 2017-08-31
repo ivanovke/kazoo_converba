@@ -153,7 +153,7 @@ manual_presence_resp(Username, Realm, JObj) ->
                              ,{<<"Call-ID">>, kz_term:to_hex_binary(crypto:hash(md5, PresenceId))}
                               | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
                              ],
-            kapps_util:amqp_pool_send(PresenceUpdate, fun kapi_presence:publish_update/1)
+            kz_amqp_worker:cast(PresenceUpdate, fun kapi_presence:publish_update/1)
     end.
 
 %%--------------------------------------------------------------------
@@ -340,7 +340,7 @@ send_mwi_update(New, Saved, Username, Realm, JObj) ->
                | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
               ],
     lager:debug("updating MWI for ~s@~s (~p/~p)", [Username, Realm, New, Saved]),
-    kapps_util:amqp_pool_send(Command, fun kapi_presence:publish_unsolicited_mwi_update/1).
+    kz_amqp_worker:cast(Command, fun kapi_presence:publish_unsolicited_mwi_update/1).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -712,10 +712,10 @@ find_channels(Usernames, Call) ->
           ,{<<"Usernames">>, Usernames}
            | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
           ],
-    case kapps_util:amqp_pool_request(Req
-                                     ,fun kapi_call:publish_query_user_channels_req/1
-                                     ,fun kapi_call:query_user_channels_resp_v/1
-                                     )
+    case kz_amqp_worker:call(Req
+                            ,fun kapi_call:publish_query_user_channels_req/1
+                            ,fun kapi_call:query_user_channels_resp_v/1
+                            )
     of
         {'ok', Resp} -> kz_json:get_value(<<"Channels">>, Resp, []);
         {'error', _E} ->
