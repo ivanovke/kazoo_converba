@@ -808,8 +808,8 @@ handle_waiting_stat(JObj, Props) ->
         'undefined' -> create_call_stat(Id, JObj, Props);
         _Stat ->
             Updates = props:filter_undefined(
-                        [{#call_stat.caller_id_name, kz_json:get_value(<<"Caller-ID-Name">>, JObj)}
-                        ,{#call_stat.caller_id_number, kz_json:get_value(<<"Caller-ID-Number">>, JObj)}
+                        [{#call_stat.caller_id_name, kz_json:get_ne_binary_value(<<"Caller-ID-Name">>, JObj)}
+                        ,{#call_stat.caller_id_number, kz_json:get_ne_binary_value(<<"Caller-ID-Number">>, JObj)}
                         ]),
             update_call_stat(Id, Updates, Props)
     end.
@@ -839,8 +839,8 @@ handle_abandoned_stat(JObj, Props) ->
 
     Id = call_stat_id(JObj),
     Updates = props:filter_undefined(
-                [{#call_stat.abandoned_reason, kz_json:get_value(<<"Abandon-Reason">>, JObj)}
-                ,{#call_stat.abandoned_timestamp, kz_json:get_value(<<"Abandon-Timestamp">>, JObj)}
+                [{#call_stat.abandoned_reason, kz_json:get_ne_binary_value(<<"Abandon-Reason">>, JObj)}
+                ,{#call_stat.abandoned_timestamp, kz_json:get_integer_value(<<"Abandon-Timestamp">>, JObj)}
                 ,{#call_stat.status, <<"abandoned">>}
                 ]),
     update_call_stat(Id, Updates, Props).
@@ -851,8 +851,8 @@ handle_handled_stat(JObj, Props) ->
 
     Id = call_stat_id(JObj),
     Updates = props:filter_undefined(
-                [{#call_stat.agent_id, kz_json:get_value(<<"Agent-ID">>, JObj)}
-                ,{#call_stat.handled_timestamp, kz_json:get_value(<<"Handled-Timestamp">>, JObj)}
+                [{#call_stat.agent_id, kz_json:get_ne_binary_value(<<"Agent-ID">>, JObj)}
+                ,{#call_stat.handled_timestamp, kz_json:get_integer_value(<<"Handled-Timestamp">>, JObj)}
                 ,{#call_stat.status, <<"handled">>}
                 ]),
     update_call_stat(Id, Updates, Props).
@@ -863,9 +863,9 @@ handle_processed_stat(JObj, Props) ->
 
     Id = call_stat_id(JObj),
     Updates = props:filter_undefined(
-                [{#call_stat.agent_id, kz_json:get_value(<<"Agent-ID">>, JObj)}
-                ,{#call_stat.processed_timestamp, kz_json:get_value(<<"Processed-Timestamp">>, JObj)}
-                ,{#call_stat.hung_up_by, kz_json:get_value(<<"Hung-Up-By">>, JObj)}
+                [{#call_stat.agent_id, kz_json:get_ne_binary_value(<<"Agent-ID">>, JObj)}
+                ,{#call_stat.processed_timestamp, kz_json:get_integer_value(<<"Processed-Timestamp">>, JObj)}
+                ,{#call_stat.hung_up_by, kz_json:get_ne_binary_value(<<"Hung-Up-By">>, JObj)}
                 ,{#call_stat.status, <<"processed">>}
                 ]),
     update_call_stat(Id, Updates, Props).
