@@ -177,12 +177,12 @@ open_cache_doc(Db, AccountId) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec fetch_name(ne_binary()) -> api_ne_binary().
-fetch_name(Account) ->
+fetch_name(<<_/binary>>=Account) ->
     case fetch(Account) of
-        {ok, JObj} -> name(JObj);
-        {error, _R} ->
+        {'ok', JObj} -> name(JObj);
+        {'error', _R} ->
             lager:error("error opening account doc ~p", [Account]),
-            undefined
+            'undefined'
     end.
 
 -spec name(doc()) -> api_ne_binary().
