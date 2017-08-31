@@ -39,9 +39,10 @@ list_account(Account) ->
 
 list_account(Account, Encoding) ->
     AccountId = kz_util:format_account_id(Account, 'unencoded'),
+    {'ok', MODBs} = kz_datamgr:db_list([{'startkey', <<AccountId/binary, "-">>}
+                                       ,{'endkey', <<AccountId/binary, ".">>}
+                                       ]),
 
     [kz_util:format_account_modb(MODb, Encoding)
-     || MODb <- kz_datamgr:db_list([{'startkey', <<AccountId/binary, "-">>}
-                                   ,{'endkey', <<AccountId/binary, ".">>}
-                                   ])
+     || MODb <- MODBs
     ].
