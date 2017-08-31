@@ -130,13 +130,13 @@ do_send(CallId, CtrlQ, Commands) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec send_default(kapps_call:call(), api_binary()) ->
+-spec send_default(kapps_call:call(), api_ne_binary()) ->
                           {'ok', ne_binary()} |
                           {'error', 'no_response'}.
 send_default(_Call, 'undefined') ->
     {'error', 'no_response'};
 send_default(Call, Cause) ->
-    case get_response(Cause, Call) of
+    case get_response(Call, Cause) of
         'undefined' ->
             lager:debug("no default response for '~s' found", [Cause]),
             {'error', 'no_response'};
@@ -164,8 +164,8 @@ send_default_response(Call, Response) ->
 %% returns the configured response proplist
 %% @end
 %%--------------------------------------------------------------------
--spec get_response(ne_binary(), kapps_call:call()) -> api_object().
-get_response(Cause, Call) ->
+-spec get_response(kapps_call:call(), ne_binary()) -> api_object().
+get_response(Call, Cause) ->
     Default = case default_response(Cause) of
                   'undefined' -> 'undefined';
                   Props -> kz_json:from_list(Props)
