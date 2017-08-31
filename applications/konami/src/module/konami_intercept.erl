@@ -19,7 +19,8 @@
                     {'continue', kapps_call:call()} |
                     {'stop', kapps_call:call()}.
 handle(Data, Call) ->
-    case send_originate_req(get_originate_req(Data, Call), Call) of
+    Req = get_originate_req(Data, Call),
+    case send_originate_req(Req, Call) of
         {'ok', Result} ->
             maybe_update_metaflow(Data, Call, Result);
         {'error', _E} ->
@@ -89,45 +90,52 @@ source_leg_of_dtmf(Data, Call) ->
 
 -spec get_originate_req(kz_json:object(), kapps_call:call()) -> kz_proplist().
 get_originate_req(Data, Call) ->
-    SourceOfDTMF = kz_json:get_value(<<"dtmf_leg">>, Data),
-    TargetType = kz_json:get_value(<<"target_type">>, Data),
-    TargetId = kz_json:get_value(<<"target_id">>, Data),
+    SourceOfDTMF = kz_json:get_ne_binary_value(<<"dtmf_leg">>, Data),
+    TargetType = kz_json:get_ne_binary_value(<<"target_type">>, Data),
+    TargetId = kz_json:get_ne_binary_value(<<"target_id">>, Data),
     UnbridgedOnly = kz_json:is_true(<<"unbridged_only">>, Data, 'true'),
 
     Params = kz_json:set_values([{<<"source">>, ?MODULE}
                                 ,{<<"can_call_self">>, 'true'}
-                                ], Data),
+                                ]
+                               ,Data
+                               ),
 
     SourceDeviceId = find_device_id_for_leg(SourceOfDTMF),
     Endpoints = build_endpoints(TargetType, TargetId, SourceDeviceId, Params, Call),
     build_originate(Endpoints, SourceOfDTMF, UnbridgedOnly, Call).
 
--spec build_endpoints(ne_binary(), ne_binary(), ne_binary(), kz_json:object(), kapps_call:call()) -> kz_json:objects().
+-spec build_endpoints(ne_binary(), ne_binary(), ne_binary(), kz_json:object(), kapps_call:call()) ->
+                             kz_json:objects().
 build_endpoints(<<"device">>, Id, Id, _Params, _Call) ->
     lager:debug("skipping ~s since it same source device id", [Id]),
     [];
 build_endpoints(<<"device">>, DeviceId, _SourceDeviceId, Params, Call) ->
     lager:debug("building endpoints for ~s", [DeviceId]),
     case kz_endpoint:build(DeviceId, Params, Call) of
-        {'ok', Endpoint} -> Endpoint;
+        {'ok', Endpoints} -> Endpoints;
         _Else -> []
     end;
 build_endpoints(<<"user">>, OwnerId, SourceDeviceId, Params, Call) ->
     lager:debug("building endpoints for user ~s", [OwnerId]),
-    lists:foldr(
-      fun(EndpointId, Acc) when EndpointId =:= SourceDeviceId ->
-              lager:debug("skipping ~s since it matches device id", [EndpointId]),
-              Acc;
-         (EndpointId, Acc) ->
-              lager:debug("building endpoint ~s", [EndpointId]),
-              case kz_endpoint:build(EndpointId, Params, Call) of
-                  {'ok', Endpoint} -> Endpoint ++ Acc;
-                  _Else -> Acc
-              end
-      end
-               ,[]
-               ,kz_attributes:owned_by(OwnerId, <<"device">>, Call)
-     ).
+
+    FoldR = build_foldr_fun(SourceDeviceId, Params, Call),
+
+    lists:foldr(FoldR, [], kz_attributes:owned_by(OwnerId, <<"device">>, Call)).
+
+-spec build_foldr_fun(ne_binary(), kz_proplist(), kapps_call:call()) ->
+                             kz_json:objects().
+build_foldr_fun(SourceDeviceId, Params, Call) ->
+    fun(EndpointId, Acc) when EndpointId =:= SourceDeviceId ->
+            lager:debug("skipping ~s since it matches device id", [EndpointId]),
+            Acc;
+       (EndpointId, Acc) ->
+            lager:debug("building endpoint ~s", [EndpointId]),
+            case kz_endpoint:build(EndpointId, Params, Call) of
+                {'ok', Endpoint} -> Endpoint ++ Acc;
+                _Else -> Acc
+            end
+    end.
 
 -spec build_originate(kz_json:objects(), ne_binary(), boolean(), kapps_call:call()) -> kz_proplist().
 build_originate([], _CallId, _UnbridgedOnly, _Call) -> [];
