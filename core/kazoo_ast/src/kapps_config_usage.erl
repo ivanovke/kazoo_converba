@@ -340,6 +340,7 @@ fetch_description(DescriptionKey) ->
     kz_json:get_ne_binary_value(DescriptionKey, kz_json:decode(Bin)).
 
 default_value('undefined') -> 'undefined';
+default_value(?NE_BINARY=Bin) -> Bin;
 default_value(?ATOM('true')) -> 'true';
 default_value(?ATOM('false')) -> 'false';
 default_value(?ATOM('undefined')) -> 'undefined';
