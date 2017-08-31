@@ -522,7 +522,7 @@ recursive_to_proplist(Else) -> Else.
 -spec to_map(path(), object() | objects()) -> map().
 to_map(JObjs) when is_list(JObjs) ->
     lists:foldl(fun to_map_fold/2, #{}, JObjs);
-to_map(JObj) ->
+to_map(?JSON_WRAPPER(_)=JObj) ->
     recursive_to_map(JObj).
 
 %% convert everything starting at a specific key
@@ -532,12 +532,11 @@ to_map(Key, JObj) ->
 to_map_fold(JObj, #{}=Map) ->
     maps:merge(Map, recursive_to_map(JObj)).
 
--spec recursive_to_map(object() | objects() | kz_proplist()) -> map().
+-spec recursive_to_map(object() | objects()) -> map() | [map()].
 recursive_to_map(?JSON_WRAPPER(Props)) ->
     maps:from_list([{K, recursive_to_map(V)} || {K, V} <- Props]);
 recursive_to_map(List) when is_list(List) ->
-    [recursive_to_map(Item) || Item <- List];
-recursive_to_map(Else) -> Else.
+    [recursive_to_map(Item) || Item <- List].
 
 %%--------------------------------------------------------------------
 %% @public
@@ -1142,11 +1141,11 @@ replace_in_list(N, V1, [V | Vs], Acc) ->
 %% Read a json fixture file from the filesystem into memory
 %% @end
 %%--------------------------------------------------------------------
--spec load_fixture_from_file(atom(), nonempty_string() | ne_binary()) ->
+-spec load_fixture_from_file(atom(), text()) ->
                                     object() |
                                     {'error', atom()}.
 
--spec load_fixture_from_file(atom(), nonempty_string() | ne_binary(), iodata()) ->
+-spec load_fixture_from_file(atom(), text(), text()) ->
                                     object() |
                                     {'error', atom()}.
 
@@ -1154,7 +1153,7 @@ load_fixture_from_file(App, File) ->
     load_fixture_from_file(App, <<"couchdb">>, File).
 
 load_fixture_from_file(App, Dir, File) ->
-    Path = list_to_binary([code:priv_dir(App), "/", kz_term:to_list(Dir), "/", kz_term:to_list(File)]),
+    Path = filename:join([code:priv_dir(App), Dir, File]),
     lager:debug("read fixture for kapp ~s from JSON file: ~s", [App, Path]),
     try
         {'ok', Bin} = file:read_file(Path),
@@ -1169,9 +1168,10 @@ load_fixture_from_file(App, Dir, File) ->
     end.
 
 -ifdef(TEST).
--spec fixture(atom(), file:filename_all()) -> {ok,object()} | {error,any()}.
+-spec fixture(atom(), file:filename_all()) -> {'ok', object()} |
+                                              {'error', any()}.
 fixture(App, Path0) when is_atom(App) ->
-    Path = filename:join(code:lib_dir(App, test), Path0),
+    Path = filename:join([code:lib_dir(App, 'test'), Path0]),
     io:format(user, "reading fixture from ~s\n", [Path]),
     case file:read_file(Path) of
         {ok, Bin} -> {ok, decode(Bin)};
