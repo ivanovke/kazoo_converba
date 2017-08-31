@@ -1037,7 +1037,11 @@ maybe_new(_) -> kz_json:new().
 get_config_document(Id) ->
     kz_doc:public_fields(maybe_new(kapps_config:get_category(Id))).
 
--spec validate_system_config(ne_binary()) -> [{_, _}].
+-type validation_result() :: {'no_schema_for', ne_binary()} |
+                             {kz_json:key(), {'ok', kz_json:object()} | jesse_error:error()}.
+-type validation_results() :: [validation_result()].
+
+-spec validate_system_config(ne_binary()) -> validation_results().
 validate_system_config(Id) ->
     Doc = get_config_document(Id),
     Keys = kz_json:get_keys(Doc),
@@ -1046,8 +1050,8 @@ validate_system_config(Id) ->
         {error,not_found} ->
             [{no_schema_for, Id}];
         {ok, Schema} ->
-            Validation = [ {Key, kz_json_schema:validate(Schema, kz_json:get_value(Key, Doc))} || Key <- Keys ],
-            lists:flatten([ {Key, get_error(Error)} || {Key, Error} <- Validation, not valid(Error) ])
+            Validation = [{Key, kz_json_schema:validate(Schema, kz_json:get_value(Key, Doc))} || Key <- Keys],
+            lists:flatten([{Key, get_error(Error)} || {Key, Error} <- Validation, not valid(Error) ])
     end.
 
 -spec valid(any()) -> boolean().
@@ -1058,21 +1062,24 @@ get_error({error, Errors}) -> [ get_error(Error) || Error <- Errors ];
 get_error({Code, _Schema, Error, Value, Path}) -> {Code, Error, Value, Path};
 get_error(X) -> X.
 
--spec cleanup_system_config(ne_binary()) -> {'ok', kz_json:object()}.
+-type save_doc_ret() :: {'ok', kz_json:object() | kz_json:objects()} |
+                        kz_datamgr:data_error().
+
+-spec cleanup_system_config(ne_binary()) -> save_doc_ret().
 cleanup_system_config(Id) ->
     Doc = maybe_new(kapps_config:get_category(Id)),
-    ErrorKeys = [ Key || {Key, _} <- validate_system_config(Id), Key =/= no_schema_for ],
+    ErrorKeys = [Key || {Key, _} <- validate_system_config(Id), Key =/= 'no_schema_for'],
     NewDoc = lists:foldl(fun(K, A) -> kz_json:delete_key(K, A) end, Doc, ErrorKeys),
     kz_datamgr:save_doc(?KZ_CONFIG_DB, NewDoc).
 
--spec cleanup_system_configs() -> [{ok, kz_json:object() | kz_json:objects()} | _].
+-spec cleanup_system_configs() -> [save_doc_ret()].
 cleanup_system_configs() ->
-    [ cleanup_system_config(Id) || {Id, _Err} <- validate_system_configs() ].
+    [cleanup_system_config(Id) || {Id, _Err} <- validate_system_configs()].
 
 -spec validate_system_configs() -> [{ne_binary(), _}].
 validate_system_configs() ->
-    Results = [ {Config, validate_system_config(Config)} || Config <- kapps_config_doc:list_configs() ],
-    [ Result || Result = {_, Status} <- Results, Status =/= [] ].
+    Results = [{Config, validate_system_config(Config)} || Config <- kapps_config_doc:list_configs()],
+    [Result || Result = {_, Status} <- Results, Status =/= []].
 
 -spec flush_getby_cache() -> 'ok'.
 flush_getby_cache() ->
