@@ -21,7 +21,6 @@
         ,account_doc_id/1
         ]).
 
-
 -ifdef(TEST).
 -export([fixture/1]).
 -endif.
@@ -105,8 +104,7 @@ account_schema(Config) when is_binary(Config) ->
 
 -spec system_config_document_schema(ne_binary()) -> kz_json:object().
 system_config_document_schema(Id) ->
-    Flat = [
-            {[<<"$schema">>],<<"http://json-schema.org/draft-04/schema#">>}
+    Flat = [{[<<"$schema">>],<<"http://json-schema.org/draft-04/schema#">>}
            ,{[<<"id">>], <<"system_config">>}
            ,{[<<"patternProperties">>, <<".+">>, <<"$ref">>], system_schema_name(Id)}
            ,{[<<"patternProperties">>, <<".+">>, <<"type">>], <<"object">>}
