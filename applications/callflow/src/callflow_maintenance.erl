@@ -307,8 +307,8 @@ set_account_classifier_action(Action, Classifier, AccountDb) ->
     io:format("found account: ~p", [kz_account:fetch_name(AccountDb)]),
     AccountId = kz_util:format_account_id(AccountDb, 'raw'),
 
-    kz_datamgr:update_doc(AccountDb, AccountId, [{[<<"call_restriction">>, Classifier, <<"action">>], Action}]),
-    kz_datamgr:update_doc(<<"accounts">>, AccountId, [{[<<"call_restriction">>, Classifier, <<"action">>], Action}]),
+    {'ok', _} = kz_datamgr:update_doc(AccountDb, AccountId, [{[<<"call_restriction">>, Classifier, <<"action">>], Action}]),
+    {'ok', _} = kz_datamgr:update_doc(<<"accounts">>, AccountId, [{[<<"call_restriction">>, Classifier, <<"action">>], Action}]),
 
     kz_endpoint:flush_account(AccountDb),
 
