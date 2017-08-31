@@ -340,13 +340,14 @@ map_tranform_cdrs(AccountId, [VR|VRs], Map) ->
     NewMap = maps_update_with(NewDb, fun(Old) -> [NewDoc|Old] end, [NewDoc], Map),
     map_tranform_cdrs(AccountId, VRs, NewMap).
 
--spec do_move_cdrs(ne_binary(), kz_json:object(), ne_binaries()) -> ne_binaries().
-do_move_cdrs(MODB, Docs, MovedAcc) ->
-    _AccountId = kz_util:format_account_id(MODB),
+-spec do_move_cdrs(ne_binary(), kz_json:objects(), ne_binaries()) -> ne_binaries().
+do_move_cdrs(<<_/binary>>=MODB, Docs, MovedAcc) ->
     case kz_datamgr:save_docs(MODB, Docs) of
-        {ok, SavedJObj} -> check_for_failure(SavedJObj, MovedAcc);
-        {error, _Reason} ->
-            io:format("[~s] failed to move cdrs in batch: ~p~n", [_AccountId, _Reason]),
+        {'ok', SavedJObj} -> check_for_failure(SavedJObj, MovedAcc);
+        {'error', _Reason} ->
+            io:format("[~s] failed to move cdrs in batch: ~p~n"
+                     ,[kz_util:format_account_id(MODB), _Reason]
+                     ),
             MovedAcc
     end.
 
