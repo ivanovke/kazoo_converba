@@ -206,8 +206,8 @@ update_number_services_view(?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
              || Classification <- kz_json:get_keys(ClassifiersJObj)
             ],
     {Classifications, Regexs} = lists:unzip(Pairs),
-    MapView = number_services_map(Classifications, Regexs),
-    RedView = number_services_red(),
+    MapFunction = number_services_map(Classifications, Regexs),
+    ReduceFunction = number_services_reduce(),
     ViewName = <<"_design/numbers">>,
     View = case kz_datamgr:open_doc(AccountDb, ViewName) of
                {ok, JObj} -> JObj;
@@ -217,14 +217,14 @@ update_number_services_view(?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
                    JObj
            end,
     PathMap = [<<"views">>, <<"reconcile_services">>, <<"map">>],
-    PathRed = [<<"views">>, <<"reconcile_services">>, <<"reduce">>],
-    case kz_json:are_equal(MapView, kz_json:get_ne_binary_value(PathMap, View))
-        andalso kz_json:are_equal(RedView, kz_json:get_ne_binary_value(PathRed, View))
+    PathReduce = [<<"views">>, <<"reconcile_services">>, <<"reduce">>],
+    case MapFunction =:= kz_json:get_ne_binary_value(PathMap, View)
+        andalso ReduceFunction =:= kz_json:get_ne_binary_value(PathReduce, View)
     of
         true -> no_return;
         false ->
-            NewView = kz_json:set_values([{PathMap, MapView}
-                                         ,{PathRed, RedView}
+            NewView = kz_json:set_values([{PathMap, MapFunction}
+                                         ,{PathReduce, ReduceFunction}
                                          ]
                                         ,View
                                         ),
@@ -366,6 +366,7 @@ escape(?NE_BINARY=Bin0) ->
     <<Start:StartSz/binary, Escaped:SizeOfWhatIWant/binary, End:EndSz/binary>> = Bin,
     Escaped.
 
+-spec number_services_map(ne_binaries(), ne_binaries()) -> ne_binary().
 number_services_map(Classifications, Regexs) ->
     iolist_to_binary(
       ["function(doc) {"
@@ -390,7 +391,8 @@ number_services_map(Classifications, Regexs) ->
        "}"
       ]).
 
-number_services_red() ->
+-spec number_services_reduce() -> ne_binary().
+number_services_reduce() ->
     iolist_to_binary(
       ["function(Keys, Values, _Rereduce) {"
        "  var incr = function (o, k, v) {"
