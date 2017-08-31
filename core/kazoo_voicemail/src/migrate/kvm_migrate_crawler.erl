@@ -11,6 +11,7 @@
 
 %%% Public API
 -export([start/0, start/1, stop/1
+        ,start_link/0, start_migrate/0
         ]).
 
 %%% API used by Workers
@@ -94,11 +95,31 @@ start() ->
     gen_server:start(?SERVER, [], []).
 
 -spec start(pid()) -> startlink_ret().
-start(Pid) ->
+start(Pid) when is_pid(Pid) ->
     gen_server:start(?SERVER, [Pid], []).
 
+%% We're just registering for migration bindings here
+-spec start_link() -> 'ignore'.
+start_link() ->
+    kazoo_bindings:bind([<<"migrate_to_4_0">>
+                        ,<<"migrate">>
+                        ]
+                       ,?MODULE
+                       ,'start_migrate'
+                       ).
+
+-spec start_migrate() -> 'ok'.
+start_migrate() ->
+    {'ok', Pid} = ?MODULE:start(self()),
+    Ref = erlang:monitor('process', Pid),
+    receive
+        {'DOWN', Ref, 'process', Pid, 'normal'} -> 'ok';
+        {'DOWN', Ref, 'process', Pid, _Reason} ->
+            io:format("~n********** migration process died with reason:~n~p~n", [_Reason])
+    end.
+
 -spec stop(pid()) -> 'ok'.
-stop(Server) ->
+stop(Server) when is_pid(Server) ->
     gen_server:call(Server, 'stop').
 
 %% Workers API

@@ -112,13 +112,16 @@ rebuild_token_auth(Pause) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec migrate_to_4_0() -> no_return.
+-spec migrate_to_4_0() -> 'no_return'.
 migrate_to_4_0() ->
-    %% Number migration
-    kazoo_number_manager_maintenance:migrate(),
-    %% Voicemail migration
-    kazoo_voicemail_maintenance:migrate(),
-    no_return.
+    _ = kazoo_bindings:map(<<"migrate_to_4_0">>, []),
+    'no_return'.
+
+%% %% Number migration
+%% kazoo_number_manager_maintenance:migrate(),
+%% %% Voicemail migration
+%% %% kazoo_voicemail_maintenance:migrate(),
+%% no_return.
 
 %%--------------------------------------------------------------------
 %% @public
