@@ -944,8 +944,9 @@ save_docs(DbName, Docs, Options) when is_list(Docs) ->
 update_doc(DbName, Id, UpdateProps) ->
     update_doc(DbName, Id, UpdateProps, []).
 
-update_doc(DbName, Id, UpdateProps, CreateProps) when is_list(UpdateProps),
-                                                      is_list(CreateProps) ->
+update_doc(<<_/binary>>=DbName, <<_/binary>>=Id, UpdateProps, CreateProps)
+  when is_list(UpdateProps)
+       andalso is_list(CreateProps) ->
     case open_doc(DbName, Id) of
         {'error', 'not_found'} ->
             JObj = kz_json:from_list(lists:append([[{<<"_id">>, Id} | CreateProps], UpdateProps])),
