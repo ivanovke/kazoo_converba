@@ -12,12 +12,6 @@
 -export([update_all_accounts/1]).
 -export([replicate_from_accounts/2, replicate_from_account/3]).
 -export([revise_whapp_views_in_accounts/1]).
--export([get_all_accounts_and_mods/0
-        ,get_all_accounts_and_mods/1
-        ]).
--export([is_account_db/1
-        ,is_account_mod/1
-        ]).
 -export([get_account_by_realm/1
         ,get_ccvs_by_ip/1
         ,get_accounts_by_name/1
@@ -57,6 +51,10 @@
 
 -include("kazoo_apps.hrl").
 -include_lib("kazoo_caches/include/kazoo_caches.hrl").
+
+-type getby_return() :: {'ok', ne_binary()} |
+                        {'multiples', ne_binaries()} |
+                        {'error', 'not_found'}.
 
 -define(REPLICATE_ENCODING, 'encoded').
 -define(AGG_LIST_BY_REALM, <<"accounts/listing_by_realm">>).
@@ -246,43 +244,6 @@ find_oldest_doc([First|Docs]) ->
                    ,{kz_doc:created(First), kz_doc:id(First)}
                    ,Docs),
     {'ok', OldestDocID}.
-
--spec get_all_accounts_and_mods() -> ne_binaries().
--spec get_all_accounts_and_mods(kz_util:account_format()) -> ne_binaries().
-get_all_accounts_and_mods() ->
-    get_all_accounts_and_mods(?REPLICATE_ENCODING).
-
-get_all_accounts_and_mods(Encoding) ->
-    {'ok', Dbs} = kz_datamgr:db_list_by_classifier(['account', 'modb']
-                                                  ,[{'startkey', <<"account/">>}
-                                                   ,{'endkey', <<"account0">>}
-                                                   ]),
-    [format_db(Db, Encoding) || Db <- Dbs].
-
--spec format_db(ne_binary(), kz_util:account_format()) -> ne_binary().
-format_db(Db, Encoding) ->
-    Fs = [{fun is_account_db/1, fun kz_util:format_account_id/2}
-         ,{fun is_account_mod/1, fun kz_util:format_account_modb/2}
-         ],
-    format_db(Db, Encoding, Fs).
-
-format_db(Db, Encoding, [{Predicate, Formatter}|Fs]) ->
-    case Predicate(Db) of
-        'true' -> Formatter(Db, Encoding);
-        'false' -> format_db(Db, Encoding, Fs)
-    end.
-
--spec is_account_mod(ne_binary()) -> boolean().
-is_account_mod(Db) ->
-    kz_datamgr:db_classification(Db) =:= 'modb'.
-
--spec is_account_db(ne_binary()) -> boolean().
-is_account_db(Db) ->
-    kz_datamgr:db_classification(Db) =:= 'account'.
-
--type getby_return() :: {'ok', ne_binary()} |
-                        {'multiples', ne_binaries()} |
-                        {'error', 'not_found'}.
 
 %%--------------------------------------------------------------------
 %% @public

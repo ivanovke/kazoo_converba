@@ -282,6 +282,9 @@ kapps_util() {
     replace kapps_util get_account_mods kazoo_modbs list_account
     replace kapps_util update_views kz_datamgr db_view_update
     replace kapps_util get_all_accounts kz_util get_all_accounts
+    replace kapps_util get_all_accounts_and_mods kz_util get_all_accounts_and_mods
+    replace kapps_util is_account_db kz_util is_account_db
+    replace kapps_util is_account_mod kz_util is_account_mod
 }
 
 echo "ensuring kz_term is used"

@@ -382,7 +382,7 @@ put(Context, AccountId, ?RESELLER) ->
 delete(Context, Account) ->
     AccountDb = kz_util:format_account_id(Account, 'encoded'),
     AccountId = kz_util:format_account_id(Account, 'raw'),
-    case kapps_util:is_account_db(AccountDb) of
+    case kz_util:is_account_db(AccountDb) of
         'false' ->
             cb_context:add_system_error('bad_identifier', kz_json:from_list([{<<"cause">>, AccountId}]),  Context);
         'true' ->
@@ -1291,7 +1291,7 @@ load_account_db(Context, AccountId) when is_binary(AccountId) ->
 create_new_account_db(Context) ->
     AccountDb = cb_context:account_db(Context),
     _ = ensure_accounts_db_exists(),
-    case kapps_util:is_account_db(AccountDb)
+    case kz_util:is_account_db(AccountDb)
         andalso kz_datamgr:db_create(AccountDb)
     of
         'false' ->

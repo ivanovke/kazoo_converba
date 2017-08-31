@@ -148,7 +148,7 @@ migrate(Pause) ->
 migrate(Pause, Databases) ->
     Accounts = [kz_util:format_account_id(Db, 'encoded')
                 || Db <- Databases,
-                   kapps_util:is_account_db(Db)
+                   kz_util:is_account_db(Db)
                ],
     io:format("updating dbs...~n"),
     _ = refresh(Databases, Pause),
@@ -169,7 +169,7 @@ parallel_migrate(Workers) ->
 parallel_migrate(Workers, Pause) ->
     _ = migrate_system(),
     _ = kapps_config:migrate(),
-    {Accounts, Others} = lists:partition(fun kapps_util:is_account_db/1, get_databases()),
+    {Accounts, Others} = lists:partition(fun kz_util:is_account_db/1, get_databases()),
     AccountDbs = [kz_util:format_account_db(Db) || Db <- Accounts],
     OtherSplit = kz_term:to_integer(length(Others) / kz_term:to_integer(Workers)),
     AccountSplit = kz_term:to_integer(length(AccountDbs) / kz_term:to_integer(Workers)),
