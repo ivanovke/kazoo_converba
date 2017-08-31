@@ -12,9 +12,7 @@
 -export([update_all_accounts/1]).
 -export([replicate_from_accounts/2, replicate_from_account/3]).
 -export([revise_whapp_views_in_accounts/1]).
--export([get_all_accounts/0
-        ,get_all_accounts/1
-        ,get_all_accounts_and_mods/0
+-export([get_all_accounts_and_mods/0
         ,get_all_accounts_and_mods/1
         ]).
 -export([is_account_db/1
@@ -84,7 +82,7 @@ update_all_accounts(File) ->
     lists:foreach(fun(AccountDb) ->
                           timer:sleep(2 * ?MILLISECONDS_IN_SECOND),
                           kz_datamgr:revise_doc_from_file(AccountDb, 'crossbar', File)
-                  end, get_all_accounts(?REPLICATE_ENCODING)).
+                  end, kz_util:get_all_accounts(?REPLICATE_ENCODING)).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -98,7 +96,7 @@ revise_whapp_views_in_accounts(App) ->
     lists:foreach(fun(AccountDb) ->
                           timer:sleep(2 * ?MILLISECONDS_IN_SECOND),
                           kz_datamgr:revise_views_from_folder(AccountDb, App)
-                  end, get_all_accounts(?REPLICATE_ENCODING)).
+                  end, kz_util:get_all_accounts(?REPLICATE_ENCODING)).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -112,7 +110,7 @@ replicate_from_accounts(TargetDb, FilterDoc) when is_binary(FilterDoc) ->
     lists:foreach(fun(AccountDb) ->
                           timer:sleep(2 * ?MILLISECONDS_IN_SECOND),
                           replicate_from_account(AccountDb, TargetDb, FilterDoc)
-                  end, get_all_accounts(?REPLICATE_ENCODING)).
+                  end, kz_util:get_all_accounts(?REPLICATE_ENCODING)).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -249,37 +247,17 @@ find_oldest_doc([First|Docs]) ->
                    ,Docs),
     {'ok', OldestDocID}.
 
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%% This function will return a list of all account database names
-%% in the requested encoding
-%% @end
-%%--------------------------------------------------------------------
--spec get_all_accounts() -> ne_binaries().
--spec get_all_accounts(kz_util:account_format()) -> ne_binaries().
-get_all_accounts() -> get_all_accounts(?REPLICATE_ENCODING).
-
-get_all_accounts(Encoding) ->
-    {'ok', Dbs} = kz_datamgr:db_list([{'startkey', <<"account/">>}
-                                     ,{'endkey', <<"account0">>}
-                                     ]),
-    [kz_util:format_account_id(Db, Encoding)
-     || Db <- Dbs, is_account_db(Db)
-    ].
-
 -spec get_all_accounts_and_mods() -> ne_binaries().
 -spec get_all_accounts_and_mods(kz_util:account_format()) -> ne_binaries().
 get_all_accounts_and_mods() ->
     get_all_accounts_and_mods(?REPLICATE_ENCODING).
 
 get_all_accounts_and_mods(Encoding) ->
-    {'ok', Databases} = kz_datamgr:db_info(),
-    [format_db(Db, Encoding)
-     || Db <- Databases,
-        is_account_db(Db)
-            orelse is_account_mod(Db)
-    ].
+    {'ok', Dbs} = kz_datamgr:db_list_by_classifier(['account', 'modb']
+                                                  ,[{'startkey', <<"account/">>}
+                                                   ,{'endkey', <<"account0">>}
+                                                   ]),
+    [format_db(Db, Encoding) || Db <- Dbs].
 
 -spec format_db(ne_binary(), kz_util:account_format()) -> ne_binary().
 format_db(Db, Encoding) ->

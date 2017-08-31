@@ -29,6 +29,7 @@
         ,db_archive/1, db_archive/2
         ,db_import/2
         ,db_list/0, db_list/1
+        ,db_list_by_classifier/1, db_list_by_classifier/2
         ]).
 
 %% Document manipulation
@@ -748,7 +749,6 @@ open_cache_docs(DbName, DocIds, Options) ->
 -spec all_docs(text(), kz_proplist()) ->
                       {'ok', kz_json:objects()} |
                       data_error().
-
 all_docs(DbName) ->
     all_docs(DbName, []).
 
@@ -761,7 +761,7 @@ all_docs(DbName, Options) ->
     end.
 
 -spec db_list() -> {'ok', ne_binaries()} | data_error().
--spec db_list(kz_proplist()) -> {'ok', ne_binaries()} | data_error().
+-spec db_list(view_options()) -> {'ok', ne_binaries()} | data_error().
 
 db_list() ->
     db_list([]).
@@ -769,11 +769,33 @@ db_list() ->
 db_list(Options) ->
     kzs_db:db_list(kzs_plan:plan(), Options).
 
--spec all_design_docs(text()) -> {'ok', kz_json:objects()} |
-                                 data_error().
--spec all_design_docs(text(), kz_proplist()) -> {'ok', kz_json:objects()} |
-                                                data_error().
+-spec db_list_by_classifier(db_classification() | db_classifications()) ->
+                                   {'ok', ne_binaries()} | data_error().
+-spec db_list_by_classifier(db_classification() | db_classifications(), view_options()) ->
+                                   {'ok', ne_binaries()} | data_error().
+db_list_by_classifier(Classifier) ->
+    db_list_by_classifier(Classifier, []).
+db_list_by_classifier(Classifier, Options) ->
+    case db_list(Options) of
+        {'error', _}=Error -> Error;
+        {'ok', Dbs} -> {'ok', filter_by_classifier(Dbs, Classifier)}
+    end.
 
+filter_by_classifier(Dbs, Classifiers) when is_list(Classifiers) ->
+    [Db || Db <- Dbs,
+           lists:member(db_classification(Db), Classifiers)
+    ];
+filter_by_classifier(Dbs, Classifier) ->
+    [Db || Db <- Dbs,
+           Classifier =:= db_classification(Db)
+    ].
+
+-spec all_design_docs(text()) ->
+                             {'ok', kz_json:objects()} |
+                             data_error().
+-spec all_design_docs(text(), kz_proplist()) ->
+                             {'ok', kz_json:objects()} |
+                             data_error().
 all_design_docs(DbName) ->
     all_design_docs(DbName, []).
 

@@ -566,7 +566,7 @@ should_archive(AccountMODb, Year, Month) ->
 %% Delete an modb if it is no longer associated with its account.
 %% (That is: orphaned).
 %% AccountMODb must be 'encoded' otherwise kz_datamgr:db_delete/1 will fail.
-%% AccountIds should be kapps_util:get_all_accounts('raw').
+%% AccountIds should be kz_util:get_all_accounts('raw').
 %% Returns whether AccountMODb has been deleted.
 %% @end
 %%--------------------------------------------------------------------

@@ -19,7 +19,7 @@
 
 -spec migrate() -> 'ok'.
 migrate() ->
-    AccountIds = kz_term:shuffle_list(kapps_util:get_all_accounts('raw')),
+    AccountIds = kz_term:shuffle_list(kz_util:get_all_accounts('raw')),
     Total = length(AccountIds),
     io:format("Start migrating items to MODB from ~b databases~n~n", [Total]),
     lists:foldl(fun(A, C) -> migrate_account_fold(A, C, Total) end, 1, AccountIds),

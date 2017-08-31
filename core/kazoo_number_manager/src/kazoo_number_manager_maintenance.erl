@@ -299,7 +299,7 @@ fix_number(Num, AuthBy, AccountDb) ->
 migrate() ->
     ensure_adminonly_features_are_reachable(),
     _ = refresh_numbers_dbs(),
-    pforeach(fun migrate/1, kapps_util:get_all_accounts()),
+    pforeach(fun migrate/1, kz_util:get_all_accounts()),
     migrate_unassigned_numbers().
 
 -spec migrate(ne_binary()) -> 'ok'.

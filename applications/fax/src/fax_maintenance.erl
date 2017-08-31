@@ -30,7 +30,7 @@
 
 -spec migrate() -> 'ok'.
 migrate() ->
-    Accounts = kapps_util:get_all_accounts(),
+    Accounts = kz_util:get_all_accounts(),
     Total = length(Accounts),
     lists:foldr(fun(A, C) -> migrate_faxes_fold(A, C, Total, ?DEFAULT_MIGRATE_OPTIONS) end, 1, Accounts),
     migrate_outbound_faxes(),
@@ -39,7 +39,7 @@ migrate() ->
 -spec migrate(ne_binaries() | ne_binary()) -> 'ok'.
 migrate([]) -> 'ok';
 migrate(<<"override_existing_documents">>) ->
-    Accounts = kapps_util:get_all_accounts(),
+    Accounts = kz_util:get_all_accounts(),
     Total = length(Accounts),
     lists:foldr(fun(A, C) -> migrate_faxes_fold(A, C, Total, ?OVERRIDE_DOCS) end, 1, Accounts),
     'ok';

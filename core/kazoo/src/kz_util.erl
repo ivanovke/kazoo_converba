@@ -14,10 +14,14 @@
         ,format_account_mod_id/1, format_account_mod_id/2, format_account_mod_id/3
         ,format_account_db/1
         ,format_account_modb/1, format_account_modb/2
-        ,format_resource_selectors_id/1, format_resource_selectors_id/2
-        ,format_resource_selectors_db/1
+
         ,normalize_account_name/1
         ,account_update/1, account_update/2
+
+        ,get_all_accounts/0, get_all_accounts/1
+
+        ,format_resource_selectors_id/1, format_resource_selectors_id/2
+        ,format_resource_selectors_db/1
         ]).
 -export([is_in_account_hierarchy/2, is_in_account_hierarchy/3]).
 -export([is_system_admin/1]).
@@ -89,6 +93,7 @@
 -include_lib("kazoo/include/kz_api_literals.hrl").
 
 -define(KAZOO_VERSION_CACHE_KEY, {?MODULE, 'kazoo_version'}).
+-define(REPLICATE_ENCODING, 'encoded').
 
 -export_type([account_format/0]).
 
@@ -257,6 +262,26 @@ raw_account_modb(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, Year, Month)) ->
     ?MATCH_MODB_SUFFIX_RAW(A, B, Rest, Year, Month);
 raw_account_modb(?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, Year, Month)) ->
     ?MATCH_MODB_SUFFIX_RAW(A, B, Rest, Year, Month).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% This function will return a list of all account database names
+%% in the requested encoding
+%% @end
+%%--------------------------------------------------------------------
+-spec get_all_accounts() -> ne_binaries().
+-spec get_all_accounts(kz_util:account_format()) -> ne_binaries().
+get_all_accounts() -> get_all_accounts(?REPLICATE_ENCODING).
+
+get_all_accounts(Encoding) ->
+    {'ok', Dbs} = kz_datamgr:db_list_by_classifier('account'
+                                                  ,[{'startkey', <<"account/">>}
+                                                   ,{'endkey', <<"account0">>}
+                                                   ]),
+    [format_account_id(Db, Encoding)
+     || Db <- Dbs
+    ].
 
 %%--------------------------------------------------------------------
 %% @public

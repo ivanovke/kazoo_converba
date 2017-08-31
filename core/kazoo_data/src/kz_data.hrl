@@ -76,10 +76,8 @@
                        'group' |
                        'include_docs' |
                        'inclusive_end' |
-                       'reduce' |
                        'override_existing_document' |
-                       {max_bulk_read, pos_integer()} |
-                       {'transform',transform_fun()} |
+                       'reduce' |
                        {'end_docid', binary()} |
                        {'endkey', key_range()} |
                        {'group_level', 'exact' | integer()} |
@@ -87,11 +85,13 @@
                        {'keys', [binary()]} |
                        {'limit', integer()} |
                        {'list', binary()} |
+                       {'max_bulk_read', pos_integer()} |
                        {'reduce', boolean()} |
                        {'skip', integer()} |
                        {'stale', stale()} |
                        {'start_docid', binary()} |
-                       {'startkey', key_range()}.
+                       {'startkey', key_range()} |
+                       {'transform',transform_fun()}.
 
 -type view_options() :: [view_option()].
 
@@ -110,6 +110,7 @@
                              'resource_selectors' |
                              'system' |
                              'undefined'.
+-type db_classifications() :: [db_classification()].
 
 -type db_create_options() :: [{'q',integer()} | {'n',integer()} | 'ensure_other_dbs'].
 -type db_delete_options() :: ['ensure_other_dbs'].

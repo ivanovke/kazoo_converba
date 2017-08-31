@@ -23,7 +23,7 @@
 blocking_refresh() ->
     lists:foreach(fun(AccountDb) ->
                           refresh(AccountDb)
-                  end, kapps_util:get_all_accounts()),
+                  end, kz_util:get_all_accounts()),
     ok.
 
 %%--------------------------------------------------------------------

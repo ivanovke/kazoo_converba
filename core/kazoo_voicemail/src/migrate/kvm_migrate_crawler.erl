@@ -32,8 +32,9 @@
 
 -define(SERVER, ?MODULE).
 
--define(MAX_PROCESS,
-        kapps_config:get_integer(?CF_CONFIG_CAT, [?KEY_VOICEMAIL, <<"migrate_max_worker">>], 10)).
+-define(MAX_PROCESS
+       ,kapps_config:get_integer(?CF_CONFIG_CAT, [?KEY_VOICEMAIL, <<"migrate_max_worker">>], 10)
+       ).
 
 -type worker() :: {pid(), next_account()}.
 -type workers() :: [worker()].
@@ -131,7 +132,7 @@ init(Pid) ->
     _ = process_flag('trap_exit', 'true'),
     kz_util:put_callid(?SERVER),
     lager:debug("started ~s", [?SERVER]),
-    case kapps_util:get_all_accounts('raw') of
+    case kz_util:get_all_accounts('raw') of
         [] ->
             ?ERROR("********** no account found, going down **********", []),
             {'stop', #state{}};

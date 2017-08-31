@@ -237,7 +237,7 @@ update_status(Job, Status) ->
 start_recovery() ->
     kz_util:put_callid(?MODULE),
     {Year, Month, _} = erlang:date(),
-    maybe_recover_jobs(Year, Month, kapps_util:get_all_accounts('raw')).
+    maybe_recover_jobs(Year, Month, kz_util:get_all_accounts('raw')).
 
 -spec maybe_recover_jobs(kz_year(), kz_month(), ne_binaries()) -> 'ok'.
 maybe_recover_jobs(Year, Month, Accounts) ->

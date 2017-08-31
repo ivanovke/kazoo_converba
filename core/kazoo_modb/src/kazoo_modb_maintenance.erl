@@ -118,7 +118,7 @@ do_archive_modbs(MODbs, AccountId) ->
 
 -spec current_rollups() -> 'ok'.
 current_rollups() ->
-    Accounts = kapps_util:get_all_accounts(),
+    Accounts = kz_util:get_all_accounts(),
     current_rollups(Accounts).
 
 -spec current_rollups(ne_binaries()) -> 'ok'.
@@ -142,14 +142,14 @@ current_rollups([Account|Accounts]) ->
 
 -spec verify_rollups() -> 'ok'.
 verify_rollups() ->
-    Accounts = kapps_util:get_all_accounts(),
+    Accounts = kz_util:get_all_accounts(),
     Total = erlang:length(Accounts),
     _ = lists:foldr(fun verify_db_rollup/2, {1, Total, []}, Accounts),
     'ok'.
 
 -spec verify_all_rollups() -> 'ok'.
 verify_all_rollups() ->
-    Accounts = kapps_util:get_all_accounts(),
+    Accounts = kz_util:get_all_accounts(),
     Total = erlang:length(Accounts),
     _ = lists:foldr(fun verify_db_rollup/2, {1, Total, [{'all_rollups', 'true'}]}, Accounts),
     'ok'.
@@ -233,7 +233,7 @@ fix_rollup(Account, Year, Month) ->
 
 -spec rollup_accounts() -> 'ok'.
 rollup_accounts() ->
-    Accounts = kapps_util:get_all_accounts(),
+    Accounts = kz_util:get_all_accounts(),
     Total = length(Accounts),
     _ = lists:foldr(fun rollup_account_fold/2, {1, Total}, Accounts),
     'ok'.

@@ -58,7 +58,7 @@
 %%--------------------------------------------------------------------
 -spec migrate() -> 'no_return'.
 migrate() ->
-    migrate(kapps_util:get_all_accounts()).
+    migrate(kz_util:get_all_accounts()).
 
 -spec migrate(ne_binaries()) -> 'no_return'.
 migrate(Accounts) ->
@@ -89,7 +89,7 @@ remove_deprecated_modules(Modules, Deprecated) ->
 
 -spec migrate_accounts_data() -> 'no_return'.
 migrate_accounts_data() ->
-    migrate_accounts_data(kapps_util:get_all_accounts()).
+    migrate_accounts_data(kz_util:get_all_accounts()).
 
 -spec migrate_accounts_data(ne_binaries()) -> 'no_return'.
 migrate_accounts_data([]) -> 'no_return';
@@ -410,7 +410,7 @@ maybe_promote_account(Context) ->
     AccountDb = cb_context:account_db(Context),
     AccountId = cb_context:account_id(Context),
 
-    case kapps_util:get_all_accounts() of
+    case kz_util:get_all_accounts() of
         [AccountDb] ->
             'ok' = promote_account(AccountId),
             'ok' = allow_account_number_additions(AccountId),

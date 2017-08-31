@@ -105,7 +105,7 @@ do_show_calls([Srv|Srvs], Total) ->
 blocking_refresh() ->
     lists:foreach(fun(AccountDb) ->
                           refresh(AccountDb)
-                  end, kapps_util:get_all_accounts()).
+                  end, kz_util:get_all_accounts()).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -134,7 +134,7 @@ refresh(Account) ->
 %%--------------------------------------------------------------------
 -spec migrate_recorded_names() -> 'no_return'.
 migrate_recorded_names() ->
-    migrate_recorded_names(kapps_util:get_all_accounts()).
+    migrate_recorded_names(kz_util:get_all_accounts()).
 
 -spec migrate_recorded_names(ne_binaries()) -> 'no_return'.
 migrate_recorded_names([]) -> 'no_return';
@@ -193,7 +193,7 @@ do_recorded_name_migration(Db, MediaId, OwnerId) ->
 -spec migrate_menus() -> ['done' | 'error',...].
 -spec migrate_menus(ne_binary()) -> 'done' | 'error'.
 migrate_menus() ->
-    [migrate_menus(Account) || Account <- kapps_util:get_all_accounts('raw')].
+    [migrate_menus(Account) || Account <- kz_util:get_all_accounts('raw')].
 migrate_menus(Account) ->
     Db = kz_util:format_account_id(Account, 'encoded'),
     lager:info("migrating all menus in ~s", [Db]),
@@ -321,7 +321,7 @@ all_accounts_set_classifier(Action, Classifier) ->
                           %% Not sure if this interruption is really needed.
                           %%  Keeping it as it was taken as an example from kapps_util:update_all_accounts/1
                           set_account_classifier_action(Action, Classifier, AccountDb)
-                  end, kapps_util:get_all_accounts()).
+                  end, kz_util:get_all_accounts()).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -454,7 +454,7 @@ print_trunkstore_call_restrictions(DbName) ->
 
 -spec update_feature_codes() -> 'ok'.
 update_feature_codes() ->
-    lists:foreach(fun update_feature_codes/1, kapps_util:get_all_accounts()).
+    lists:foreach(fun update_feature_codes/1, kz_util:get_all_accounts()).
 
 -spec update_feature_codes(ne_binary()) -> 'ok'.
 update_feature_codes(Account)

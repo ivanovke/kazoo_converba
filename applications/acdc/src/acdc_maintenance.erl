@@ -218,7 +218,7 @@ migrate_to_acdc_db() ->
     {'ok', Accounts} = kz_datamgr:all_docs(?KZ_ACDC_DB),
     _ = [maybe_remove_acdc_account(kz_doc:id(Account)) || Account <- Accounts],
     io:format("removed any missing accounts from ~s~n", [?KZ_ACDC_DB]),
-    lists:foreach(fun migrate_to_acdc_db/1, kapps_util:get_all_accounts('raw')),
+    lists:foreach(fun migrate_to_acdc_db/1, kz_util:get_all_accounts('raw')),
     io:format("migration complete~n").
 
 -spec maybe_remove_acdc_account(ne_binary()) -> 'ok'.

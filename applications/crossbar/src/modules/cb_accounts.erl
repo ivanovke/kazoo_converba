@@ -1223,7 +1223,7 @@ create_new_tree('undefined') ->
     case kapps_util:get_master_account_id() of
         {'ok', MasterAccountId} -> [MasterAccountId];
         {'error', _} ->
-            case kapps_util:get_all_accounts() of
+            case kz_util:get_all_accounts() of
                 [] -> [];
                 _Else -> 'error'
             end
