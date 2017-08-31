@@ -385,7 +385,7 @@ find_conference_details(JObjs) ->
 %%%===================================================================
 %%% Utility functions
 %%%===================================================================
--spec conference(ne_binary()) -> kz_json:object().
+-spec conference(ne_binary()) -> kapps_conference:conference().
 conference(ConferenceId) ->
     kapps_conference:set_id(ConferenceId, kapps_conference:new()).
 
