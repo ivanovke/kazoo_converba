@@ -21,10 +21,7 @@
 %%--------------------------------------------------------------------
 -spec blocking_refresh() -> 'ok'.
 blocking_refresh() ->
-    lists:foreach(fun(AccountDb) ->
-                          refresh(AccountDb)
-                  end, kz_util:get_all_accounts()),
-    ok.
+    lists:foreach(fun refresh/1, kz_util:get_all_accounts()).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -33,7 +30,7 @@ blocking_refresh() ->
 %% @end
 %%--------------------------------------------------------------------
 -spec refresh() -> 'started'.
--spec refresh(text()) -> 'ok'.
+-spec refresh(text()) -> boolean().
 
 refresh() ->
     _ = kz_util:spawn(fun blocking_refresh/0),
@@ -42,7 +39,6 @@ refresh() ->
 refresh(<<Account/binary>>) ->
     AccountDb = kz_util:format_account_id(Account, 'encoded'),
     Views = kapps_util:get_views_json('conference', "views"),
-    kz_datamgr:db_view_update(AccountDb, Views),
-    'ok';
+    kz_datamgr:db_view_update(AccountDb, Views);
 refresh(Account) ->
     refresh(kz_term:to_binary(Account)).
