@@ -573,12 +573,16 @@ set_json(Category, Key, Value) ->
 %% @end
 %%-----------------------------------------------------------------------------
 -spec set(config_category(), config_key(), any()) ->
-                 {'ok', kz_json:object()}.
+                 'ok' |
+                 {'ok', kz_json:object()} |
+                 {'error', any()}.
+-spec set(config_category(), config_key(), any(), ne_binary() | atom()) ->
+                 'ok' |
+                 {'ok', kz_json:object()} |
+                 {'error', any()}.
 set(Category, Key, Value) ->
     set(Category, Key, Value, node()).
 
--spec set(config_category(), config_key(), any(), ne_binary() | atom()) ->
-                 {'ok', kz_json:object()}.
 set(Category, Key, Value, Node) ->
     update_category(Category, Key, Value, Node, []).
 
