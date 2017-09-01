@@ -176,10 +176,8 @@ send_originate_req(OriginateProps, _Call) ->
                                ,20 * ?MILLISECONDS_IN_SECOND
                                ).
 
--spec is_resp(kz_json:objects() | kz_json:object()) -> boolean().
+-spec is_resp(kz_json:objects()) -> boolean().
 is_resp([JObj|_]) ->
-    kapi_resource:originate_resp_v(JObj);
-is_resp(JObj) ->
     kapi_resource:originate_resp_v(JObj).
 
 -spec is_originate_uuid(kz_json:object(), api_binary()) -> boolean().

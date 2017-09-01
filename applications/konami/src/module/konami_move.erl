@@ -17,7 +17,8 @@
                     {'continue', kapps_call:call()} |
                     {'stop', kapps_call:call()}.
 handle(Data, Call) ->
-    case send_originate_req(get_originate_req(Data, Call), Call) of
+    Req = get_originate_req(Data, Call),
+    case send_originate_req(Req, Call) of
         {'ok', Result} ->
             maybe_update_metaflow(Data, Call, Result);
         {'error', _E} ->
@@ -31,16 +32,20 @@ handle(Data, Call) ->
 -spec maybe_update_metaflow(kz_json:object(), kapps_call:call(), kz_json:objects()) ->
                                    {'stop', kapps_call:call()}.
 maybe_update_metaflow(Data, Call, Results) ->
-    case [Result || Result <- Results, is_resp(Result)] of
+    case [Result
+          || Result <- Results,
+             kapi_resource:originate_resp_v(Result)
+         ]
+    of
         [] ->
             lager:debug("no useful responses"),
             {'stop', Call};
         [Resp|_] ->
-            CallId = kz_json:get_value(<<"Call-ID">>, Resp),
+            CallId = kz_json:get_ne_binary_value(<<"Call-ID">>, Resp),
             maybe_update_metaflow(Data, Call, Results, CallId)
     end.
 
--spec maybe_update_metaflow(kz_json:object(), kapps_call:call(), kz_json:objects(), api_binary()) ->
+-spec maybe_update_metaflow(kz_json:object(), kapps_call:call(), kz_json:objects(), api_ne_binary()) ->
                                    {'stop', kapps_call:call()}.
 maybe_update_metaflow(Data, Call, Results, CallId) ->
     case [Result || Result <- Results, is_originate_uuid(Result, CallId)] of
@@ -48,7 +53,7 @@ maybe_update_metaflow(Data, Call, Results, CallId) ->
             lager:debug("no matching originate_uuid"),
             {'stop', Call};
         [OriginateUUID|_] ->
-            ControlQueue = kz_json:get_value(<<"Outbound-Call-Control-Queue">>, OriginateUUID),
+            ControlQueue = kz_json:get_ne_binary_value(<<"Outbound-Call-Control-Queue">>, OriginateUUID),
             lager:debug("should use ~s for control of ~s", [ControlQueue, CallId]),
             maybe_update_metaflow_control(Data, Call, CallId, ControlQueue, source_leg_of_dtmf(Data, Call))
     end.
@@ -58,21 +63,17 @@ maybe_update_metaflow(Data, Call, Results, CallId) ->
 maybe_update_metaflow_control(_Data, Call, CallId, ControlQueue, 'a') ->
     lager:debug("update ~s to ~s with ctl ~s", [kapps_call:call_id(Call), CallId, ControlQueue]),
 
-    konami_code_statem:transfer_to(
-      kapps_call:set_control_queue(ControlQueue
-                                  ,kapps_call:set_call_id(CallId, Call)
-                                  )
+    konami_code_statem:transfer_to(kapps_call:set_control_queue(ControlQueue
+                                                               ,kapps_call:set_call_id(CallId, Call)
+                                                               )
                                   ,'a'
-     ),
+                                  ),
 
     {'stop', Call};
 maybe_update_metaflow_control(_Data, Call, CallId, _ControlQueue, 'b') ->
     lager:debug("update ~s to ~s with ctl ~s", [kapps_call:other_leg_call_id(Call), CallId, _ControlQueue]),
 
-    konami_code_statem:transfer_to(
-      kapps_call:set_other_leg_call_id(CallId, Call)
-                                  ,'b'
-     ),
+    konami_code_statem:transfer_to(kapps_call:set_other_leg_call_id(CallId, Call), 'b'),
 
     {'stop', Call}.
 
@@ -83,15 +84,17 @@ source_leg_of_dtmf(<<_/binary>> = SourceDTMF, Call) ->
         'false' -> 'b'
     end;
 source_leg_of_dtmf(Data, Call) ->
-    source_leg_of_dtmf(kz_json:get_value(<<"dtmf_leg">>, Data), Call).
+    source_leg_of_dtmf(kz_json:get_ne_binary_value(<<"dtmf_leg">>, Data), Call).
 
 -spec get_originate_req(kz_json:object(), kapps_call:call()) -> kz_proplist().
 get_originate_req(Data, Call) ->
-    SourceOfDTMF = kz_json:get_value(<<"dtmf_leg">>, Data),
+    SourceOfDTMF = kz_json:get_ne_binary_value(<<"dtmf_leg">>, Data),
 
-    Params = kz_json:set_values([{<<"source">>, ?MODULE}
+    Params = kz_json:set_values([{<<"source">>, kz_term:to_binary(?MODULE)}
                                 ,{<<"can_call_self">>, 'true'}
-                                ], Data),
+                                ]
+                               ,Data
+                               ),
 
     {SourceDeviceId, TargetCallId} =
         case source_leg_of_dtmf(SourceOfDTMF, Call) of
@@ -100,27 +103,30 @@ get_originate_req(Data, Call) ->
         end,
 
     DeviceOwnerId = kz_attributes:owner_id(SourceDeviceId, Call),
-    OwnerId = kz_json:get_value(<<"owner_id">>, Data, DeviceOwnerId),
+    OwnerId = kz_json:get_ne_binary_value(<<"owner_id">>, Data, DeviceOwnerId),
     Endpoints = build_endpoints(SourceDeviceId, OwnerId, Params, Call),
     build_originate(Endpoints, TargetCallId, Call).
 
--spec build_endpoints(ne_binary(), ne_binary(), kz_json:object(), kapps_call:call()) -> kz_json:objects().
+-spec build_endpoints(ne_binary(), ne_binary(), kz_json:object(), kapps_call:call()) ->
+                             kz_json:objects().
 build_endpoints(DeviceId, OwnerId, Params, Call) ->
     lager:debug("building endpoints against ~s(~s)", [DeviceId, OwnerId]),
-    lists:foldr(
-      fun(EndpointId, Acc) when EndpointId =:= DeviceId ->
-              lager:debug("skipping ~s since it matches device id", [EndpointId]),
-              Acc;
-         (EndpointId, Acc) ->
-              lager:debug("building endpoint ~s", [EndpointId]),
-              case kz_endpoint:build(EndpointId, Params, Call) of
-                  {'ok', Endpoint} -> Endpoint ++ Acc;
-                  _Else -> Acc
-              end
-      end
-               ,[]
-               ,kz_attributes:owned_by(OwnerId, <<"device">>, Call)
-     ).
+    FoldR = build_foldr_fun(DeviceId, Params, Call),
+    lists:foldr(FoldR, [], kz_attributes:owned_by(OwnerId, <<"device">>, Call)).
+
+-spec build_foldr_fun(api_ne_binary(), kz_json:object(), kapps_call:call()) ->
+                             fun((ne_binary(), kz_json:objects()) -> kz_json:objects()).
+build_foldr_fun(DeviceId, Params, Call) ->
+    fun(EndpointId, Acc) when EndpointId =:= DeviceId ->
+            lager:debug("skipping ~s since it matches device id", [EndpointId]),
+            Acc;
+       (EndpointId, Acc) ->
+            lager:debug("building endpoint ~s", [EndpointId]),
+            case kz_endpoint:build(EndpointId, Params, Call) of
+                {'ok', Endpoint} -> Endpoint ++ Acc;
+                _Else -> Acc
+            end
+    end.
 
 -spec build_originate(kz_json:objects(), ne_binary(), kapps_call:call()) -> kz_proplist().
 build_originate([], _CallId, _Call) -> [];
@@ -159,10 +165,8 @@ send_originate_req(OriginateProps, _Call) ->
                                ,20 * ?MILLISECONDS_IN_SECOND
                                ).
 
--spec is_resp(kz_json:objects() | kz_json:object()) -> boolean().
+-spec is_resp(kz_json:objects()) -> boolean().
 is_resp([JObj|_]) ->
-    is_resp(JObj);
-is_resp(JObj) ->
     kapi_resource:originate_resp_v(JObj).
 
 -spec is_originate_uuid(kz_json:object(), api_binary()) -> boolean().
