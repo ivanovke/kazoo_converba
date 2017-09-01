@@ -34,16 +34,20 @@ handle(Data, Call) ->
 -spec maybe_update_metaflow(kz_json:object(), kapps_call:call(), kz_json:objects()) ->
                                    {'stop', kapps_call:call()}.
 maybe_update_metaflow(Data, Call, Results) ->
-    case [Result || Result <- Results, is_resp(Result)] of
+    case [Result
+          || Result <- Results,
+             kapi_resource:originate_resp_v(Result)
+         ]
+    of
         [] ->
             lager:debug("no useful responses"),
             {'stop', Call};
         [Resp|_] ->
-            CallId = kz_json:get_value(<<"Call-ID">>, Resp),
+            CallId = kz_json:get_ne_binary_value(<<"Call-ID">>, Resp),
             maybe_update_metaflow(Data, Call, Results, CallId)
     end.
 
--spec maybe_update_metaflow(kz_json:object(), kapps_call:call(), kz_json:objects(), api_binary()) ->
+-spec maybe_update_metaflow(kz_json:object(), kapps_call:call(), kz_json:objects(), api_ne_binary()) ->
                                    {'stop', kapps_call:call()}.
 maybe_update_metaflow(Data, Call, Results, CallId) ->
     case [Result || Result <- Results, is_originate_uuid(Result, CallId)] of
@@ -51,7 +55,7 @@ maybe_update_metaflow(Data, Call, Results, CallId) ->
             lager:debug("no matching originate_uuid"),
             {'stop', Call};
         [OriginateUUID|_] ->
-            ControlQueue = kz_json:get_value(<<"Outbound-Call-Control-Queue">>, OriginateUUID),
+            ControlQueue = kz_json:get_ne_binary_value(<<"Outbound-Call-Control-Queue">>, OriginateUUID),
             lager:debug("should use ~s for control of ~s", [ControlQueue, CallId]),
             maybe_update_metaflow_control(Data, Call, CallId, ControlQueue, source_leg_of_dtmf(Data, Call))
     end.
@@ -72,10 +76,7 @@ maybe_update_metaflow_control(_Data, Call, CallId, ControlQueue, 'a') ->
 maybe_update_metaflow_control(_Data, Call, CallId, _ControlQueue, 'b') ->
     lager:debug("update ~s to ~s with ctl ~s", [kapps_call:other_leg_call_id(Call), CallId, _ControlQueue]),
 
-    konami_code_statem:transfer_to(
-      kapps_call:set_other_leg_call_id(CallId, Call)
-                                  ,'b'
-     ),
+    konami_code_statem:transfer_to(kapps_call:set_other_leg_call_id(CallId, Call), 'b'),
 
     {'stop', Call}.
 
@@ -86,7 +87,7 @@ source_leg_of_dtmf(<<_/binary>> = SourceDTMF, Call) ->
         'false' -> 'b'
     end;
 source_leg_of_dtmf(Data, Call) ->
-    source_leg_of_dtmf(kz_json:get_value(<<"dtmf_leg">>, Data), Call).
+    source_leg_of_dtmf(kz_json:get_ne_binary_value(<<"dtmf_leg">>, Data), Call).
 
 -spec get_originate_req(kz_json:object(), kapps_call:call()) -> kz_proplist().
 get_originate_req(Data, Call) ->
@@ -95,7 +96,7 @@ get_originate_req(Data, Call) ->
     TargetId = kz_json:get_ne_binary_value(<<"target_id">>, Data),
     UnbridgedOnly = kz_json:is_true(<<"unbridged_only">>, Data, 'true'),
 
-    Params = kz_json:set_values([{<<"source">>, ?MODULE}
+    Params = kz_json:set_values([{<<"source">>, kz_term:to_binary(?MODULE)}
                                 ,{<<"can_call_self">>, 'true'}
                                 ]
                                ,Data
@@ -105,7 +106,7 @@ get_originate_req(Data, Call) ->
     Endpoints = build_endpoints(TargetType, TargetId, SourceDeviceId, Params, Call),
     build_originate(Endpoints, SourceOfDTMF, UnbridgedOnly, Call).
 
--spec build_endpoints(ne_binary(), ne_binary(), ne_binary(), kz_json:object(), kapps_call:call()) ->
+-spec build_endpoints(ne_binary(), ne_binary(), api_ne_binary(), kz_json:object(), kapps_call:call()) ->
                              kz_json:objects().
 build_endpoints(<<"device">>, Id, Id, _Params, _Call) ->
     lager:debug("skipping ~s since it same source device id", [Id]),
@@ -123,7 +124,7 @@ build_endpoints(<<"user">>, OwnerId, SourceDeviceId, Params, Call) ->
 
     lists:foldr(FoldR, [], kz_attributes:owned_by(OwnerId, <<"device">>, Call)).
 
--spec build_foldr_fun(ne_binary(), kz_proplist(), kapps_call:call()) ->
+-spec build_foldr_fun(api_ne_binary(), kz_json:object(), kapps_call:call()) ->
                              kz_json:objects().
 build_foldr_fun(SourceDeviceId, Params, Call) ->
     fun(EndpointId, Acc) when EndpointId =:= SourceDeviceId ->
@@ -175,18 +176,20 @@ send_originate_req(OriginateProps, _Call) ->
                                ,20 * ?MILLISECONDS_IN_SECOND
                                ).
 
--spec is_resp(kz_json:objects()) -> boolean().
+-spec is_resp(kz_json:objects() | kz_json:object()) -> boolean().
 is_resp([JObj|_]) ->
+    kapi_resource:originate_resp_v(JObj);
+is_resp(JObj) ->
     kapi_resource:originate_resp_v(JObj).
 
 -spec is_originate_uuid(kz_json:object(), api_binary()) -> boolean().
 is_originate_uuid(JObj, CallId) ->
     kapi_resource:originate_uuid_v(JObj)
         andalso (CallId =:= 'undefined'
-                 orelse CallId =:= kz_json:get_value(<<"Outbound-Call-ID">>, JObj)
+                 orelse CallId =:= kz_json:get_ne_binary_value(<<"Outbound-Call-ID">>, JObj)
                 ).
 
--spec find_device_id_for_leg(ne_binary()) -> api_binary().
+-spec find_device_id_for_leg(ne_binary()) -> api_ne_binary().
 find_device_id_for_leg(CallId) ->
     case kz_amqp_worker:call([{<<"Fields">>, [<<"Authorizing-ID">>]}
                              ,{<<"Call-ID">>, CallId}
