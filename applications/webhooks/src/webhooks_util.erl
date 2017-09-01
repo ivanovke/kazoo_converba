@@ -337,7 +337,7 @@ debug_resp({'error', E}, Debug, Retries) ->
        | Debug
       ]).
 
--spec retries_left(api_pos_integer()) -> api_pos_integer() | ne_binary().
+-spec retries_left(hook_retries() | 'undefined') -> hook_retries() | api_ne_binary().
 retries_left('undefined') -> 'undefined';
 retries_left(1) -> <<"retries exceeded">>;
 retries_left(Retries) -> Retries - 1.
