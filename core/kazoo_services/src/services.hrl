@@ -24,8 +24,9 @@
        ,kz_term:to_atom(kapps_account_config:get_global(ResellerId
                                                        ,?CONFIG_CAT
                                                        ,<<"master_account_bookkeeper">>
-                                                       ,'kz_bookkeeper_local'
-                                                       ))
+                                                       ,<<"kz_bookkeeper_local">>
+                                                       )
+                       )
        ).
 
 -ifdef(TEST).
