@@ -197,7 +197,7 @@ code_checks: apps_of_app
 	@$(ROOT)/scripts/kz_diaspora.bash
 
 apps_of_app:
-	@ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/apps_of_app.escript
+	# @ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/apps_of_app.escript
 
 apis:
 	@ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/generate-schemas.escript
