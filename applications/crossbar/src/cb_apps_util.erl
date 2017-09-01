@@ -68,7 +68,7 @@ allowed_app(AccountId, AppId) ->
 %%--------------------------------------------------------------------
 -spec load_default_apps() -> kz_json:objects().
 load_default_apps() ->
-    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
     case kz_datamgr:get_results(MasterAccountDb, ?CB_APPS_STORE_LIST, ['include_docs']) of
         {'ok', JObjs} -> [maybe_set_account(MasterAccountDb, JObj) || JObj <- JObjs];
         {'error', _E} ->

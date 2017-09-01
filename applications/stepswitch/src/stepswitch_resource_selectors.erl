@@ -101,7 +101,7 @@ rule_to_resource(Rule, Resources, Number, OffnetJObj, SelectorsDb) ->
 maybe_get_hunt_account(OffnetJObj) ->
     HuntAccountId = kapi_offnet_resource:hunt_account_id(OffnetJObj),
     AccountId = kapi_offnet_resource:account_id(OffnetJObj),
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     case kz_term:is_not_empty(HuntAccountId)
         andalso kz_util:is_in_account_hierarchy(HuntAccountId, AccountId, 'true')
     of

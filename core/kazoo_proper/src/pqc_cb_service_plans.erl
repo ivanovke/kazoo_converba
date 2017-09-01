@@ -15,14 +15,14 @@
 create_service_plan(_API, ServicePlan) ->
     %% No API to add service plans to master account
     %% Doing so manually for now
-    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
     kz_datamgr:save_doc(MasterAccountDb, ServicePlan).
 
 -spec delete_service_plan(pqc_cb_api:state(), ne_binary()) ->
                                  {'ok', kz_json:object()} |
                                  {'error', any()}.
 delete_service_plan(_API, ServicePlanId) ->
-    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
     kz_datamgr:del_doc(MasterAccountDb, ServicePlanId).
 
 -spec assign_service_plan(pqc_cb_api:state(), ne_binary() | proper_types:type(), ne_binary()) -> pqc_cb_api:response().

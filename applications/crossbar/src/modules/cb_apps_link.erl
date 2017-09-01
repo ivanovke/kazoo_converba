@@ -101,7 +101,7 @@ validate(Context, ?AUTHORIZE) ->
 -spec account_info(cb_context:context()) -> kz_json:object().
 account_info(Context) ->
     AccountId = get_request_account(Context),
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     kz_json:from_list(
       [{<<"account_id">>, AccountId}
       ,{<<"account_name">>, kz_account:fetch_name(AccountId)}
@@ -116,7 +116,7 @@ auth_info(Context) ->
     JObj = cb_context:auth_doc(Context),
     AccountId = cb_context:auth_account_id(Context),
     OwnerId = kz_json:get_value(<<"owner_id">>, JObj),
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     kz_json:from_list(
       [{<<"account_id">>, AccountId}
       ,{<<"owner_id">>, OwnerId}

@@ -272,7 +272,7 @@ multi_factor_allowed_for_account(_Master, _ClaimAccountId, _ParentAccount, Inclu
 
 -spec master_account_id() -> api_ne_binary().
 master_account_id() ->
-    case kapps_util:get_master_account_id() of
+    case kz_util:get_master_account_id() of
         {'ok', Id} -> Id;
         {'error', _R} ->
             lager:debug("failed to find master account id: ~p", [_R]),

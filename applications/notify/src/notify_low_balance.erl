@@ -140,7 +140,7 @@ build_and_send_email(TxtBody, HTMLBody, Subject, To, Props) ->
 %%--------------------------------------------------------------------
 -spec collect_recipients(ne_binary()) -> api_binaries() | api_binary().
 collect_recipients(AccountId) ->
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     get_email(AccountId, MasterAccountId).
 
 -spec get_email(ne_binary(), ne_binary()) -> api_binaries() | api_binary().

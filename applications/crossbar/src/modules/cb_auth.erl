@@ -449,7 +449,7 @@ normalize_view(JObj, Acc) ->
 
 -spec account_id(cb_contxt:context()) -> ne_binary().
 account_id(Context) ->
-    {ok, Master} = kapps_util:get_master_account_id(),
+    {ok, Master} = kz_util:get_master_account_id(),
     Source = [cb_context:req_param(Context, <<"account_id">>)
              ,cb_context:account_id(Context)
              ,cb_context:auth_account_id(Context)

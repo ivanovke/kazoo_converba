@@ -881,7 +881,7 @@ maybe_set_api_url(AppUrl, MetaData) ->
 -spec maybe_create_app(file:filename_all(), kz_json:object()) -> 'ok'.
 -spec maybe_create_app(file:filename_all(), kz_json:object(), ne_binary()) -> 'ok'.
 maybe_create_app(AppPath, MetaData) ->
-    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
     maybe_create_app(AppPath, MetaData, MasterAccountDb).
 
 maybe_create_app(AppPath, MetaData, MasterAccountDb) ->
@@ -1020,7 +1020,7 @@ find_metadata(AppPath) ->
 
 -spec apps() -> no_return.
 apps() ->
-    {ok, MA} = kapps_util:get_master_account_db(),
+    {ok, MA} = kz_util:get_master_account_db(),
     case kz_datamgr:get_results(MA, ?CB_APPS_STORE_LIST) of
         {error, _R} -> lager:debug("failed to read apps in ~s: ~p", [MA, _R]);
         {ok, JObjs} -> lists:foreach(fun print_app/1, JObjs)
@@ -1029,7 +1029,7 @@ apps() ->
 
 -spec app(ne_binary()) -> no_return.
 app(AppNameOrId) ->
-    {ok, MA} = kapps_util:get_master_account_db(),
+    {ok, MA} = kz_util:get_master_account_db(),
     case find_app(MA, AppNameOrId) of
         {ok, AppJObj} -> print_app(AppJObj);
         {error, _} ->
@@ -1074,7 +1074,7 @@ update_app(AppId, Path, Value) ->
         <<"_id">> -> ok;
         <<"pvt_", _/binary>> -> ok;
         ?NE_BINARY ->
-            {ok, MA} = kapps_util:get_master_account_db(),
+            {ok, MA} = kz_util:get_master_account_db(),
             Update = [{Path, Value}],
             case kz_datamgr:update_doc(MA, AppId, Update) of
                 {ok, _} -> app(AppId);
@@ -1105,14 +1105,14 @@ set_app_features(AppId, Value) ->
 
 -spec set_app_icon(ne_binary(), ne_binary()) -> no_return.
 set_app_icon(AppId, PathToPNGIcon) ->
-    {ok, MA} = kapps_util:get_master_account_db(),
+    {ok, MA} = kz_util:get_master_account_db(),
     io:format("Processing...\n"),
     Icon = {filename:basename(PathToPNGIcon), PathToPNGIcon},
     update_icon(AppId, MA, Icon).
 
 -spec set_app_screenshots(ne_binary(), ne_binary()) -> no_return.
 set_app_screenshots(AppId, PathToScreenshotsFolder) ->
-    {ok, MA} = kapps_util:get_master_account_db(),
+    {ok, MA} = kz_util:get_master_account_db(),
     io:format("Processing...\n"),
     SShots = [{filename:basename(SShot), SShot}
               || SShot <- filelib:wildcard(kz_term:to_list(PathToScreenshotsFolder) ++ "/*.png")

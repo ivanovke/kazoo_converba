@@ -579,7 +579,7 @@ maybe_enable_descendant_hooks(Account) ->
 
 -spec init_metadata(ne_binary(), kz_json:object()) -> 'ok'.
 init_metadata(Id, JObj) ->
-    case kapps_util:get_master_account_db() of
+    case kz_util:get_master_account_db() of
         {'ok', MasterAccountDb} -> init_metadata(Id, JObj, MasterAccountDb);
         _ -> lager:warning("master account not available")
     end.
@@ -626,7 +626,7 @@ available_events() ->
 
 -spec fetch_available_events() -> ne_binaries().
 fetch_available_events() ->
-    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
     View = <<"webhooks/webhook_meta_listing">>,
     case kz_datamgr:get_all_results(MasterAccountDb, View) of
         {'ok', []} -> [];

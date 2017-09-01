@@ -131,7 +131,7 @@ maybe_set_from(DataJObj) ->
 -spec maybe_set_to(kz_json:object()) -> kz_json:object().
 maybe_set_to(DataJObj) ->
     AccountId = kz_json:get_value(<<"account_id">>, DataJObj),
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     case find_port_authority(MasterAccountId, AccountId) of
         'undefined' -> DataJObj;
         ?NE_BINARY=To ->

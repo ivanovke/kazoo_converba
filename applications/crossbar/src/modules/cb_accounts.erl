@@ -98,7 +98,7 @@ allowed_methods() ->
     [?HTTP_PUT].
 
 allowed_methods(AccountId) ->
-    allowed_methods_on_account(AccountId, kapps_util:get_master_account_id()).
+    allowed_methods_on_account(AccountId, kz_util:get_master_account_id()).
 
 -spec allowed_methods_on_account(ne_binary(), {'ok', ne_binary()} | {'error', any()}) ->
                                         http_methods().
@@ -650,7 +650,7 @@ disallow_direct_clients(AccountId, Context) ->
 maybe_disallow_direct_clients(_AccountId, Context, 'true') ->
     Context;
 maybe_disallow_direct_clients(_AccountId, Context, 'false') ->
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     AuthAccountId = cb_context:auth_account_id(Context),
     AuthUserReseller = kz_services:get_reseller_id(AuthAccountId),
     case AuthUserReseller =/= MasterAccountId
@@ -806,7 +806,7 @@ leak_is_reseller(Context) ->
 
 -spec leak_billing_mode(cb_context:context(), api_binary()) -> cb_context:context().
 leak_billing_mode(Context, PathAccountId) ->
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
     AuthAccountId = cb_context:auth_account_id(Context),
     RespJObj = cb_context:resp_data(Context),
     case find_reseller_id(Context, PathAccountId) of
@@ -1220,7 +1220,7 @@ add_pvt_tree(Context) ->
 
 -spec create_new_tree(cb_context:context() | api_binary()) -> ne_binaries() | 'error'.
 create_new_tree('undefined') ->
-    case kapps_util:get_master_account_id() of
+    case kz_util:get_master_account_id() of
         {'ok', MasterAccountId} -> [MasterAccountId];
         {'error', _} ->
             case kz_util:get_all_accounts() of

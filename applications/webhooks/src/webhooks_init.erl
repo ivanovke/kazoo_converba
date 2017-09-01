@@ -45,7 +45,7 @@ maybe_init_account(JObj, _Props) ->
 -spec init_master_account_db() -> 'ok'.
 -spec init_master_account_db(ne_binary()) -> 'ok'.
 init_master_account_db() ->
-    case kapps_util:get_master_account_db() of
+    case kz_util:get_master_account_db() of
         {'ok', MasterAccountDb} ->
             init_master_account_db(MasterAccountDb);
         {'error', _} ->
