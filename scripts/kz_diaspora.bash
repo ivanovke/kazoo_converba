@@ -289,6 +289,10 @@ kapps_util() {
     replace kapps_util amqp_pool_request kz_amqp_worker call
     replace kapps_util amqp_pool_request_custom kz_amqp_worker call_custom
     replace kapps_util amqp_pool_collect kz_amqp_worker call_collect
+    replace kapps_util find_oldest_doc kz_docs oldest
+    replace kapps_util get_master_account_id kz_util get_master_account_id
+    replace kapps_util get_master_account_db kz_util get_master_account_db
+    replace kapps_util is_master_account kz_util is_master_account
 }
 
 echo "ensuring kz_term is used"

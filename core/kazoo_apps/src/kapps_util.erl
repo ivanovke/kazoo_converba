@@ -18,15 +18,11 @@
 
         ,are_all_enabled/1
         ]).
--export([get_master_account_id/0
-        ,get_master_account_db/0
-        ]).
--export([is_master_account/1]).
+
 -export([account_depth/1]).
 -export([account_has_descendants/1
         ,account_descendants/1
         ]).
--export([find_oldest_doc/1]).
 -export([get_call_termination_reason/1]).
 -export([get_view_json/1, get_view_json/2]).
 -export([get_views_json/2]).
@@ -134,51 +130,6 @@ replicate_from_account(AccountDb, TargetDb, FilterDoc) ->
 %%--------------------------------------------------------------------
 %% @public
 %% @doc
-%% Find the system admin from the system_config if set, if not
-%% set it to the oldest acccount and return that.
-%% @end
-%%--------------------------------------------------------------------
--spec get_master_account_id() -> {'ok', ne_binary()} |
-                                 {'error', atom()}.
-get_master_account_id() ->
-    case kapps_config:get_ne_binary(?KZ_SYSTEM_CONFIG_ACCOUNT, <<"master_account_id">>) of
-        'undefined' ->
-            R = kz_datamgr:get_results(?KZ_ACCOUNTS_DB, <<"accounts/listing_by_id">>, ['include_docs']),
-            find_master_account_id(R);
-        Default -> {'ok', Default}
-    end.
-
-find_master_account_id({'error', _}=E) -> E;
-find_master_account_id({'ok', []}) -> {'error', 'no_accounts'};
-find_master_account_id({'ok', Accounts}) ->
-    {'ok', OldestAccountId}=Ok =
-        find_oldest_doc([kz_json:get_value(<<"doc">>, Account)
-                         || Account <- Accounts
-                        ]),
-    lager:debug("setting ~s.master_account_id to ~s", [?KZ_SYSTEM_CONFIG_ACCOUNT, OldestAccountId]),
-    {'ok', _} = kapps_config:set(?KZ_SYSTEM_CONFIG_ACCOUNT, <<"master_account_id">>, OldestAccountId),
-    Ok.
-
--spec get_master_account_db() -> {'ok', ne_binary()} |
-                                 {'error', any()}.
-get_master_account_db() ->
-    case get_master_account_id() of
-        {'error', _}=E -> E;
-        {'ok', AccountId} ->
-            {'ok', kz_util:format_account_db(AccountId)}
-    end.
-
--spec is_master_account(ne_binary()) -> boolean().
-is_master_account(Account) ->
-    AccountId = kz_util:format_account_id(Account),
-    case get_master_account_id() of
-        {'ok', AccountId} -> 'true';
-        _Else -> 'false'
-    end.
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
 %% @end
 %%--------------------------------------------------------------------
 -spec account_depth(ne_binary()) -> api_non_neg_integer().
@@ -214,29 +165,6 @@ account_descendants(?MATCH_ACCOUNT_RAW(AccountId)) ->
 account_has_descendants(Account) ->
     AccountId = kz_util:format_account_id(Account),
     [] =/= (account_descendants(AccountId) -- [AccountId]).
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%% Given a list of accounts this returns the id of the oldest
-%% @end
-%%--------------------------------------------------------------------
--spec find_oldest_doc(kz_json:objects()) ->
-                             {'ok', ne_binary()} |
-                             {'error', 'no_docs'}.
-find_oldest_doc([]) -> {'error', 'no_docs'};
-find_oldest_doc([First|Docs]) ->
-    {_, OldestDocID} =
-        lists:foldl(fun(Doc, {Created, _}=Eldest) ->
-                            Older = kz_doc:created(Doc),
-                            case Older < Created  of
-                                'true' -> {Older, kz_doc:id(Doc)};
-                                'false' -> Eldest
-                            end
-                    end
-                   ,{kz_doc:created(First), kz_doc:id(First)}
-                   ,Docs),
-    {'ok', OldestDocID}.
 
 %%--------------------------------------------------------------------
 %% @public
