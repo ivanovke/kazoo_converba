@@ -44,8 +44,10 @@
 -type path() :: keys() | key() | pos_integer() | [pos_integer()].
 -type paths() :: [path()].
 
--type json_proplist() :: [{key(), json_term()}] | [].
+-type json_proplist() :: [{key(), json_term()}].
 -type json_proplists() :: [json_proplist()].
+
+-type json_proplist_input() :: [{key(), json_term() | 'undefined'}].
 
 -type encode_option() :: 'uescape'
                        | 'pretty'

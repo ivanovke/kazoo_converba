@@ -258,7 +258,7 @@ are_equal(JObj1, JObj2) ->
 %% the sub-proplist [{d,e}] needs converting before being passed to the next level
 %% @end
 %%--------------------------------------------------------------------
--spec from_list(json_proplist() | flat_proplist()) -> object() | flat_object().
+-spec from_list(json_proplist_input() | flat_proplist()) -> object() | flat_object().
 from_list(L) when is_list(L) ->
     ?JSON_WRAPPER(props:filter_undefined(L)).
 
