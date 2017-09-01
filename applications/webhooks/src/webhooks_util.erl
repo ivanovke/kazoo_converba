@@ -310,11 +310,7 @@ debug_resp({'ok', RespCode, RespHeaders, RespBody}, Debug, Retries) ->
                      ,{<<"reason">>, <<"bad response code">>}
                      ]
              end,
-    RetriesLeft = case Retries of
-                      'undefined' -> 'undefined';
-                      1 -> <<"retries exceeded">>;
-                      _ -> Retries - 1
-                  end,
+    RetriesLeft = retries_left(Retries),
     kz_json:from_list(
       [{<<"resp_status_code">>, kz_term:to_binary(RespCode)}
       ,{<<"resp_headers">>, Headers}
@@ -331,11 +327,7 @@ debug_resp({'error', E}, Debug, Retries) ->
                     lager:debug("failed to convert error ~p", [E]),
                     <<"unknown">>
             end,
-    RetriesLeft = case Retries of
-                      'undefined' -> 'undefined';
-                      1 -> <<"retries exceeded">>;
-                      _ -> Retries
-                  end,
+    RetriesLeft = retries_left(Retries),
     kz_json:from_list(
       [{<<"result">>, <<"failure">>}
       ,{<<"reason">>, <<"kazoo http client error">>}
@@ -344,6 +336,11 @@ debug_resp({'error', E}, Debug, Retries) ->
       ,{<<"client_error">>, Error}
        | Debug
       ]).
+
+-spec retries_left(api_pos_integer()) -> api_pos_integer() | ne_binary().
+retries_left('undefined') -> 'undefined';
+retries_left(1) -> <<"retries exceeded">>;
+retries_left(Retries) -> Retries - 1.
 
 -spec fix_value(number() | list()) -> number() | ne_binary().
 fix_value(N) when is_number(N) -> N;
@@ -358,7 +355,7 @@ fix_error_value({E, R}) ->
 fix_error_value(E) ->
     kz_term:to_binary(E).
 
--spec hook_id(kz_json:object()) -> ne_binary().
+-spec hook_id(kzd_webhook:doc()) -> ne_binary().
 -spec hook_id(ne_binary(), ne_binary()) -> ne_binary().
 hook_id(JObj) ->
     hook_id(kz_json:get_first_defined([<<"pvt_account_id">>
@@ -366,7 +363,7 @@ hook_id(JObj) ->
                                       ]
                                      ,JObj
                                      )
-           ,kz_json:get_first_defined([<<"_id">>, <<"ID">>], JObj)
+           ,kz_doc:id(JObj)
            ).
 
 hook_id(AccountId, Id) ->
@@ -417,7 +414,7 @@ load_hooks(Srv, WebHooks) ->
     _ = [load_hook(Srv, kz_json:get_value(<<"doc">>, Hook)) || Hook <- WebHooks],
     lager:debug("sent hooks into server ~p", [Srv]).
 
--spec load_hook(pid(), kz_json:object()) -> 'ok'.
+-spec load_hook(pid(), kzd_webhook:doc()) -> 'ok'.
 load_hook(Srv, WebHook) ->
     try jobj_to_rec(WebHook) of
         Hook -> gen_listener:cast(Srv, {'add_hook', Hook})
@@ -438,7 +435,7 @@ load_hook(Srv, WebHook) ->
                         ])
     end.
 
--spec jobj_to_rec(kz_json:object()) -> webhook().
+-spec jobj_to_rec(kzd_webhook:doc()) -> webhook().
 jobj_to_rec(Hook) ->
     #webhook{id = hook_id(Hook)
             ,uri = kzd_webhook:uri(Hook)
