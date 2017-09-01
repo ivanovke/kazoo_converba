@@ -125,7 +125,7 @@ build_endpoints(<<"user">>, OwnerId, SourceDeviceId, Params, Call) ->
     lists:foldr(FoldR, [], kz_attributes:owned_by(OwnerId, <<"device">>, Call)).
 
 -spec build_foldr_fun(api_ne_binary(), kz_json:object(), kapps_call:call()) ->
-                             kz_json:objects().
+                             fun((ne_binary(), kz_json:objects()) -> kz_json:objects()).
 build_foldr_fun(SourceDeviceId, Params, Call) ->
     fun(EndpointId, Acc) when EndpointId =:= SourceDeviceId ->
             lager:debug("skipping ~s since it matches device id", [EndpointId]),
