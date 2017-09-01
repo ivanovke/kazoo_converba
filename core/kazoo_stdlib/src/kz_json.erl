@@ -532,11 +532,13 @@ to_map(Key, JObj) ->
 to_map_fold(JObj, #{}=Map) ->
     maps:merge(Map, recursive_to_map(JObj)).
 
--spec recursive_to_map(object() | objects()) -> map() | [map()].
+-spec recursive_to_map(object() | objects() | json_term()) -> map() | [map()].
 recursive_to_map(?JSON_WRAPPER(Props)) ->
-    maps:from_list([{K, recursive_to_map(V)} || {K, V} <- Props]);
+    maps:from_list([{K, recursive_to_map(V)} || {K, V} <- Props, V =/= 'undefined']);
 recursive_to_map(List) when is_list(List) ->
-    [recursive_to_map(Item) || Item <- List].
+    [recursive_to_map(Item) || Item <- List];
+recursive_to_map(Value) -> Value.
+
 
 %%--------------------------------------------------------------------
 %% @public

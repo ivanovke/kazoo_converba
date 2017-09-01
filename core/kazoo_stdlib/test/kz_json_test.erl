@@ -623,11 +623,12 @@ are_all_there(Values, Keys, Vs, Ks) ->
                               ]).
 
 codec_test_() ->
+    JObjWithUndefined = kz_json:from_list(?PROPS_WITH_UNDEFINED),
     [?_assertEqual(?CODEC_JOBJ, kz_json:decode(kz_json:encode(?CODEC_JOBJ)))
     ,?_assertThrow({error,{invalid_ejson,undefined}}, kz_json:encode(undefined))
     ,?_assertThrow({error,{invalid_ejson,undefined}}, kz_json:encode(?JSON_WRAPPER(?PROPS_WITH_UNDEFINED)))
-    ,?_assert(kz_json:are_equal(kz_json:from_list(?PROPS_WITH_UNDEFINED)
-                               ,kz_json:decode(kz_json:encode(kz_json:from_list(?PROPS_WITH_UNDEFINED)))
+    ,?_assert(kz_json:are_equal(JObjWithUndefined
+                               ,kz_json:decode(kz_json:encode(JObjWithUndefined))
                                ))
     ].
 
