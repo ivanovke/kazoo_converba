@@ -95,7 +95,7 @@ clean(Bin, Opts) ->
     lists:foldl(fun(F, B) -> F(B, Opts) end, Bin, Routines).
 
 -type strip_option() :: 'both' | 'left' | 'right' | char() | nonempty_string().
--type strip_options() :: [strip_option()].
+-type strip_options() :: ['left' | 'right'].
 
 -spec strip(binary()) -> binary().
 -spec strip(binary(), strip_option() | strip_options()) -> binary().
