@@ -64,7 +64,7 @@ authenticate() ->
 -spec api_key() -> ne_binary().
 -spec api_key(ne_binary()) -> ne_binary().
 api_key() ->
-    case kz_util:get_master_account_id() of
+    case kz_config_accounts:master_account_id() of
         {'ok', MasterAccountId} ->
             api_key(MasterAccountId);
         {'error', _} ->

@@ -29,7 +29,7 @@
 -spec promote(ne_binary()) -> {'error', _} | 'ok'.
 promote(Account) ->
     AccountId = kz_util:format_account_id(Account, 'raw'),
-    case kz_util:is_master_account(AccountId) of
+    case kz_config_accounts:is_master_account(AccountId) of
         'true' -> {'error', 'master_account'};
         'false' ->
             case has_reseller_descendants(AccountId) of
@@ -60,7 +60,7 @@ do_promote(AccountId) ->
 -spec demote(ne_binary()) -> {'error', _} | 'ok'.
 demote(Account) ->
     AccountId = kz_util:format_account_id(Account, 'raw'),
-    case kz_util:is_master_account(AccountId) of
+    case kz_config_accounts:is_master_account(AccountId) of
         'true' -> {'error', 'master_account'};
         'false' ->
             case has_reseller_descendants(AccountId) of

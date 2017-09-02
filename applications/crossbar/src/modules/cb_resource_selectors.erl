@@ -205,7 +205,7 @@ post_doc(Context) ->
 set_selectors_db(Context) ->
     case is_global_request(Context) of
         'true' ->
-            {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+            {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
             MasterSelectorsDb = kz_util:format_resource_selectors_db(MasterAccountId),
             cb_context:set_account_db(Context, MasterSelectorsDb);
         'false' ->
@@ -218,7 +218,7 @@ set_selectors_db(Context) ->
 set_account_db(Context) ->
     case is_global_request(Context) of
         'true' ->
-            {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
+            {'ok', MasterAccountDb} = kz_config_accounts:master_account_db(),
             cb_context:set_account_db(Context, MasterAccountDb);
         'false' -> Context
     end.

@@ -497,7 +497,7 @@ create_braintree_customer(Context) ->
 -spec maybe_charge_billing_id(float(), cb_context:context()) -> cb_context:context().
 maybe_charge_billing_id(Amount, Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),
-    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
 
     case kz_services:find_reseller_id(cb_context:account_id(Context)) of
         MasterAccountId ->

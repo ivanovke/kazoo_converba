@@ -83,7 +83,7 @@ timezone_test_() ->
     Missing = kz_json:delete_key(<<"timezone">>, MasterAccount),
     Invalid = kz_json:set_value(<<"timezone">>, <<"inherit">>, MasterAccount),
     Updated = kz_account:set_timezone(MasterAccount, <<"updated">>),
-    Default = kz_account:default_timezone(),
+    Default = kz_config_accounts:default_timezone(),
     [{"validate timezone returns the expected value", ?_assertEqual(<<"America/Los_Angeles">>, kz_account:timezone(MasterAccount))}
     ,{"validate timezone returns the default if not found", ?_assertEqual(Default, kz_account:timezone(Missing))}
     ,{"validate timezone returns the default if set to 'inherit'", ?_assertEqual(Default, kz_account:timezone(Invalid))}

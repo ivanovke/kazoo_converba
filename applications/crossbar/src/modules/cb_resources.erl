@@ -207,7 +207,7 @@ maybe_set_account_to_master(Context) ->
 
 -spec set_account_to_master(cb_context:context()) -> cb_context:context().
 set_account_to_master(Context) ->
-    {'ok', AccountId} = kz_util:get_master_account_id(),
+    {'ok', AccountId} = kz_config_accounts:master_account_id(),
     cb_context:set_account_id(Context, AccountId).
 
 -spec validate_resources(cb_context:context(), http_method()) -> cb_context:context().

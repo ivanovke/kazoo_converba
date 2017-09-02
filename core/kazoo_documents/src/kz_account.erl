@@ -19,7 +19,7 @@
         ,fetch_name/1, name/1, name/2, set_name/2
         ,fetch_realm/1, realm/1, realm/2, set_realm/2
         ,language/1, language/2, set_language/2
-        ,timezone/1, timezone/2, set_timezone/2, default_timezone/0
+        ,timezone/1, timezone/2, set_timezone/2
         ,parent_account_id/1
         ,get_parent_account/1, get_parent_account_id/1
         ,tree/1, tree/2 ,set_tree/2
@@ -263,22 +263,22 @@ set_language(JObj, Language) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec timezone(api_ne_binary() | doc()) -> ne_binary().
-timezone('undefined') -> default_timezone();
+timezone('undefined') -> kz_config_accounts:default_timezone();
 timezone(AccountId) when is_binary(AccountId) ->
     case fetch(AccountId) of
         {'ok', JObj} -> timezone(JObj);
         {'error', _R} ->
             lager:debug("failed to open account ~s definition, returning system's default timezone"),
-            default_timezone()
+            kz_config_accounts:default_timezone()
     end;
 timezone(JObj) ->
     timezone(JObj, 'undefined').
 
 -spec timezone(api_ne_binary() | doc(), Default) -> ne_binary() | Default.
 timezone('undefined', 'undefined') ->
-    default_timezone();
+    kz_config_accounts:default_timezone();
 timezone('undefined', <<"inherit">>) -> %% UI-1808
-    default_timezone();
+    kz_config_accounts:default_timezone();
 timezone('undefined', Default) ->
     Default;
 timezone(AccountId, Default) when is_binary(AccountId) ->
@@ -287,7 +287,7 @@ timezone(AccountId, Default) when is_binary(AccountId) ->
         {'error', _R} when Default =:= 'undefined';
                            Default =:= <<"inherit">> -> %% UI-1808
             lager:debug("failed to open account ~s definition, returning system's default timezone"),
-            default_timezone();
+            kz_config_accounts:default_timezone();
         {'error', _} ->
             Default
     end;
@@ -299,13 +299,9 @@ timezone(JObj, Default) ->
     end.
 
 -spec parent_timezone(ne_binary(), api_ne_binary()) -> ne_binary().
-parent_timezone(AccountId, AccountId) -> default_timezone();
-parent_timezone(_AccountId, 'undefined') -> default_timezone();
+parent_timezone(AccountId, AccountId) -> kz_config_accounts:default_timezone();
+parent_timezone(_AccountId, 'undefined') -> kz_config_accounts:default_timezone();
 parent_timezone(_AccountId, ParentId) -> timezone(ParentId).
-
--spec default_timezone() -> ne_binary().
-default_timezone() ->
-    kapps_config:get_ne_binary(<<"accounts">>, <<"default_timezone">>, <<"America/Los_Angeles">>).
 
 %%--------------------------------------------------------------------
 %% @public

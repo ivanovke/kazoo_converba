@@ -982,7 +982,7 @@ migrate_template_attachments(Context, _Id, 'undefined') ->
     lager:debug("no attachments to migrate for ~s", [_Id]),
     Context;
 migrate_template_attachments(Context, Id, Attachments) ->
-    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
+    {'ok', MasterAccountDb} = kz_config_accounts:master_account_db(),
     kz_json:foldl(fun(AName, AMeta, C) ->
                           lager:debug("migrate attachment ~s", [AName]),
                           migrate_template_attachment(MasterAccountDb, Id, AName, AMeta, C)

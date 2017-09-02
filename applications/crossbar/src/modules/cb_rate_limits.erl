@@ -60,7 +60,7 @@ authorize(Context) ->
     case thing_type_id(Context) of
         'undefined' -> 'false';
         _ ->
-            {'ok', MasterAccount} = kz_util:get_master_account_id(),
+            {'ok', MasterAccount} = kz_config_accounts:master_account_id(),
             AuthAccountId = cb_context:auth_account_id(Context),
             AuthAccountId =:= MasterAccount
                 orelse kz_services:is_reseller(AuthAccountId)

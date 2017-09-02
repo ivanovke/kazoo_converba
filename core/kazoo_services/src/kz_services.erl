@@ -764,7 +764,7 @@ find_reseller_id(Account) ->
 -ifdef(TEST).
 master_account_id() -> {ok, ?A_MASTER_ACCOUNT_ID}.
 -else.
-master_account_id() -> kz_util:get_master_account_id().
+master_account_id() -> kz_config_accounts:master_account_id().
 -endif.
 
 %%%===================================================================

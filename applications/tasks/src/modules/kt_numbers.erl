@@ -474,7 +474,7 @@ dump(_, Todo) ->
     dump_next(fun db_and_view_for_dump/1, Todo).
 
 init_dump(ExtraArgs) ->
-    {ok, MasterAccountId} = kz_util:get_master_account_id(),
+    {ok, MasterAccountId} = kz_config_accounts:master_account_id(),
     case maps:get(auth_account_id, ExtraArgs) of
         MasterAccountId -> {ok, knm_util:get_all_number_dbs()};
         _ -> stop

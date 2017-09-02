@@ -438,8 +438,8 @@ load_app(Context, AppId) ->
 %% @private
 -spec load_app_from_master_account(cb_context:context(), ne_binary()) -> cb_context:context().
 load_app_from_master_account(Context, AppId) ->
-    {'ok', MasterAccountDb} = kz_util:get_master_account_db(),
-    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+    {'ok', MasterAccountDb} = kz_config_accounts:master_account_db(),
+    {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
     DefaultApps = cb_apps_util:load_default_apps(),
     case [JObj || JObj <- DefaultApps, kz_doc:id(JObj) == AppId] of
         [AppJObj] ->

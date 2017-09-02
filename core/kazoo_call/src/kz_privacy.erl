@@ -242,7 +242,7 @@ get_legacy_anonymizer({'ok', JObj}) ->
 
 -spec get_master_account() -> api_binary().
 get_master_account() ->
-    case kz_util:get_master_account_id() of
+    case kz_config_accounts:master_account_id() of
         {'ok', AccountId} -> AccountId;
         {'error', _} -> 'undefined'
     end.

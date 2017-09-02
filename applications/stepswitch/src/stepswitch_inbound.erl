@@ -270,7 +270,7 @@ maybe_transition_port_in(NumberProps, JObj) ->
 
 -spec transition_port_in(ne_binary(), api_object()) -> any().
 transition_port_in(Number, JObj) ->
-    {ok, MasterAccountId} = kz_util:get_master_account_id(),
+    {ok, MasterAccountId} = kz_config_accounts:master_account_id(),
     Comment = <<(?APP_NAME)/binary, "-", (?APP_VERSION)/binary, " automagic">>,
     Metadata = knm_port_request:transition_metadata(MasterAccountId, undefined, Comment),
     case knm_port_request:get(Number) of

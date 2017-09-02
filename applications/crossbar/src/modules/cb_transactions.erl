@@ -137,7 +137,7 @@ put(Context, ?CREDIT) ->
 -spec maybe_credit_billing_id(cb_context:context()) -> cb_context:context().
 maybe_credit_billing_id(Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),
-    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
     CreditAccountId = cb_context:account_id(Context),
 
     case kz_services:find_reseller_id(CreditAccountId) of
@@ -233,7 +233,7 @@ delete(Context, ?DEBIT) ->
 -spec maybe_debit_billing_id(cb_context:context()) -> cb_context:context().
 maybe_debit_billing_id(Context) ->
     AuthAccountId = cb_context:auth_account_id(Context),
-    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
 
     case kz_services:find_reseller_id(cb_context:account_id(Context)) of
         MasterAccountId ->
@@ -350,7 +350,7 @@ validate_transaction(Context, _PathToken, _Verb) ->
 -spec validate_credit(cb_context:context(), api_float()) -> cb_context:context().
 validate_credit(Context) ->
     Amount = kz_json:get_float_value(<<"amount">>, cb_context:req_data(Context)),
-    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
 
     case cb_context:is_superduper_admin(Context) of
         'true' -> validate_credit(Context, Amount);
@@ -394,7 +394,7 @@ validate_debit(Context, Amount) when Amount =< 0 ->
     Message = kz_json:from_list([{<<"message">>, <<"Amount must be more than 0">>}]),
     cb_context:add_validation_error(<<"amount">>, <<"minimum">>, Message, Context);
 validate_debit(Context, Amount) ->
-    {'ok', MasterAccountId} = kz_util:get_master_account_id(),
+    {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
     AuthAccountId = cb_context:auth_account_id(Context),
     AccountId = cb_context:account_id(Context),
     case AuthAccountId == MasterAccountId
