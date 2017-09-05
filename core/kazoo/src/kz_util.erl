@@ -11,8 +11,6 @@
 
 -export([log_stacktrace/0, log_stacktrace/1, log_stacktrace/2
 
-        ,format_resource_selectors_id/1, format_resource_selectors_id/2
-        ,format_resource_selectors_db/1
         ]).
 
 -export([try_load_module/1]).
@@ -71,8 +69,6 @@
 
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
 -include_lib("kazoo_stdlib/include/kz_log.hrl").
--include_lib("kazoo_stdlib/include/kz_databases.hrl").
--include_lib("kazoo/include/kz_system_config.hrl").
 -include_lib("kazoo/include/kz_api_literals.hrl").
 
 -define(KAZOO_VERSION_CACHE_KEY, {?MODULE, 'kazoo_version'}).
@@ -157,72 +153,6 @@ change_syslog_log_level(L) when is_atom(L) ->
     lager:set_loglevel({'lager_syslog_backend',{"2600hz",'local0'}}, L);
 change_syslog_log_level(L) ->
     change_syslog_log_level(kz_term:to_atom(L)).
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%% Given a representation of an account resource_selectors return it in a 'encoded',
-%% unencoded or 'raw' format.
-%% @end
-%%--------------------------------------------------------------------
--spec format_resource_selectors_id(api_binary()) -> api_binary().
--spec format_resource_selectors_id(api_binary(), kzd_account:account_format()) -> api_binary();
-                                  (api_binary(), gregorian_seconds()) -> api_binary(). %% MODb!
-
-format_resource_selectors_id(Account) ->
-    format_resource_selectors_id(Account, 'raw').
-
-format_resource_selectors_id('undefined', _Encoding) -> 'undefined';
-
-format_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_RAW(_)=AccountId, 'raw') ->
-    AccountId;
-format_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_ENCODED(_)=AccountDb, 'encoded') ->
-    AccountDb;
-format_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_UNENCODED(_)=AccountDbUn, 'unencoded') ->
-    AccountDbUn;
-format_resource_selectors_id(?MATCH_ACCOUNT_RAW(A, B, Rest), 'raw') ->
-    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
-format_resource_selectors_id(?MATCH_ACCOUNT_RAW(A, B, Rest), 'encoded') ->
-    ?MATCH_RESOURCE_SELECTORS_ENCODED(A, B, Rest);
-format_resource_selectors_id(?MATCH_ACCOUNT_RAW(A, B, Rest), 'unencoded') ->
-    ?MATCH_RESOURCE_SELECTORS_UNENCODED(A, B, Rest);
-
-format_resource_selectors_id(AccountId, 'raw') ->
-    raw_resource_selectors_id(AccountId);
-format_resource_selectors_id(AccountId, 'unencoded') ->
-    ?MATCH_RESOURCE_SELECTORS_RAW(A,B,Rest) = raw_resource_selectors_id(AccountId),
-    kz_term:to_binary(["account/", A, "/", B, "/", Rest]);
-format_resource_selectors_id(AccountId, 'encoded') ->
-    ?MATCH_RESOURCE_SELECTORS_RAW(A,B,Rest) = raw_resource_selectors_id(AccountId),
-    kz_term:to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
-
-%% @private
-%% Returns account_id() | any()
-%% Passes input along if not account_id() | account_db() | account_db_unencoded().
--spec raw_resource_selectors_id(ne_binary()) -> ne_binary().
-raw_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_RAW(AccountId)) ->
-    AccountId;
-raw_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_UNENCODED(A, B, Rest)) ->
-    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
-raw_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_ENCODED(A, B, Rest)) ->
-    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
-raw_resource_selectors_id(Other) ->
-    case lists:member(Other, ?KZ_SYSTEM_DBS) of
-        'true' -> Other;
-        'false' ->
-            lager:warning("raw account resource_selectors id doesn't process '~p'", [Other]),
-            Other
-    end.
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%% Given a representation of an account resource_selectors return it in a 'encoded',
-%% @end
-%%--------------------------------------------------------------------
--spec format_resource_selectors_db(api_binary()) -> api_binary().
-format_resource_selectors_db(AccountId) ->
-    format_resource_selectors_id(AccountId, 'encoded').
 
 %%--------------------------------------------------------------------
 %% @public

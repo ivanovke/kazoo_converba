@@ -32,6 +32,7 @@
 
         ,error_to_binary/1
         ]).
+
 -export([is_true/1, is_false/1
         ,is_boolean/1
         ,is_ne_binary/1, is_api_ne_binary/1
@@ -44,7 +45,21 @@
 
 -export([a1hash/3, floor/1, ceiling/1]).
 
+%% Formatters for IDs/DBs
+-export([format_resource_selectors_id/1, format_resource_selectors_id/2
+        ,format_resource_selectors_db/1
+
+         %% Account naming-related functionality
+        ,format_account_id/1, format_account_id/2, format_account_id/3
+        ,format_account_mod_id/1, format_account_mod_id/2, format_account_mod_id/3
+        ,format_account_db/1
+        ,format_account_modb/1, format_account_modb/2
+        ]).
+
+-export_type([account_format/0]).
+
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kz_databases.hrl").
 
 %%--------------------------------------------------------------------
 %% @public
@@ -365,3 +380,233 @@ error_to_binary(Reason) ->
         'error':'function_clause' -> <<"Unknown Error">>;
         'error':'badarg' -> <<"Unknown Error">>
     end.
+
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account resource_selectors return it in a 'encoded',
+%% unencoded or 'raw' format.
+%% @end
+%%--------------------------------------------------------------------
+-spec format_resource_selectors_id(api_binary()) -> api_binary().
+-spec format_resource_selectors_id(api_binary(), kzd_account:account_format()) -> api_binary();
+                                  (api_binary(), gregorian_seconds()) -> api_binary(). %% MODb!
+
+format_resource_selectors_id(Account) ->
+    format_resource_selectors_id(Account, 'raw').
+
+format_resource_selectors_id('undefined', _Encoding) -> 'undefined';
+
+format_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_RAW(_)=AccountId, 'raw') ->
+    AccountId;
+format_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_ENCODED(_)=AccountDb, 'encoded') ->
+    AccountDb;
+format_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_UNENCODED(_)=AccountDbUn, 'unencoded') ->
+    AccountDbUn;
+format_resource_selectors_id(?MATCH_ACCOUNT_RAW(A, B, Rest), 'raw') ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+format_resource_selectors_id(?MATCH_ACCOUNT_RAW(A, B, Rest), 'encoded') ->
+    ?MATCH_RESOURCE_SELECTORS_ENCODED(A, B, Rest);
+format_resource_selectors_id(?MATCH_ACCOUNT_RAW(A, B, Rest), 'unencoded') ->
+    ?MATCH_RESOURCE_SELECTORS_UNENCODED(A, B, Rest);
+
+format_resource_selectors_id(AccountId, 'raw') ->
+    raw_resource_selectors_id(AccountId);
+format_resource_selectors_id(AccountId, 'unencoded') ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A,B,Rest) = raw_resource_selectors_id(AccountId),
+    to_binary(["account/", A, "/", B, "/", Rest]);
+format_resource_selectors_id(AccountId, 'encoded') ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A,B,Rest) = raw_resource_selectors_id(AccountId),
+    to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
+
+%% @private
+%% Returns account_id() | any()
+%% Passes input along if not account_id() | account_db() | account_db_unencoded().
+-spec raw_resource_selectors_id(ne_binary()) -> ne_binary().
+raw_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_RAW(AccountId)) ->
+    AccountId;
+raw_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_UNENCODED(A, B, Rest)) ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+raw_resource_selectors_id(?MATCH_RESOURCE_SELECTORS_ENCODED(A, B, Rest)) ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+raw_resource_selectors_id(Other) ->
+    case lists:member(Other, ?KZ_SYSTEM_DBS) of
+        'true' -> Other;
+        'false' ->
+            lager:warning("raw account resource_selectors id doesn't process '~p'", [Other]),
+            Other
+    end.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account resource_selectors return it in a 'encoded',
+%% @end
+%%--------------------------------------------------------------------
+-spec format_resource_selectors_db(api_binary()) -> api_binary().
+format_resource_selectors_db(AccountId) ->
+    format_resource_selectors_id(AccountId, 'encoded').
+
+
+
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account return it in a 'encoded',
+%% unencoded or 'raw' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% Note: if given (Account, GregorianSeconds), it will return
+%%   an MODb in the 'encoded' format.
+%% @end
+%%--------------------------------------------------------------------
+-type account_format() :: 'unencoded' | 'encoded' | 'raw'.
+-spec format_account_id(api_binary()) -> api_binary().
+-spec format_account_id(api_binary(), account_format()) -> api_binary();
+                       (api_binary(), gregorian_seconds()) -> api_binary(). %% MODb!
+
+format_account_id(Account) ->
+    format_account_id(Account, 'raw').
+
+format_account_id('undefined', _Encoding) -> 'undefined';
+format_account_id(DbName, Timestamp)
+  when is_integer(Timestamp)
+       andalso Timestamp > 0 ->
+    {{Year, Month, _}, _} = calendar:gregorian_seconds_to_datetime(Timestamp),
+    format_account_id(DbName, Year, Month);
+format_account_id(<<"accounts">>, _) -> <<"accounts">>;
+
+format_account_id(?MATCH_ACCOUNT_RAW(_)=AccountId, 'raw') ->
+    AccountId;
+format_account_id(?MATCH_ACCOUNT_ENCODED(_)=AccountDb, 'encoded') ->
+    AccountDb;
+format_account_id(?MATCH_ACCOUNT_UNENCODED(_)=AccountDbUn, 'unencoded') ->
+    AccountDbUn;
+
+format_account_id(AccountId, 'raw') ->
+    raw_account_id(AccountId);
+format_account_id(AccountId, 'unencoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_id(AccountId),
+    to_binary(["account/", A, "/", B, "/", Rest]);
+format_account_id(AccountId, 'encoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_id(AccountId),
+    to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
+
+%% @private
+%% Returns account_id() | any()
+%% Passes input along if not account_id() | account_db() | account_db_unencoded().
+-spec raw_account_id(ne_binary()) -> ne_binary().
+raw_account_id(?MATCH_ACCOUNT_RAW(AccountId)) ->
+    AccountId;
+raw_account_id(?MATCH_ACCOUNT_UNENCODED(A, B, Rest)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_ACCOUNT_ENCODED(A, B, Rest)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_MODB_SUFFIX_RAW(AccountId, _, _)) ->
+    AccountId;
+raw_account_id(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, _, _)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, _, _)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_RESOURCE_SELECTORS_RAW(AccountId)) ->
+    AccountId;
+raw_account_id(?MATCH_RESOURCE_SELECTORS_UNENCODED(A, B, Rest)) ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+raw_account_id(?MATCH_RESOURCE_SELECTORS_ENCODED(A, B, Rest)) ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+raw_account_id(<<"number/", _/binary>>=Other) ->
+    Other;
+raw_account_id(Other) ->
+    case lists:member(Other, ?KZ_SYSTEM_DBS) of
+        'true' -> Other;
+        'false' ->
+            lager:warning("raw account id doesn't process '~p'", [Other]),
+            Other
+    end.
+
+%% @private
+%% (modb()) -> modb_id() when modb() :: modb_id() | modb_db() | modb_db_unencoded()
+%% Crashes if given anything else.
+-spec raw_account_modb(ne_binary()) -> ne_binary().
+raw_account_modb(?MATCH_MODB_SUFFIX_RAW(_, _, _) = AccountId) ->
+    AccountId;
+raw_account_modb(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, Year, Month)) ->
+    ?MATCH_MODB_SUFFIX_RAW(A, B, Rest, Year, Month);
+raw_account_modb(?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, Year, Month)) ->
+    ?MATCH_MODB_SUFFIX_RAW(A, B, Rest, Year, Month).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account, build an MODb in an 'encoded' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_id(api_binary(), kz_year() | ne_binary(), kz_month() | ne_binary()) ->
+                               api_binary().
+format_account_id('undefined', _Year, _Month) -> 'undefined';
+format_account_id(AccountId, Year, Month) when not is_integer(Year) ->
+    format_account_id(AccountId, to_integer(Year), Month);
+format_account_id(AccountId, Year, Month) when not is_integer(Month) ->
+    format_account_id(AccountId, Year, to_integer(Month));
+format_account_id(Account, Year, Month) when is_integer(Year),
+                                             is_integer(Month) ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_id(Account),
+    ?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, to_binary(Year), kz_time:pad_month(Month)).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account, build an MODb in an 'encoded' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_mod_id(api_binary()) -> api_binary().
+-spec format_account_mod_id(api_binary(), gregorian_seconds() | kz_now()) -> api_binary().
+-spec format_account_mod_id(api_binary(), kz_year() | ne_binary(), kz_month() | ne_binary()) ->
+                                   api_binary().
+
+format_account_mod_id(Account) ->
+    format_account_mod_id(Account, os:timestamp()).
+
+format_account_mod_id(AccountId, {_,_,_}=Timestamp) ->
+    {{Year, Month, _}, _} = calendar:now_to_universal_time(Timestamp),
+    format_account_id(AccountId, Year, Month);
+format_account_mod_id(AccountId, Timestamp) when is_integer(Timestamp) ->
+    {{Year, Month, _}, _} = calendar:gregorian_seconds_to_datetime(Timestamp),
+    format_account_id(AccountId, Year, Month).
+
+format_account_mod_id(AccountId, Year, Month) ->
+    format_account_id(AccountId, Year, Month).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account return it in a 'encoded' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_db(api_binary()) -> api_binary().
+format_account_db(AccountId) ->
+    format_account_id(AccountId, 'encoded').
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an MODb return the MODb in the specified format.
+%% Note: crashes if given anything but an MODb (in any format).
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_modb(ne_binary()) -> ne_binary().
+-spec format_account_modb(ne_binary(), account_format()) -> ne_binary().
+format_account_modb(AccountId) ->
+    format_account_modb(AccountId, 'raw').
+format_account_modb(AccountId, 'raw') ->
+    raw_account_modb(AccountId);
+format_account_modb(AccountId, 'unencoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_modb(AccountId),
+    to_binary(["account/", A, "/", B, "/", Rest]);
+format_account_modb(AccountId, 'encoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_modb(AccountId),
+    to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
