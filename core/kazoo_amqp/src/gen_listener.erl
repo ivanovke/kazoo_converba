@@ -32,6 +32,7 @@
 -export([start_link/3
         ,start_link/4
         ,start_link/5
+        ,stop/1
         ]).
 
 -export([start_listener/2]).
@@ -213,6 +214,10 @@ start_link(Name, Module, Params, InitArgs, Options) when is_atom(Module),
                                                          is_list(Options)
                                                          ->
     gen_server:start_link(Name, ?MODULE, [Module, Params, InitArgs], Options).
+
+-spec stop(gen_server_name()) -> 'ok'.
+stop(Name) ->
+    gen_server:stop(Name, 'normal', 5000).
 
 -spec queue_name(server_ref()) -> ne_binary().
 queue_name(Srv) -> gen_server:call(Srv, 'queue_name').
