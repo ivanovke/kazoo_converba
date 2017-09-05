@@ -237,7 +237,7 @@ update_status(Job, Status) ->
 start_recovery() ->
     kz_util:put_callid(?MODULE),
     {Year, Month, _} = erlang:date(),
-    maybe_recover_jobs(Year, Month, kz_util:get_all_accounts('raw')).
+    maybe_recover_jobs(Year, Month, kzd_account:get_all_accounts('raw')).
 
 -spec maybe_recover_jobs(kz_year(), kz_month(), ne_binaries()) -> 'ok'.
 maybe_recover_jobs(Year, Month, Accounts) ->
@@ -414,9 +414,9 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec job_modb(ne_binary(), ne_binary()) -> ne_binary().
 job_modb(AccountId, ?MATCH_MODB_PREFIX(Year,Month,_)) ->
-    kz_util:format_account_mod_id(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month));
+    kzd_account:format_account_mod_id(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month));
 job_modb(AccountId, ?MATCH_MODB_PREFIX_M1(Year,Month,_)) ->
-    kz_util:format_account_mod_id(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)).
+    kzd_account:format_account_mod_id(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)).
 
 -spec start_timer() -> reference().
 start_timer() ->

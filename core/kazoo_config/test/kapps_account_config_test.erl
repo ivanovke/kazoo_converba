@@ -169,7 +169,7 @@ get_with_strategy_general() ->
     SysValue = get_fixture_value([<<"default">>, <<"root_obj_key">>], "test_cat_system"),
 
     Default = kz_json:from_list([{<<"new_key">>, <<"new_val">>}]),
-    Db = kz_util:format_account_db(?NOT_CUSTOMIZED_ALL_ACCOUNTS),
+    Db = kzd_account:format_account_db(?NOT_CUSTOMIZED_ALL_ACCOUNTS),
 
     [{"Testing strategy with no account id"
      ,[{"undefined account id should result in system_config"

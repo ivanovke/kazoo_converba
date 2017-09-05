@@ -128,7 +128,7 @@ reconcile() ->
     reconcile('all').
 
 reconcile('all') ->
-    Accounts = kz_util:get_all_accounts('raw'),
+    Accounts = kzd_account:get_all_accounts('raw'),
     Total = length(Accounts),
     _ = lists:foldr(fun(Account, Current) ->
                             io:format("reconcile services (~p/~p) '~s'~n", [Current, Total, Account]),

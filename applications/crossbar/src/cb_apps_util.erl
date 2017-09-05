@@ -84,7 +84,7 @@ load_default_apps() ->
 -spec create_apps_store_doc(ne_binary()) -> {'ok', kz_json:object()} | {'error', any()}.
 create_apps_store_doc(Account) ->
     Doc = kzd_apps_store:new(Account),
-    kz_datamgr:save_doc(kz_util:format_account_db(Account), Doc).
+    kz_datamgr:save_doc(kzd_account:format_account_db(Account), Doc).
 
 %%%===================================================================
 %%% Internal functions
@@ -286,10 +286,10 @@ maybe_set_account(Account, Doc) ->
 %%--------------------------------------------------------------------
 -spec set_account(ne_binary(), kz_json:object()) -> kz_json:object().
 set_account(Account, JObj) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     Corrected =
         kz_json:set_values(
-          [{<<"pvt_account_id">>, kz_util:format_account_id(Account)}
+          [{<<"pvt_account_id">>, kzd_account:format_account_id(Account)}
           ,{<<"pvt_account_db">>, AccountDb}
           ], JObj),
     case kz_datamgr:save_doc(AccountDb, Corrected) of

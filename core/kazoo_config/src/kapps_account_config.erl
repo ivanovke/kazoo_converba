@@ -301,7 +301,7 @@ load_config_from_account(no_account_id, _Category) ->
     {error, no_account_id};
 load_config_from_account(AccountId, Category) ->
     DocId = kapps_config_util:account_doc_id(Category),
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     kz_datamgr:open_cache_doc(AccountDb, DocId, [{cache_failures, [not_found]}]).
 -endif.
 
@@ -424,7 +424,7 @@ maybe_set_account(no_account_id, _, Key, Value) ->
 maybe_set_account(AccountId, Category, Key, Value) ->
     JObj = kz_json:set_value(Key, Value, get(AccountId, Category)),
     JObj1 = update_config_for_saving(AccountId, JObj),
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     {'ok', JObj2} = kz_datamgr:ensure_saved(AccountDb, JObj1),
     JObj2.
 -endif.
@@ -452,14 +452,14 @@ set_account_or_merge_global(AccountId, Category, Key, Value) ->
     Doc = kz_doc:set_id(get_global(AccountId, Category), kapps_config_util:account_doc_id(Category)),
     Doc1 = kz_json:set_value(Key, Value, update_config_for_saving(AccountId, Doc)),
 
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     {'ok', JObj1} = kz_datamgr:ensure_saved(AccountDb, Doc1),
     JObj1.
 -endif.
 
 -spec update_config_for_saving(ne_binary(), kz_json:object()) -> kz_json:object().
 update_config_for_saving(AccountId, JObj) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     kz_doc:update_pvt_parameters(JObj
                                 ,AccountDb
                                 ,[{type, <<"account_config">>}
@@ -474,7 +474,7 @@ update_config_for_saving(AccountId, JObj) ->
 %%--------------------------------------------------------------------
 -spec flush(ne_binary(), ne_binary()) -> ok.
 flush(Account, Category) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     kz_datamgr:flush_cache_doc(AccountDb, kapps_config_util:account_doc_id(Category)),
     flush_all_strategies(Account, Category).
 
@@ -490,7 +490,7 @@ flush_all_strategies(Account, Category) ->
 
 -spec flush(ne_binary(), ne_binary(), ne_binary()) -> ok.
 flush(Account, Category, Strategy) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     CacheKey = strategy_cache_key(AccountId, Category, Strategy),
     kz_cache:erase_local(?KAPPS_CONFIG_CACHE, CacheKey).
 
@@ -570,7 +570,7 @@ config_origins(Doc, Acc) ->
     case {kz_doc:account_db(Doc), kz_doc:account_id(Doc)} of
         {undefined, 'undefined'} -> Acc;
         {undefined, DocAccountId} ->
-            Db = kz_util:format_account_db(DocAccountId),
+            Db = kzd_account:format_account_db(DocAccountId),
             [{db, Db, kz_doc:id(Doc)}|Acc];
         {Db, _} -> [{db, Db, kz_doc:id(Doc)}|Acc]
     end.
@@ -621,7 +621,7 @@ strategy_funs(<<"hierarchy_merge">>) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec account_id(api_account()) -> account_or_not().
-account_id(?NE_BINARY=Account) -> kz_util:format_account_id(Account);
+account_id(?NE_BINARY=Account) -> kzd_account:format_account_id(Account);
 account_id('undefined') -> 'no_account_id';
 account_id(JObj) -> account_id_from_jobj(JObj, kz_json:is_json_object(JObj)).
 
@@ -640,7 +640,7 @@ account_id_from_jobj(_Obj, 'false') ->
 
 -spec maybe_format_account_id(api_ne_binary()) -> account_or_not().
 maybe_format_account_id('undefined') -> 'no_account_id';
-maybe_format_account_id(Account) -> kz_util:format_account_id(Account).
+maybe_format_account_id(Account) -> kzd_account:format_account_id(Account).
 
 -spec maybe_new_system_doc({'ok', kz_json:object()} | {'error', any()}, ne_binary()) ->
                                   kz_json:object().
@@ -670,7 +670,7 @@ maybe_new_system_doc({'error', _}, Category) ->
 
 -spec migrate(ne_binary()) -> 'ok'.
 migrate(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     _ = [migrate_config_setting(AccountDb, From, To)
          || {From, To} <- ?ACCOUNT_CONFIG_MIGRATIONS
         ],

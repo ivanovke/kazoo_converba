@@ -30,7 +30,7 @@
 
 -spec migrate() -> 'ok'.
 migrate() ->
-    Accounts = kz_util:get_all_accounts(),
+    Accounts = kzd_account:get_all_accounts(),
     Total = length(Accounts),
     lists:foldr(fun(A, C) -> migrate_faxes_fold(A, C, Total, ?DEFAULT_MIGRATE_OPTIONS) end, 1, Accounts),
     migrate_outbound_faxes(),
@@ -39,7 +39,7 @@ migrate() ->
 -spec migrate(ne_binaries() | ne_binary()) -> 'ok'.
 migrate([]) -> 'ok';
 migrate(<<"override_existing_documents">>) ->
-    Accounts = kz_util:get_all_accounts(),
+    Accounts = kzd_account:get_all_accounts(),
     Total = length(Accounts),
     lists:foldr(fun(A, C) -> migrate_faxes_fold(A, C, Total, ?OVERRIDE_DOCS) end, 1, Accounts),
     'ok';
@@ -81,7 +81,7 @@ migrate_faxes(Account, Options) ->
 migrate_private_media(Account) ->
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzd_account:format_account_id(Account, 'encoded')
                 end,
     ViewOptions = [{'key', <<"private_media">>}],
     case kz_datamgr:get_results(AccountDb, <<"maintenance/listing_by_type">>, ViewOptions) of
@@ -115,7 +115,7 @@ migrate_private_media(_AccountDb, _JObj, _MediaType) -> 'ok'.
 recover_private_media(Account) ->
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzd_account:format_account_id(Account, 'encoded')
                 end,
     ViewOptions = [{'key', <<"fax">>}],
     case kz_datamgr:get_results(AccountDb, <<"maintenance/listing_by_type">>, ViewOptions) of
@@ -144,7 +144,7 @@ recover_private_media(AccountDb, Doc, _MediaType) ->
 migrate_faxes_to_modb(Account, Options) ->
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzd_account:format_account_id(Account, 'encoded')
                 end,
     ViewOptions = [{'key', <<"fax">>}],
     case kz_datamgr:get_results(AccountDb, <<"maintenance/listing_by_type">>, ViewOptions) of
@@ -179,7 +179,7 @@ migrate_fax_to_modb(AccountDb, DocId, JObj, Options) ->
     Timestamp = kz_doc:created(JObj, kz_time:now_s()),
     {{Year, Month, _}, _} = calendar:gregorian_seconds_to_datetime(Timestamp),
     AccountMODb = kazoo_modb:get_modb(AccountDb, Year, Month),
-    FaxMODb = kz_util:format_account_modb(AccountMODb, 'encoded'),
+    FaxMODb = kzd_account:format_account_modb(AccountMODb, 'encoded'),
     FaxId = <<(kz_term:to_binary(Year))/binary
               ,(kz_date:pad_month(Month))/binary
               ,"-"
@@ -405,8 +405,8 @@ migrate_outbound_fax(JObj) ->
     AccountId = kz_doc:account_id(JObj),
     AccountMODb = kazoo_modb:get_modb(AccountId, Year, Month),
 
-    ToDB = kz_util:format_account_modb(AccountMODb, 'encoded'),
-    ToId = ?MATCH_MODB_PREFIX(kz_term:to_binary(Year), kz_date:pad_month(Month),FromId),
+    ToDB = kzd_account:format_account_modb(AccountMODb, 'encoded'),
+    ToId = ?MATCH_MODB_PREFIX(kz_term:to_binary(Year), kz_time:pad_month(Month),FromId),
 
     case kazoo_modb:move_doc(FromDB, FromId, ToDB, ToId, ?OVERRIDE_DOCS) of
         {'ok', _} -> io:format("document ~s/~s moved to ~s/~s~n", [FromDB, FromId, ToDB, ToId]);

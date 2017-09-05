@@ -60,7 +60,7 @@ update_mwi(BoxId, AccountId) ->
 send_mwi_update(BoxId, AccountId) ->
     timer:sleep(?MILLISECONDS_IN_SECOND),
 
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     {'ok', BoxJObj} = kz_datamgr:open_cache_doc(AccountDb, BoxId),
     OwnerId = kzd_voicemail_box:owner_id(BoxJObj),
     BoxNumber = kzd_voicemail_box:mailbox_number(BoxJObj),

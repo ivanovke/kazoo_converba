@@ -297,6 +297,29 @@ kapps_util() {
     replace kz_account default_timezone kz_config_accounts default_timezone
 
     replace kz_account "" kzd_account ""
+
+    replace kz_util set_superduper_admin kzd_account update_superduper_admin
+    replace kz_util set_allow_number_additions kzd_account update_allow_number_additions
+    replace kz_util format_account_id kzd_account format_account_id
+    replace kz_util format_account_mod_id kzd_account format_account_mod_id
+    replace kz_util format_account_db kzd_account format_account_db
+    replace kz_util format_account_modb kzd_account format_account_modb
+
+    replace kz_util normalize_account_name kzd_account normalize_name
+    replace kz_util account_update kzd_account account_update
+
+    replace kz_util get_all_accounts kzd_account get_all_accounts
+    replace kz_util get_all_accounts_and_mods kzd_account get_all_accounts_and_mods
+    replace kz_util is_account_db kzd_account is_account_db
+    replace kz_util is_account_mod kzd_account is_account_mod
+    replace kz_util is_in_account_hierarchy kzd_account is_in_account_hierarchy
+    replace kz_util is_account_enabled kzd_account is_account_enabled
+    replace kz_util is_account_expired kzd_account is_account_expired
+
+    replace kz_util maybe_disable_account kzd_account maybe_disable_account
+    replace kz_util disable_account kzd_account disable_account
+    replace kz_util enable_account kzd_account enable_account
+    replace kz_util is_system_admin kzd_account is_system_admin
 }
 
 echo "ensuring kz_term is used"

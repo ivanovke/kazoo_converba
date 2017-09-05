@@ -59,7 +59,7 @@ init(RouteReqJObj, Type) ->
             #ts_callflow_state{aleg_callid=CallID
                               ,route_req_jobj=RouteReqJObj
                               ,acctid=AccountId
-                              ,acctdb=kz_util:format_account_id(AccountId, 'encoded')
+                              ,acctdb=kzd_account:format_account_id(AccountId, 'encoded')
                               ,kapps_call=kapps_call:from_route_req(RouteReqJObj)
                               }
     end.

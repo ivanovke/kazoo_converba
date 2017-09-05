@@ -139,7 +139,7 @@ generate_test_account_cdrs(AccountDb, CdrJObjFixture, Date, NumCdrs) ->
 
 -spec delete_test_accounts() -> 'ok' | kz_std_return().
 delete_test_accounts() ->
-    lists:foreach(fun maybe_delete_test_account/1, kz_util:get_all_accounts()).
+    lists:foreach(fun maybe_delete_test_account/1, kzd_account:get_all_accounts()).
 
 -spec maybe_get_migrate_account(account_db()) -> 'false' | kz_json:objects().
 maybe_get_migrate_account(AccountDb) ->
@@ -167,10 +167,10 @@ maybe_delete_test_account(AccountDb) ->
         [] -> lager:debug("account_db is not a migrate test: ~p", [AccountDb]);
         [_Account] ->
             NumMonthsToShard = kapps_config:get_integer(?CONFIG_CAT, <<"v3_migrate_num_months">>, 4),
-            AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+            AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
             {{CurrentYear, CurrentMonth, _}, _} = calendar:universal_time(),
             Months = get_prev_n_months(CurrentYear, CurrentMonth, NumMonthsToShard),
-            AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+            AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
             _ = [delete_account_database(AccountId, {Year, Month})
                  || {Year, Month} <- Months],
             kz_datamgr:del_doc(<<"accounts">>, AccountId),
@@ -182,7 +182,7 @@ maybe_delete_test_account(AccountDb) ->
 
 -spec delete_account_database(account_id(), ym()) -> 'ok' | {'error', any()}.
 delete_account_database(AccountId, {Year, Month}) ->
-    AccountMODb = kz_util:format_account_id(AccountId, Year, Month),
+    AccountMODb = kzd_account:format_account_id(AccountId, Year, Month),
     kz_datamgr:db_delete(AccountMODb).
 
 -spec get_prev_n_months(kz_year(), kz_month(), pos_integer()) -> yms().

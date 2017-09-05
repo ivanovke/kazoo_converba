@@ -21,7 +21,7 @@
 %%--------------------------------------------------------------------
 -spec blocking_refresh() -> 'ok'.
 blocking_refresh() ->
-    lists:foreach(fun refresh/1, kz_util:get_all_accounts()).
+    lists:foreach(fun refresh/1, kzd_account:get_all_accounts()).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -37,7 +37,7 @@ refresh() ->
     'started'.
 
 refresh(<<Account/binary>>) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     Views = kapps_util:get_views_json('conference', "views"),
     kz_datamgr:db_view_update(AccountDb, Views);
 refresh(Account) ->

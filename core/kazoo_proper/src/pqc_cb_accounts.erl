@@ -47,7 +47,7 @@ create_account(API, NewAccountName) ->
 
 -spec allow_number_additions(ne_binary()) -> {'ok', kzd_account:doc()}.
 allow_number_additions(AccountId) ->
-    {'ok', _Account} = kz_util:set_allow_number_additions(AccountId, 'true').
+    {'ok', _Account} = kzd_account:update_allow_number_additions(AccountId, 'true').
 
 -spec delete_account(pqc_cb_api:state(), ne_binary()) -> binary().
 delete_account(API, AccountId) ->
@@ -84,7 +84,7 @@ cleanup_account(API, AccountName) ->
     timer:sleep(1000).% was needed to stop overwhelming the socket, at least locally
 
 check_accounts_db(Name) ->
-    AccountName = kz_util:normalize_account_name(Name),
+    AccountName = kzd_account:normalize_name(Name),
     ViewOptions = [{'key', AccountName}],
     case kz_datamgr:get_results(?KZ_ACCOUNTS_DB, <<"accounts/listing_by_name">>, ViewOptions) of
         {'ok', []} -> 'ok';

@@ -124,7 +124,7 @@ assign(Account, IPDoc) ->
         'false' -> {'error', 'already_assigned'};
         'true' ->
             IPJObj = to_json(IPDoc),
-            AccountId = kz_util:format_account_id(Account, 'raw'),
+            AccountId = kzd_account:format_account_id(Account, 'raw'),
             Props = [{<<"pvt_assigned_to">>, AccountId}
                     ,{<<"pvt_modified">>, kz_time:now_s()}
                     ,{<<"pvt_status">>, ?ASSIGNED}

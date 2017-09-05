@@ -448,7 +448,7 @@ gsm_auth(AuthUser) -> {'ok', AuthUser}.
 get_account_id(JObj) ->
     case get_account_db(JObj) of
         'undefined' -> 'undefined';
-        AccountDb -> kz_util:format_account_id(AccountDb, 'raw')
+        AccountDb -> kzd_account:format_account_id(AccountDb, 'raw')
     end.
 
 %%-----------------------------------------------------------------------------
@@ -466,7 +466,7 @@ get_account_db(JObj) ->
                                    ], JObj)
     of
         'undefined' -> 'undefined';
-        AccountDb -> kz_util:format_account_id(AccountDb, 'encoded')
+        AccountDb -> kzd_account:format_account_id(AccountDb, 'encoded')
     end.
 
 -spec remove_dashes(ne_binary()) -> ne_binary().

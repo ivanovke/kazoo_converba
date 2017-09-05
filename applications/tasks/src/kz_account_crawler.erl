@@ -64,7 +64,7 @@ stop() ->
 -spec check(ne_binary()) -> 'ok'.
 check(Account)
   when is_binary(Account) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     case kz_datamgr:open_doc(?KZ_ACCOUNTS_DB, AccountId) of
         {'ok', AccountJObj} ->
             process_account(AccountId, kz_doc:account_db(AccountJObj), AccountJObj);
@@ -277,7 +277,7 @@ handle_initial_registration(AccountId) ->
 -spec notify_initial_registration(kzd_account:doc()) -> 'ok'.
 notify_initial_registration(AccountJObj) ->
     UpdatedAccountJObj = kzd_account:set_initial_registration_sent(AccountJObj, 'true'),
-    _ = kz_util:account_update(UpdatedAccountJObj),
+    _ = kzd_account:account_update(UpdatedAccountJObj),
     Req = [{<<"Account-ID">>, kz_doc:id(AccountJObj)}
           ,{<<"Occurrence">>, <<"registration">>}
            | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
@@ -316,7 +316,7 @@ handle_initial_call(AccountId) ->
 -spec notify_initial_call(kzd_account:doc()) -> 'ok'.
 notify_initial_call(AccountJObj) ->
     UpdatedAccountJObj = kzd_account:set_initial_call_sent(AccountJObj, 'true'),
-    _ = kz_util:account_update(UpdatedAccountJObj),
+    _ = kzd_account:account_update(UpdatedAccountJObj),
     Req = [{<<"Account-ID">>, kz_doc:id(AccountJObj)}
           ,{<<"Occurrence">>, <<"call">>}
            | kz_api:default_headers(?APP_NAME, ?APP_VERSION)
@@ -389,7 +389,7 @@ reset_low_balance_sent(AccountJObj0) ->
     lager:debug("resetting low balance sent"),
     AccountJObj1 = kzd_account:reset_low_balance_sent(AccountJObj0),
     AccountJObj2 = kzd_account:remove_low_balance_tstamp(AccountJObj1),
-    _ = kz_util:account_update(AccountJObj2),
+    _ = kzd_account:account_update(AccountJObj2),
     'ok'.
 
 -spec maybe_low_balance_notify(kzd_account:doc(), kz_transaction:units()) -> 'ok'.
@@ -444,5 +444,5 @@ notify_of_low_balance(AccountJObj, CurrentBalance) ->
 update_account_low_balance_sent(AccountJObj0) ->
     AccountJObj1 = kzd_account:set_low_balance_sent(AccountJObj0),
     AccountJObj2 = kzd_account:set_low_balance_tstamp(AccountJObj1),
-    _ = kz_util:account_update(AccountJObj2),
+    _ = kzd_account:account_update(AccountJObj2),
     'ok'.

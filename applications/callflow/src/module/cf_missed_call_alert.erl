@@ -105,7 +105,7 @@ send_missed_alert(Call, Notify, Emails) ->
 %%--------------------------------------------------------------------
 -spec find_email_addresses(kapps_call:call(), kz_json:objects()) -> ne_binaries().
 find_email_addresses(Call, Recipients) ->
-    AccountDb = kz_util:format_account_db(kapps_call:account_id(Call)),
+    AccountDb = kzd_account:format_account_db(kapps_call:account_id(Call)),
     lager:debug("call went unanswered and left no voicemail message, finding configured email addresses"),
     lists:flatten(
       [Emails

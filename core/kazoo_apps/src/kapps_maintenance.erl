@@ -143,9 +143,9 @@ migrate(Pause) ->
 
 -spec migrate(text() | integer(), ne_binaries()) -> 'no_return'.
 migrate(Pause, Databases) ->
-    Accounts = [kz_util:format_account_id(Db, 'encoded')
+    Accounts = [kzd_account:format_account_id(Db, 'encoded')
                 || Db <- Databases,
-                   kz_util:is_account_db(Db)
+                   kzd_account:is_account_db(Db)
                ],
     io:format("updating dbs...~n"),
     _ = refresh(Databases, Pause),
@@ -166,8 +166,8 @@ parallel_migrate(Workers) ->
 parallel_migrate(Workers, Pause) ->
     _ = migrate_system(),
     _ = kapps_config:migrate(),
-    {Accounts, Others} = lists:partition(fun kz_util:is_account_db/1, get_databases()),
-    AccountDbs = [kz_util:format_account_db(Db) || Db <- Accounts],
+    {Accounts, Others} = lists:partition(fun kzd_account:is_account_db/1, get_databases()),
+    AccountDbs = [kzd_account:format_account_db(Db) || Db <- Accounts],
     OtherSplit = kz_term:to_integer(length(Others) / kz_term:to_integer(Workers)),
     AccountSplit = kz_term:to_integer(length(AccountDbs) / kz_term:to_integer(Workers)),
     SplitDbs = split(AccountSplit, AccountDbs, OtherSplit, Others, []),
@@ -336,8 +336,8 @@ cleanup_aggregated_accounts([JObj|JObjs]) ->
 
 -spec cleanup_aggregated_account(ne_binary()) -> 'ok'.
 cleanup_aggregated_account(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
     case kz_datamgr:open_doc(AccountDb, AccountId) of
         {'error', 'not_found'} -> remove_aggregated_account(AccountDb);
         _Else -> 'ok'
@@ -345,7 +345,7 @@ cleanup_aggregated_account(Account) ->
 
 -spec remove_aggregated_account(ne_binary()) -> 'ok'.
 remove_aggregated_account(Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
     {'ok', JObj} = kz_datamgr:open_doc(?KZ_ACCOUNTS_DB, AccountId),
     io:format("    removing invalid ~s doc ~s~n", [?KZ_ACCOUNTS_DB, AccountId]),
     _ = kz_datamgr:del_doc(?KZ_ACCOUNTS_DB, JObj),
@@ -384,8 +384,8 @@ cleanup_aggregated_device(DocId) ->
     of
         'undefined' -> 'ok';
         Account ->
-            AccountDb = kz_util:format_account_id(Account, 'encoded'),
-            AccountId = kz_util:format_account_id(Account, 'raw'),
+            AccountDb = kzd_account:format_account_id(Account, 'encoded'),
+            AccountId = kzd_account:format_account_id(Account, 'raw'),
             verify_aggregated_device(AccountDb, AccountId, JObj)
     end.
 
@@ -410,7 +410,7 @@ verify_aggregated_device(AccountDb, AccountId, JObj) ->
                                      {'ok', kz_json:objects()} |
                                      {'error', any()}.
 cleanup_voicemail_media(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     Medias = get_medias(Account),
     Messages = get_messages(Account),
     ExtraMedia = Medias -- Messages,
@@ -424,7 +424,7 @@ cleanup_voicemail_media(Account) ->
 -spec cleanup_orphan_modbs() -> 'ok'.
 cleanup_orphan_modbs() ->
     AccountMODbs = kazoo_modbs:list_all('encoded'),
-    AccountIds = kz_util:get_all_accounts('raw'),
+    AccountIds = kzd_account:get_all_accounts('raw'),
     DeleteOrphaned = fun (AccountMODb) ->
                              kazoo_modb:maybe_delete(AccountMODb, AccountIds)
                      end,
@@ -432,7 +432,7 @@ cleanup_orphan_modbs() ->
 
 -spec get_messages(ne_binary()) -> ne_binaries().
 get_messages(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     ViewOptions = ['include_docs'],
     case kz_datamgr:get_results(AccountDb, ?VMBOX_VIEW, ViewOptions) of
         {'ok', ViewRes} ->
@@ -452,7 +452,7 @@ extract_messages(JObj, CurMessages) ->
 
 -spec get_medias(ne_binary()) -> ne_binaries().
 get_medias(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     ViewOptions = [],
     case kz_datamgr:get_results(AccountDb, ?PMEDIA_VIEW, ViewOptions) of
         {'ok', ViewRes} -> [kz_doc:id(JObj) || JObj<- ViewRes];
@@ -471,7 +471,7 @@ get_medias(Account) ->
 -spec migrate_limits(atom() | string() | binary()) -> 'ok'.
 
 migrate_limits() ->
-    migrate_all_limits(kz_util:get_all_accounts()).
+    migrate_all_limits(kzd_account:get_all_accounts()).
 
 -spec migrate_all_limits(ne_binaries()) -> 'ok'.
 migrate_all_limits(Accounts) ->
@@ -497,7 +497,7 @@ migrate_limits(Account) ->
 
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzd_account:format_account_id(Account, 'encoded')
                 end,
     {TT, IT} = clean_trunkstore_docs(AccountDb, TwowayTrunks, InboundTrunks),
     JObj = kz_json:from_list(
@@ -505,7 +505,7 @@ migrate_limits(Account) ->
              ,{<<"twoway_trunks">>, TT}
              ,{<<"inbound_trunks">>, IT}
              ,{<<"pvt_account_db">>, AccountDb}
-             ,{<<"pvt_account_id">>, kz_util:format_account_id(Account, 'raw')}
+             ,{<<"pvt_account_id">>, kzd_account:format_account_id(Account, 'raw')}
              ,{<<"pvt_type">>, <<"limits">>}
              ,{<<"pvt_created">>, TStamp}
              ,{<<"pvt_modified">>, TStamp}
@@ -561,7 +561,7 @@ clean_trunkstore_docs(AccountDb, [JObj|JObjs], Trunks, InboundTrunks) ->
 -spec migrate_media(atom() | string() | binary()) -> 'ok'.
 
 migrate_media() ->
-    Accounts = kz_util:get_all_accounts(),
+    Accounts = kzd_account:get_all_accounts(),
     Total = length(Accounts),
     lists:foldr(fun(A, C) -> migrate_media_fold(A, C, Total) end, 1, Accounts),
     'ok'.
@@ -576,7 +576,7 @@ migrate_media(Account) when not is_binary(Account) ->
 migrate_media(Account) ->
     AccountDb = case kz_datamgr:db_exists(Account) of
                     'true' -> Account;
-                    'false' -> kz_util:format_account_id(Account, 'encoded')
+                    'false' -> kzd_account:format_account_id(Account, 'encoded')
                 end,
     case kz_datamgr:get_results(AccountDb, <<"media/listing_by_name">>, []) of
         {'ok', []} -> io:format("no public media files in db ~s~n", [AccountDb]);
@@ -603,7 +603,7 @@ migrate_media(Account) ->
 %%--------------------------------------------------------------------
 -spec ensure_aggregate_devices() -> 'ok'.
 ensure_aggregate_devices() ->
-    ensure_aggregate_devices(kz_util:get_all_accounts()).
+    ensure_aggregate_devices(kzd_account:get_all_accounts()).
 
 -spec ensure_aggregate_devices(ne_binaries()) -> 'ok'.
 ensure_aggregate_devices([]) -> 'ok';
@@ -613,7 +613,7 @@ ensure_aggregate_devices([Account|Accounts]) ->
 
 -spec ensure_aggregate_device(ne_binary()) -> 'ok'.
 ensure_aggregate_device(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     case kz_datamgr:get_results(AccountDb, ?DEVICES_CB_LIST, ['include_docs']) of
         {'ok', Devices} ->
             AccountRealm = kzd_account:fetch_realm(Account),
@@ -656,10 +656,10 @@ should_remove_aggregate(AccountRealm, Device) ->
 %%--------------------------------------------------------------------
 -spec find_invalid_acccount_dbs() -> ne_binaries().
 find_invalid_acccount_dbs() ->
-    lists:foldr(fun find_invalid_acccount_dbs_fold/2, [], kz_util:get_all_accounts()).
+    lists:foldr(fun find_invalid_acccount_dbs_fold/2, [], kzd_account:get_all_accounts()).
 
 find_invalid_acccount_dbs_fold(AccountDb, Acc) ->
-    AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
     case kz_datamgr:open_doc(AccountDb, AccountId) of
         {'error', 'not_found'} -> [AccountDb|Acc];
         {'ok', _} -> Acc
@@ -931,7 +931,7 @@ purge_doc_type(Type, Account) when not is_binary(Account) ->
                   ).
 
 purge_doc_type(Type, Account, ChunkSize) ->
-    Db = kz_util:format_account_id(Account, 'encoded'),
+    Db = kzd_account:format_account_id(Account, 'encoded'),
     Opts = [{'key', Type}
            ,{'limit', ChunkSize}
            ,'include_docs'

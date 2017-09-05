@@ -145,7 +145,7 @@ collect_recipients(AccountId) ->
 
 -spec get_email(ne_binary(), ne_binary()) -> api_binaries() | api_binary().
 get_email(MasterAccountId, MasterAccountId) ->
-    AccountDb = kz_util:format_account_id(MasterAccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(MasterAccountId, 'encoded'),
     lager:debug("attempting to email low balance to master account ~s"
                ,[MasterAccountId]
                ),
@@ -161,7 +161,7 @@ get_email(AccountId, MasterAccountId) ->
     lager:debug("attempting to email low balance to account ~s"
                ,[AccountId]
                ),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:open_doc(AccountDb, AccountId) of
         {'ok', JObj} -> get_email(JObj, AccountId, MasterAccountId);
         {'error', _R} ->

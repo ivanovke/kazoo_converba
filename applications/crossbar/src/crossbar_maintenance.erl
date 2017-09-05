@@ -58,7 +58,7 @@
 %%--------------------------------------------------------------------
 -spec migrate() -> 'no_return'.
 migrate() ->
-    migrate(kz_util:get_all_accounts()).
+    migrate(kzd_account:get_all_accounts()).
 
 -spec migrate(ne_binaries()) -> 'no_return'.
 migrate(Accounts) ->
@@ -89,7 +89,7 @@ remove_deprecated_modules(Modules, Deprecated) ->
 
 -spec migrate_accounts_data() -> 'no_return'.
 migrate_accounts_data() ->
-    migrate_accounts_data(kz_util:get_all_accounts()).
+    migrate_accounts_data(kzd_account:get_all_accounts()).
 
 -spec migrate_accounts_data(ne_binaries()) -> 'no_return'.
 migrate_accounts_data([]) -> 'no_return';
@@ -200,13 +200,13 @@ find_account_by_number(Number) when not is_binary(Number) ->
 find_account_by_number(Number) ->
     case knm_number:lookup_account(Number) of
         {'ok', AccountId, _} ->
-            AccountDb = kz_util:format_account_db(AccountId),
+            AccountDb = kzd_account:format_account_db(AccountId),
             print_account_info(AccountDb, AccountId);
         {'error', {'not_in_service', AssignedTo}} ->
-            AccountDb = kz_util:format_account_db(AssignedTo),
+            AccountDb = kzd_account:format_account_db(AssignedTo),
             print_account_info(AccountDb, AssignedTo);
         {'error', {'account_disabled', AssignedTo}} ->
-            AccountDb = kz_util:format_account_db(AssignedTo),
+            AccountDb = kzd_account:format_account_db(AssignedTo),
             print_account_info(AccountDb, AssignedTo);
         {'error', Reason}=E ->
             io:format("failed to find account assigned to number '~s': ~p~n", [Number, Reason]),
@@ -279,7 +279,7 @@ find_account_by_realm(Realm) ->
                                 {'ok', ne_binary()} |
                                 {'error', any()}.
 find_account_by_id(Id) when is_binary(Id) ->
-    print_account_info(kz_util:format_account_id(Id, 'encoded'));
+    print_account_info(kzd_account:format_account_id(Id, 'encoded'));
 find_account_by_id(Id) ->
     find_account_by_id(kz_term:to_binary(Id)).
 
@@ -291,7 +291,7 @@ find_account_by_id(Id) ->
 %%--------------------------------------------------------------------
 -spec allow_account_number_additions(input_term()) -> 'ok' | 'failed'.
 allow_account_number_additions(AccountId) ->
-    case kz_util:set_allow_number_additions(AccountId, 'true') of
+    case kzd_account:update_allow_number_additions(AccountId, 'true') of
         {'ok', _} -> 'ok';
         {'error', _} -> 'failed'
     end.
@@ -304,7 +304,7 @@ allow_account_number_additions(AccountId) ->
 %%--------------------------------------------------------------------
 -spec disallow_account_number_additions(input_term()) -> 'ok' | 'failed'.
 disallow_account_number_additions(AccountId) ->
-    case kz_util:set_allow_number_additions(AccountId, 'false') of
+    case kzd_account:update_allow_number_additions(AccountId, 'false') of
         {'ok', _} -> 'ok';
         {'error', _} -> 'failed'
     end.
@@ -317,7 +317,7 @@ disallow_account_number_additions(AccountId) ->
 %%--------------------------------------------------------------------
 -spec enable_account(input_term()) -> 'ok' | 'failed'.
 enable_account(AccountId) ->
-    case kz_util:enable_account(AccountId) of
+    case kzd_account:enable_account(AccountId) of
         {'ok', _} -> 'ok';
         {'error', _} -> 'failed'
     end.
@@ -330,7 +330,7 @@ enable_account(AccountId) ->
 %%--------------------------------------------------------------------
 -spec disable_account(input_term()) -> 'ok' | 'failed'.
 disable_account(AccountId) ->
-    case kz_util:disable_account(AccountId) of
+    case kzd_account:disable_account(AccountId) of
         {'ok', _} -> 'ok';
         {'error', _} -> 'failed'
     end.
@@ -343,7 +343,7 @@ disable_account(AccountId) ->
 %%--------------------------------------------------------------------
 -spec promote_account(input_term()) -> 'ok' | 'failed'.
 promote_account(AccountId) ->
-    case kz_util:set_superduper_admin(AccountId, 'true') of
+    case kzd_account:update_superduper_admin(AccountId, 'true') of
         {'ok', _} -> 'ok';
         {'error', _} -> 'failed'
     end.
@@ -356,7 +356,7 @@ promote_account(AccountId) ->
 %%--------------------------------------------------------------------
 -spec demote_account(input_term()) -> 'ok' | 'failed'.
 demote_account(AccountId) ->
-    case kz_util:set_superduper_admin(AccountId, 'false') of
+    case kzd_account:update_superduper_admin(AccountId, 'false') of
         {'ok', _} -> 'ok';
         {'error', _} -> 'failed'
     end.
@@ -410,7 +410,7 @@ maybe_promote_account(Context) ->
     AccountDb = cb_context:account_db(Context),
     AccountId = cb_context:account_id(Context),
 
-    case kz_util:get_all_accounts() of
+    case kzd_account:get_all_accounts() of
         [AccountDb] ->
             'ok' = promote_account(AccountId),
             'ok' = allow_account_number_additions(AccountId),
@@ -560,7 +560,7 @@ create_account(Context) ->
         _Status ->
             {'error', {_Code, _Msg, Errors}} = cb_context:response(Context1),
             AccountId = kz_doc:id(cb_context:req_data(Context)),
-            kz_datamgr:db_delete(kz_util:format_account_db(AccountId)),
+            kz_datamgr:db_delete(kzd_account:format_account_db(AccountId)),
 
             io:format("failed to create the account: ~p ~s", [_Code, _Msg]),
             throw(Errors)
@@ -588,7 +588,7 @@ create_user(Context) ->
 -spec print_account_info(ne_binary()) -> {'ok', ne_binary()}.
 -spec print_account_info(ne_binary(), ne_binary()) -> {'ok', ne_binary()}.
 print_account_info(AccountDb) ->
-    AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
     print_account_info(AccountDb, AccountId).
 print_account_info(AccountDb, AccountId) ->
     case kz_datamgr:open_doc(AccountDb, AccountId) of
@@ -613,8 +613,8 @@ print_account_info(AccountDb, AccountId) ->
 %%--------------------------------------------------------------------
 -spec move_account(ne_binary(), ne_binary()) -> 'ok'.
 move_account(Account, ToAccount) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
-    ToAccountId = kz_util:format_account_id(ToAccount, 'raw'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    ToAccountId = kzd_account:format_account_id(ToAccount, 'raw'),
     maybe_move_account(AccountId, ToAccountId).
 
 -spec maybe_move_account(ne_binary(), ne_binary()) -> 'ok'.
@@ -649,7 +649,7 @@ migrate_ring_group_callflow(Account) ->
 
 -spec get_migrateable_ring_group_callflows(ne_binary()) -> kz_json:objects().
 get_migrateable_ring_group_callflows(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     case kz_datamgr:get_all_results(AccountDb, <<"callflows/crossbar_listing">>) of
         {'error', _M} ->
             io:format("error fetching callflows in ~p ~p~n", [AccountDb, _M]),

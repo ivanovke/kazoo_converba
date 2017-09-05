@@ -135,7 +135,7 @@ delete_account(AccountId, AuthToken) ->
             ).
 -spec update_account(ne_binary(), ne_binary()) -> 'ok'.
 update_account(Account, AuthToken) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
     case kzd_account:fetch(AccountId) of
         {'ok', JObj} -> update_account(AccountId, JObj, AuthToken);
         {'error', _R} ->
@@ -164,7 +164,7 @@ update_user(AccountId, JObj, AuthToken) ->
 -spec save_user(ne_binary(), kz_json:object(), ne_binary()) -> 'ok'.
 save_user(AccountId, JObj, AuthToken) ->
     _ = update_account(AccountId, AuthToken),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     Devices = crossbar_util:get_devices_by_owner(AccountDb, kz_doc:id(JObj)),
     Settings = settings(JObj),
     lists:foreach(
@@ -233,7 +233,7 @@ set_owner(JObj) ->
                        {'error', any()}.
 get_owner('undefined', _) -> {'error', 'undefined'};
 get_owner(OwnerId, AccountId) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     kz_datamgr:open_cache_doc(AccountDb, OwnerId).
 
 %%--------------------------------------------------------------------
@@ -435,7 +435,7 @@ get_feature_key_type(Assoc, Type, Brand, Family) ->
 -spec get_user(ne_binary(), ne_binary()) -> {'ok', kz_json:object()} |
                                             {'error', any()}.
 get_user(AccountId, UserId) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     kz_datamgr:open_cache_doc(AccountDb, UserId).
 
 -spec maybe_add_feature_key(ne_binary(), api_object(), kz_json:object()) -> kz_json:object().

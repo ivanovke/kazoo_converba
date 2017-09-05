@@ -17,7 +17,7 @@
 perform_migration(Account, Context) ->
     lager:info("migrating account ~p from notify to teletype...", [Account]),
 
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
 
     {'ok', BaseDoc} = kz_datamgr:open_cache_doc(AccountDb, Account),
     NewDoc = lists:foldl(fun(X, A) -> X(A) end, BaseDoc, [

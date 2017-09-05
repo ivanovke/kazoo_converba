@@ -44,7 +44,7 @@ call_charges(Ledger, CallId) ->
 -spec call_charges(ne_binary(), ne_binary(), ne_binary() | boolean()) ->
                           integer() | kz_transactions().
 call_charges(Ledger, CallId, 'true') ->
-    LedgerDb = kz_util:format_account_id(Ledger, 'encoded'),
+    LedgerDb = kzd_account:format_account_id(Ledger, 'encoded'),
     ViewOptions = ['reduce'
                   ,'group'
                   ,{'group_level', 1}
@@ -59,7 +59,7 @@ call_charges(Ledger, CallId, 'true') ->
             0
     end;
 call_charges(Ledger, CallId, 'false') ->
-    LedgerDb = kz_util:format_account_id(Ledger, 'encoded'),
+    LedgerDb = kzd_account:format_account_id(Ledger, 'encoded'),
     ViewOptions = [{'reduce', 'false'}
                   ,{'group', 'false'}
                   ,{'startkey', [CallId]}
@@ -81,7 +81,7 @@ call_charges(Ledger, CallId, Event) ->
 
 -spec call_charges(ne_binary(), ne_binary(), ne_binary(), boolean()) -> integer() | kz_transactions().
 call_charges(Ledger, CallId, Event, 'true') ->
-    LedgerDb = kz_util:format_account_id(Ledger, 'encoded'),
+    LedgerDb = kzd_account:format_account_id(Ledger, 'encoded'),
     ViewOptions = ['reduce'
                   ,'group'
                   ,{'group_level', 1}
@@ -95,7 +95,7 @@ call_charges(Ledger, CallId, Event, 'true') ->
             0
     end;
 call_charges(Ledger, CallId, Event, 'false') ->
-    LedgerDb = kz_util:format_account_id(Ledger, 'encoded'),
+    LedgerDb = kzd_account:format_account_id(Ledger, 'encoded'),
     ViewOptions = [{'reduce', 'false'}
                   ,{'group', 'false'}
                   ,{'key', [CallId, Event]}

@@ -202,7 +202,7 @@ delivery(Srv) ->
 init([WorkerSup, MgrPid, AccountId, QueueId]) ->
     kz_util:put_callid(QueueId),
     lager:debug("starting queue ~s", [QueueId]),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     {'ok', QueueJObj} = kz_datamgr:open_cache_doc(AccountDb, QueueId),
     gen_listener:cast(self(), {'start_friends', QueueJObj}),
     {'ok', #state{queue_id = QueueId

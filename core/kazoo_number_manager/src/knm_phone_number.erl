@@ -320,7 +320,7 @@ split_by_assignedto(PNs) ->
                 AssignedTo = assigned_to(PN),
                 Key = case kz_term:is_empty(AssignedTo) of
                           true -> undefined;
-                          false -> kz_util:format_account_db(AssignedTo)
+                          false -> kzd_account:format_account_db(AssignedTo)
                       end,
                 M#{Key => [PN | maps:get(Key, M, [])]}
         end,
@@ -340,7 +340,7 @@ split_by_prevassignedto(PNs) ->
                           true ->
                               lager:debug("prev_assigned_to is empty for ~s, ignoring", [number(PN)]),
                               undefined;
-                          false -> kz_util:format_account_db(PrevAssignedTo)
+                          false -> kzd_account:format_account_db(PrevAssignedTo)
                       end,
                 M#{Key => [PN | maps:get(Key, M, [])]}
         end,
@@ -1352,7 +1352,7 @@ is_admin(?KNM_DEFAULT_AUTH_BY) ->
     lager:info("bypassing auth"),
     true;
 is_admin(AuthBy) ->
-    kz_util:is_system_admin(AuthBy).
+    kzd_account:is_system_admin(AuthBy).
 -endif.
 
 %%--------------------------------------------------------------------
@@ -1666,7 +1666,7 @@ is_in_account_hierarchy(?RESELLER_ACCOUNT_ID, ?CHILD_ACCOUNT_ID) -> true;
 is_in_account_hierarchy(_, _) -> false.
 -else.
 is_in_account_hierarchy(AuthBy, AccountId) ->
-    kz_util:is_in_account_hierarchy(AuthBy, AccountId, true).
+    kzd_account:is_in_account_hierarchy(AuthBy, AccountId, true).
 -endif.
 
 -spec is_authorized_collection(knm_numbers:pn_collection()) -> knm_numbers:pn_collection().

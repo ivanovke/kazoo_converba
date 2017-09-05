@@ -97,7 +97,7 @@ process_billing(Context, _Nouns, _Verb) -> Context.
 is_allowed(Context) ->
     AccountId = cb_context:account_id(Context),
     AuthAccountId = cb_context:auth_account_id(Context),
-    IsSystemAdmin = kz_util:is_system_admin(AuthAccountId),
+    IsSystemAdmin = kzd_account:is_system_admin(AuthAccountId),
     {'ok', MasterAccount} = kz_config_accounts:master_account_id(),
     case kz_services:find_reseller_id(AccountId) of
         AuthAccountId ->

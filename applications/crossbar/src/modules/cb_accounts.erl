@@ -380,9 +380,9 @@ put(Context, AccountId, ?RESELLER) ->
 -spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 
 delete(Context, Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
-    AccountId = kz_util:format_account_id(Account, 'raw'),
-    case kz_util:is_account_db(AccountDb) of
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    case kzd_account:is_account_db(AccountDb) of
         'false' ->
             cb_context:add_system_error('bad_identifier', kz_json:from_list([{<<"cause">>, AccountId}]),  Context);
         'true' ->
@@ -428,7 +428,7 @@ create_apps_store_doc(AccountId) ->
 validate_move(<<"superduper_admin">>, Context, _, _) ->
     lager:debug("using superduper_admin flag to allow move account"),
     AuthId = kz_json:get_value(<<"account_id">>, cb_context:auth_doc(Context)),
-    kz_util:is_system_admin(AuthId);
+    kzd_account:is_system_admin(AuthId);
 validate_move(<<"tree">>, Context, MoveAccount, ToAccount) ->
     lager:debug("using tree to allow move account"),
     AuthId = kz_doc:account_id(cb_context:auth_doc(Context)),
@@ -475,8 +475,8 @@ move_account(Context, AccountId) ->
 prepare_context('undefined', Context) ->
     cb_context:set_account_db(Context, ?KZ_ACCOUNTS_DB);
 prepare_context(Account, Context) ->
-    AccountId = kz_util:format_account_id(Account),
-    AccountDb = kz_util:format_account_db(Account),
+    AccountId = kzd_account:format_account_id(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     prepare_context(Context, AccountId, AccountDb).
 
 prepare_context(Context, AccountId, AccountDb) ->
@@ -952,7 +952,7 @@ load_paginated_descendants(AccountId, Context) ->
 %%--------------------------------------------------------------------
 -spec load_siblings(ne_binary(), cb_context:context()) -> cb_context:context().
 load_siblings(AccountId, Context) ->
-    case kz_util:is_system_admin(cb_context:auth_account_id(Context))
+    case kzd_account:is_system_admin(cb_context:auth_account_id(Context))
         orelse
         (AccountId =/= cb_context:auth_account_id(Context)
          andalso kapps_config:get_is_true(?ACCOUNTS_CONFIG_CAT, <<"allow_sibling_listing">>, 'true')
@@ -1175,7 +1175,7 @@ add_pvt_enabled(Context) ->
     JObj = cb_context:doc(Context),
     case lists:reverse(kzd_account:tree(JObj)) of
         [ParentId | _] ->
-            ParentDb = kz_util:format_account_id(ParentId, 'encoded'),
+            ParentDb = kzd_account:format_account_id(ParentId, 'encoded'),
             case (not kz_term:is_empty(ParentId))
                 andalso kz_datamgr:open_doc(ParentDb, ParentId)
             of
@@ -1223,14 +1223,14 @@ create_new_tree('undefined') ->
     case kz_config_accounts:master_account_id() of
         {'ok', MasterAccountId} -> [MasterAccountId];
         {'error', _} ->
-            case kz_util:get_all_accounts() of
+            case kzd_account:get_all_accounts() of
                 [] -> [];
                 _Else -> 'error'
             end
     end;
 create_new_tree(Parent) when is_binary(Parent) ->
-    ParentId = kz_util:format_account_id(Parent, 'raw'),
-    ParentDb = kz_util:format_account_id(Parent, 'encoded'),
+    ParentId = kzd_account:format_account_id(Parent, 'raw'),
+    ParentDb = kzd_account:format_account_id(Parent, 'encoded'),
     case kz_datamgr:open_doc(ParentDb, ParentId) of
         {'error', _} -> create_new_tree('undefined');
         {'ok', JObj} ->
@@ -1262,7 +1262,7 @@ load_account_db(Context, [AccountId|_]) ->
 load_account_db(Context, AccountId) when is_binary(AccountId) ->
     case kzd_account:fetch(AccountId) of
         {'ok', JObj} ->
-            AccountDb = kz_util:format_account_db(AccountId),
+            AccountDb = kzd_account:format_account_db(AccountId),
             lager:debug("account ~s db exists, setting operating database as ~s", [AccountId, AccountDb]),
             ResellerId = kz_services:find_reseller_id(AccountId),
             cb_context:setters(Context
@@ -1291,7 +1291,7 @@ load_account_db(Context, AccountId) when is_binary(AccountId) ->
 create_new_account_db(Context) ->
     AccountDb = cb_context:account_db(Context),
     _ = ensure_accounts_db_exists(),
-    case kz_util:is_account_db(AccountDb)
+    case kzd_account:is_account_db(AccountDb)
         andalso kz_datamgr:db_create(AccountDb)
     of
         'false' ->
@@ -1357,7 +1357,7 @@ set_notification_preference(Context, Preference) ->
 
 -spec create_account_mod(ne_binary()) -> any().
 create_account_mod(AccountId) ->
-    Db = kz_util:format_account_mod_id(AccountId),
+    Db = kzd_account:format_account_mod_id(AccountId),
     kazoo_modb:create(Db).
 
 -spec create_first_transaction(ne_binary()) -> any().
@@ -1483,7 +1483,7 @@ maybe_is_unique_account_name(AccountId, Name) ->
 
 -spec is_unique_account_name(api_ne_binary(), ne_binary()) -> boolean().
 is_unique_account_name(AccountId, Name) ->
-    AccountName = kz_util:normalize_account_name(Name),
+    AccountName = kzd_account:normalize_name(Name),
     ViewOptions = [{'key', AccountName}],
     case kz_datamgr:get_results(?KZ_ACCOUNTS_DB, ?AGG_VIEW_NAME, ViewOptions) of
         {'ok', []} -> 'true';
@@ -1610,7 +1610,7 @@ delete_mod_dbs(Context) ->
     delete_mod_dbs(AccountId, Year, Month).
 
 delete_mod_dbs(AccountId, Year, Month) ->
-    Db = kz_util:format_account_mod_id(AccountId, Year, Month),
+    Db = kzd_account:format_account_mod_id(AccountId, Year, Month),
     case kz_datamgr:db_delete(Db) of
         'true' ->
             lager:debug("removed account mod: ~s", [Db]),

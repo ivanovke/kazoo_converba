@@ -232,7 +232,7 @@ do_fetch_services(?MATCH_ACCOUNT_RAW(AssignedTo)) -> kz_services:fetch(AssignedT
 -spec create_numbers_transaction(ne_binaries(), pos_integer(), ne_binary(), ne_binary()) ->
                                         kz_transaction:transaction().
 create_numbers_transaction(Nums=[_|_], Units, BillingId, AccountId) ->
-    LedgerId = kz_util:format_account_id(BillingId),
+    LedgerId = kzd_account:format_account_id(BillingId),
     Description =
         iolist_to_binary(
           ["numbers activation ", integer_to_list(length(Nums)), $:
@@ -252,7 +252,7 @@ create_numbers_transaction(Nums=[_|_], Units, BillingId, AccountId) ->
                                 kz_transaction:transaction().
 create_transaction(Number, Feature, Units) ->
     BillingId = kz_services:get_billing_id(fetch_services(Number)),
-    LedgerId = kz_util:format_account_id(BillingId),
+    LedgerId = kzd_account:format_account_id(BillingId),
     PhoneNumber = knm_number:phone_number(Number),
     AccountId = knm_phone_number:assigned_to(PhoneNumber),
     Num = knm_phone_number:number(PhoneNumber),

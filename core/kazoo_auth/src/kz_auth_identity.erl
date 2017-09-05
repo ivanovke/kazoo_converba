@@ -69,7 +69,7 @@ identity_secret(#{auth_provider := #{name := <<"kazoo">>}
                               ,<<"owner_id">> := OwnerId
                               }
                  }=Token) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     get_identity_secret(Token#{auth_db => AccountDb
                               ,auth_id => OwnerId
                               ,auth_db_id => OwnerId
@@ -78,7 +78,7 @@ identity_secret(#{auth_provider := #{name := <<"kazoo">>}
 identity_secret(#{auth_provider := #{name := <<"kazoo">>}
                  ,payload := #{<<"account_id">> := AccountId}
                  }=Token) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     get_identity_secret(Token#{auth_db => AccountDb
                               ,auth_id => AccountId
                               ,auth_db_id => AccountId
@@ -338,15 +338,15 @@ reset_system_secret() ->
 reset_secret(#{<<"account_id">> := Account
               ,<<"owner_id">> := OwnerId
               }) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     reset_identity_secret(#{auth_db => AccountDb
                            ,auth_id => OwnerId
                            ,auth_db_id => OwnerId
                            });
 reset_secret(#{<<"account_id">> := Account
               }) ->
-    AccountId = kz_util:format_account_id(Account),
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountId = kzd_account:format_account_id(Account),
+    AccountDb = kzd_account:format_account_db(AccountId),
     reset_identity_secret(#{auth_db => AccountDb
                            ,auth_id => AccountId
                            ,auth_db_id => AccountId

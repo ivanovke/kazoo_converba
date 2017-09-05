@@ -36,7 +36,7 @@
 -spec logout_agents(ne_binary()) -> 'ok'.
 logout_agents(AccountId) ->
     ?PRINT("Sending notices to logout agents for ~s", [AccountId]),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     {'ok', AgentView} = kz_datamgr:get_all_results(AccountDb, <<"agents/crossbar_listing">>),
     _ = [logout_agent(AccountId, kz_doc:id(Agent)) || Agent <- AgentView],
     'ok'.
@@ -218,7 +218,7 @@ migrate_to_acdc_db() ->
     {'ok', Accounts} = kz_datamgr:all_docs(?KZ_ACDC_DB),
     _ = [maybe_remove_acdc_account(kz_doc:id(Account)) || Account <- Accounts],
     io:format("removed any missing accounts from ~s~n", [?KZ_ACDC_DB]),
-    lists:foreach(fun migrate_to_acdc_db/1, kz_util:get_all_accounts('raw')),
+    lists:foreach(fun migrate_to_acdc_db/1, kzd_account:get_all_accounts('raw')),
     io:format("migration complete~n").
 
 -spec maybe_remove_acdc_account(ne_binary()) -> 'ok'.
@@ -261,7 +261,7 @@ migrate_to_acdc_db(AccountId, Retries) ->
 
 -spec maybe_migrate(ne_binary()) -> 'ok'.
 maybe_migrate(AccountId) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:get_results(AccountDb, <<"queues/crossbar_listing">>, [{'limit', 1}]) of
         {'ok', []} -> 'ok';
         {'ok', [_|_]} ->

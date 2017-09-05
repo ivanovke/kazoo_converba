@@ -75,7 +75,7 @@ send(JObj, Account) ->
     CustomSubjectTemplate = kz_json:get_value([<<"notifications">>, <<"vm_full">>, <<"email_subject_template">>], Account),
     {'ok', Subject} = notify_util:render_template(CustomSubjectTemplate, ?DEFAULT_SUBJ_TMPL, Props),
 
-    AccountDb = kz_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
+    AccountDb = kzd_account:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
 
     VMBoxId = kz_json:get_value(<<"Voicemail-Box">>, JObj),
     lager:debug("loading vm box ~s", [VMBoxId]),
@@ -131,7 +131,7 @@ maybe_add_user_email(BoxEmails, UserEmail) -> [UserEmail | BoxEmails].
 %%--------------------------------------------------------------------
 -spec create_template_props(kz_json:object()) -> kz_proplist().
 create_template_props(JObj) ->
-    AccountDb = kz_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
+    AccountDb = kzd_account:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
     {'ok', AccountJObj} = kzd_account:fetch(AccountDb),
 
     [{<<"service">>, notify_util:get_service_props(JObj, AccountJObj, ?MOD_CONFIG_CAT)}
@@ -153,7 +153,7 @@ get_vm_name(JObj) ->
 -spec get_vm_doc(kz_json:object()) -> kz_json:object() | 'error'.
 get_vm_doc(JObj) ->
     VMId = kz_json:get_value(<<"Voicemail-Box">>, JObj),
-    AccoundDB = kz_util:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
+    AccoundDB = kzd_account:format_account_db(kz_json:get_value(<<"Account-ID">>, JObj)),
     case kz_datamgr:open_cache_doc(AccoundDB, VMId) of
         {'ok', VMDoc} -> VMDoc;
         {'error', _E} ->

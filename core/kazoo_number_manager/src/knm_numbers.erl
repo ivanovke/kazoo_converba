@@ -473,7 +473,7 @@ assign_to_app(Nums, App, Options) ->
 %%--------------------------------------------------------------------
 -spec free(ne_binary()) -> 'ok'.
 free(Account=?NE_BINARY) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     {Numbers, _NumbersData} = lists:unzip(account_listing(AccountDb)),
     #{ok := Ns, ko := KOs} = release(Numbers),
     lager:debug("successfully released ~p from ~s", [[num(N) || N <- Ns], Account]),
@@ -491,7 +491,7 @@ free(Account=?NE_BINARY) ->
 %%--------------------------------------------------------------------
 -spec emergency_enabled(ne_binary()) -> ne_binaries().
 emergency_enabled(AccountId=?MATCH_ACCOUNT_RAW(_)) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     [Num || {Num, JObj} <- account_listing(AccountDb),
             Features <- [kz_json:get_list_value(<<"features">>, JObj, [])],
             lists:member(?FEATURE_E911, Features)

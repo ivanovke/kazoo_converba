@@ -105,7 +105,7 @@ do_show_calls([Srv|Srvs], Total) ->
 blocking_refresh() ->
     lists:foreach(fun(AccountDb) ->
                           refresh(AccountDb)
-                  end, kz_util:get_all_accounts()).
+                  end, kzd_account:get_all_accounts()).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -120,7 +120,7 @@ refresh() ->
 
 -spec refresh(binary() | string()) -> boolean().
 refresh(<<Account/binary>>) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     Views = kapps_util:get_views_json('callflow', "views"),
     kz_datamgr:db_view_update(AccountDb, Views);
 refresh(Account) ->
@@ -134,7 +134,7 @@ refresh(Account) ->
 %%--------------------------------------------------------------------
 -spec migrate_recorded_names() -> 'no_return'.
 migrate_recorded_names() ->
-    migrate_recorded_names(kz_util:get_all_accounts()).
+    migrate_recorded_names(kzd_account:get_all_accounts()).
 
 -spec migrate_recorded_names(ne_binaries()) -> 'no_return'.
 migrate_recorded_names([]) -> 'no_return';
@@ -193,9 +193,9 @@ do_recorded_name_migration(Db, MediaId, OwnerId) ->
 -spec migrate_menus() -> ['done' | 'error',...].
 -spec migrate_menus(ne_binary()) -> 'done' | 'error'.
 migrate_menus() ->
-    [migrate_menus(Account) || Account <- kz_util:get_all_accounts('raw')].
+    [migrate_menus(Account) || Account <- kzd_account:get_all_accounts('raw')].
 migrate_menus(Account) ->
-    Db = kz_util:format_account_id(Account, 'encoded'),
+    Db = kzd_account:format_account_id(Account, 'encoded'),
     lager:info("migrating all menus in ~s", [Db]),
     case kz_datamgr:get_results(Db, <<"menus/crossbar_listing">>, ['include_docs']) of
         {'ok', []} ->
@@ -279,12 +279,12 @@ update_doc(Key, Value, Id, Db) ->
 
 -spec account_set_classifier_inherit(ne_binary(), ne_binary()) -> 'ok'.
 account_set_classifier_inherit(Classifier, Account) ->
-    {'ok', AccountDb} = kapps_util:get_accounts_by_name(kz_util:normalize_account_name(Account)),
+    {'ok', AccountDb} = kapps_util:get_accounts_by_name(kzd_account:normalize_name(Account)),
     set_account_classifier_action(<<"inherit">>, Classifier, AccountDb).
 
 -spec account_set_classifier_deny(ne_binary(), ne_binary()) -> 'ok'.
 account_set_classifier_deny(Classifier, Account) ->
-    {'ok', <<_/binary>>=AccountDb} = kapps_util:get_accounts_by_name(kz_util:normalize_account_name(Account)),
+    {'ok', <<_/binary>>=AccountDb} = kapps_util:get_accounts_by_name(kzd_account:normalize_name(Account)),
     set_account_classifier_action(<<"deny">>, Classifier, AccountDb).
 
 -spec all_accounts_set_classifier_inherit(ne_binary()) -> 'ok'.
@@ -305,7 +305,7 @@ all_accounts_set_classifier_deny(Classifier) ->
 set_account_classifier_action(Action, Classifier, AccountDb) ->
     'true' = is_classifier(Classifier),
     io:format("found account: ~p", [kzd_account:fetch_name(AccountDb)]),
-    <<_/binary>> = AccountId = kz_util:format_account_id(AccountDb),
+    <<_/binary>> = AccountId = kzd_account:format_account_id(AccountDb),
 
     {'ok', _} = kz_datamgr:update_doc(AccountDb
                                      ,AccountId
@@ -327,7 +327,7 @@ all_accounts_set_classifier(Action, Classifier) ->
                           %% Not sure if this interruption is really needed.
                           %%  Keeping it as it was taken as an example from kapps_util:update_all_accounts/1
                           set_account_classifier_action(Action, Classifier, AccountDb)
-                  end, kz_util:get_all_accounts()).
+                  end, kzd_account:get_all_accounts()).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -388,10 +388,10 @@ is_classifier(Classifier) ->
 %%--------------------------------------------------------------------
 -spec list_account_restrictions(ne_binary()) -> 'ok'.
 list_account_restrictions(Account) ->
-    {'ok', AccountDb} = kapps_util:get_accounts_by_name(kz_util:normalize_account_name(Account)),
-    DbNameEncoded = kz_util:format_account_id(AccountDb, 'encoded'),
+    {'ok', AccountDb} = kapps_util:get_accounts_by_name(kzd_account:normalize_name(Account)),
+    DbNameEncoded = kzd_account:format_account_id(AccountDb, 'encoded'),
     io:format("\nAccount level classifiers:\n\n"),
-    print_call_restrictions(DbNameEncoded, kz_util:format_account_id(AccountDb)),
+    print_call_restrictions(DbNameEncoded, kzd_account:format_account_id(AccountDb)),
     print_users_level_call_restrictions(DbNameEncoded),
     print_devices_level_call_restrictions(DbNameEncoded),
     print_trunkstore_call_restrictions(DbNameEncoded).
@@ -461,25 +461,25 @@ print_trunkstore_call_restrictions(DbName) ->
 
 -spec update_feature_codes() -> 'ok'.
 update_feature_codes() ->
-    lists:foreach(fun update_feature_codes/1, kz_util:get_all_accounts()).
+    lists:foreach(fun update_feature_codes/1, kzd_account:get_all_accounts()).
 
 -spec update_feature_codes(ne_binary()) -> 'ok'.
 update_feature_codes(Account)
   when not is_binary(Account) ->
     update_feature_codes(kz_term:to_binary(Account));
 update_feature_codes(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     case kz_datamgr:get_results(AccountDb, ?LIST_BY_PATTERN, ['include_docs']) of
         {'error', _Reason} ->
             io:format("error listing feature code patterns: ~p\n", [_Reason]);
         {'ok', Patterns} ->
-            AccountId = kz_util:format_account_id(Account, 'raw'),
+            AccountId = kzd_account:format_account_id(Account, 'raw'),
             io:format("~s : looking through patterns...\n", [AccountId]),
             maybe_update_feature_codes(AccountDb, Patterns)
     end.
 
 maybe_update_feature_codes(Db, []) ->
-    io:format("~s : feature codes up to date\n", [kz_util:format_account_id(Db, 'raw')]);
+    io:format("~s : feature codes up to date\n", [kzd_account:format_account_id(Db, 'raw')]);
 maybe_update_feature_codes(Db, [Pattern|Patterns]) ->
     DocId = kz_doc:id(Pattern),
     Regex = kz_json:get_value(<<"key">>, Pattern),

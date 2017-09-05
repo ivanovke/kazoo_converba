@@ -38,7 +38,7 @@ init(Account, CurrentBalance) ->
         {'ok', Amount, Threshold} ->
             lager:info("checking if account ~s balance $~w is below top up threshold $~w"
                       ,[Account, Balance, Threshold]),
-            AccountId = kz_util:format_account_id(Account, 'raw'),
+            AccountId = kzd_account:format_account_id(Account, 'raw'),
             maybe_top_up(AccountId, Balance, Amount, Threshold)
     end.
 

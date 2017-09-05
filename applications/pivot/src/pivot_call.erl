@@ -612,7 +612,7 @@ error_to_jobj(Error, Errors) ->
 store_debug(Call, Doc) when is_list(Doc) ->
     store_debug(Call, kz_json:from_list(Doc));
 store_debug(Call, DebugJObj) ->
-    AccountModDb = kz_util:format_account_mod_id(kapps_call:account_id(Call)),
+    AccountModDb = kzd_account:format_account_mod_id(kapps_call:account_id(Call)),
     JObj =
         kz_doc:update_pvt_parameters(kz_json:set_values([{<<"call_id">>, kapps_call:call_id(Call)}
                                                         ,{<<"iteration">>, kzt_util:iteration(Call)}

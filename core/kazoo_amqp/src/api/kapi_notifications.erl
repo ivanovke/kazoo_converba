@@ -618,7 +618,7 @@ find_account_db(Req, StrictMODB, GetFun) ->
         'undefined' ->
             case find_account_id(Req, GetFun) of
                 'undefined' -> 'undefined';
-                AccountId -> kz_util:format_account_db(AccountId)
+                AccountId -> kzd_account:format_account_db(AccountId)
             end;
         ?MATCH_MODB_SUFFIX_RAW(_, _, _)=Db when StrictMODB -> kz_util:format_account_modb(Db, 'encoded');
         ?MATCH_MODB_SUFFIX_UNENCODED(_, _, _)=Db when StrictMODB -> kz_util:format_account_modb(Db, 'encoded');

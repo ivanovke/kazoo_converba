@@ -28,7 +28,7 @@
 -spec reconcile(kz_services:services(), ne_binary()) -> kz_services:services().
 reconcile(Services) ->
     AccountId = kz_services:account_id(Services),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:get_results_count(AccountDb, ?DESIGN_DOC, []) of
         {'error', _R} ->
             lager:debug("unable to get current whitelabel docs: ~p for account: ~s", [_R, AccountId]),

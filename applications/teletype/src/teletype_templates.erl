@@ -108,7 +108,7 @@ fetch_master_attachments(TemplateId) ->
 fetch_attachments(TemplateId, Account) ->
     AccountDb = case ?KZ_CONFIG_DB =:= Account of
                     true -> ?KZ_CONFIG_DB;
-                    false -> kz_util:format_account_db(Account)
+                    false -> kzd_account:format_account_db(Account)
                 end,
     DocId = doc_id(TemplateId),
     case fetch_notification(TemplateId, AccountDb) of
@@ -166,7 +166,7 @@ render(TemplateId, Macros, DataJObj, 'false') ->
             lager:debug("rendering system template for ~s", [TemplateId]),
             render_masters(TemplateId, Macros);
         AccountDb ->
-            put('template_account_id', kz_util:format_account_id(AccountDb)),
+            put('template_account_id', kzd_account:format_account_id(AccountDb)),
             lager:debug("rendering template ~s from account ~s", [TemplateId, AccountDb]),
             render_accounts(TemplateId, AccountDb, Macros)
     end;
@@ -245,7 +245,7 @@ fetch_notification(TemplateId, 'undefined', _ResellerId) ->
 fetch_notification(TemplateId, Db=?KZ_CONFIG_DB, _ResellerId) ->
     kz_datamgr:open_cache_doc(Db, doc_id(TemplateId), [{'cache_failures', ['not_found']}]);
 fetch_notification(TemplateId, AccountId, AccountId) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     DocId = doc_id(TemplateId),
 
     case kz_datamgr:open_cache_doc(AccountDb, DocId, [{'cache_failures', ['not_found']}]) of
@@ -253,7 +253,7 @@ fetch_notification(TemplateId, AccountId, AccountId) ->
         {'error', _E} -> fetch_notification(TemplateId, 'undefined', AccountId)
     end;
 fetch_notification(TemplateId, AccountId, ResellerId) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     DocId = doc_id(TemplateId),
     case kz_datamgr:open_cache_doc(AccountDb, DocId, [{'cache_failures', ['not_found']}]) of
         {'ok', _JObj}=OK -> OK;

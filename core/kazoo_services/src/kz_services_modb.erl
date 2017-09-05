@@ -25,7 +25,7 @@ start_link() ->
 
 -spec modb(ne_binary()) -> 'ok'.
 modb(?MATCH_MODB_SUFFIX_ENCODED(_AccountId, _Year, _Month) = AccountMODb) ->
-    modb(kz_util:format_account_modb(AccountMODb, 'raw'));
+    modb(kzd_account:format_account_modb(AccountMODb, 'raw'));
 modb(?MATCH_MODB_SUFFIX_RAW(AccountId, _Year, _Month) = AccountMODb) ->
     ServicesJObj = kz_services:to_json(kz_services:fetch(AccountId)),
     save_services_to_modb(AccountMODb, ServicesJObj, ?SERVICES_BOM),
@@ -40,7 +40,7 @@ save_services_to_modb(AccountMODb, ServicesJObj, Id) ->
 -spec maybe_save_to_previous_modb(ne_binary(), kz_json:object()) -> 'ok'.
 maybe_save_to_previous_modb(NewMODb, ServicesJObj) ->
     PrevMODb = kazoo_modb_util:prev_year_month_mod(NewMODb),
-    AccountDb = kz_util:format_account_modb(PrevMODb, 'encoded'),
+    AccountDb = kzd_account:format_account_modb(PrevMODb, 'encoded'),
     case kz_datamgr:db_exists(AccountDb) of
         'true' -> save_services_to_modb(PrevMODb, ServicesJObj, ?SERVICES_EOM);
         'false' -> 'ok'

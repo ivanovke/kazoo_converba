@@ -197,7 +197,7 @@ bulk_save_modb(Db, Js, _Acc) ->
         {'error', R} ->
             update_stats(?FAILED, Js, R),
             ?ERROR("    [~s] failed to migrate voicemail messages to db ~s: ~p"
-                  ,[kz_util:format_account_id(Db), Db, R])
+                  ,[kzd_account:format_account_id(Db), Db, R])
     end.
 
 %%--------------------------------------------------------------------
@@ -274,7 +274,7 @@ update_message_array(BoxJObj, MODbFailed, Failed) ->
 %%--------------------------------------------------------------------
 -spec get_messages_from_vmboxes(ne_binary(), ne_binaries()) -> db_ret().
 get_messages_from_vmboxes(AccountId, ExpectedBoxIds) ->
-    case kz_datamgr:open_cache_docs(kz_util:format_account_db(AccountId), ExpectedBoxIds) of
+    case kz_datamgr:open_cache_docs(kzd_account:format_account_db(AccountId), ExpectedBoxIds) of
         {'ok', JObjs} -> {'ok', normalize_mailbox_results(JObjs)};
         {'error', _E} = Error ->
             ?ERROR("    [~s] failed to open mailbox(es)", [AccountId]),
@@ -377,7 +377,7 @@ normalize_bulk_result(Db, [S | Saved], Dict) ->
             normalize_bulk_result(Db, Saved, dict:append(<<"succeeded">>, Id, Dict));
         Reason ->
             lager:debug("    [~s] failed to save voicemail message ~s in db ~s: ~p"
-                       ,[kz_util:format_account_id(Db), Id, Db, Reason]),
+                       ,[kzd_account:format_account_id(Db), Id, Db, Reason]),
             normalize_bulk_result(Db, Saved, dict:append(<<"failed">>, {Id, Reason}, Dict))
     end.
 
@@ -416,7 +416,7 @@ create_message(AccountId, FakeBoxJObj, DefaultExt) ->
 
     %% setting a db_link as attachment
     AttName = <<(kz_binary:rand_hex(16))/binary, ".", DefaultExt/binary>>,
-    AttHandlerProps = [{<<"att_dbname">>, kz_util:format_account_db(AccountId)}
+    AttHandlerProps = [{<<"att_dbname">>, kzd_account:format_account_db(AccountId)}
                       ,{<<"att_docid">>, kzd_box_message:media_id(Metadata)}
                       ],
     AttHandler = kz_json:from_list([{<<"kz_att_link">>, kz_json:from_list(AttHandlerProps)}]),

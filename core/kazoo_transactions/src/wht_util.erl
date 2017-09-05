@@ -544,11 +544,11 @@ rollup(Transaction) ->
     end.
 
 rollup(?NE_BINARY = AccountMODb, Balance) when Balance >= 0 ->
-    AccountId = kz_util:format_account_id(AccountMODb, 'raw'),
+    AccountId = kzd_account:format_account_id(AccountMODb, 'raw'),
     lager:debug("creating monthly rollup for ~s as a credit for ~p", [AccountMODb, Balance]),
     rollup(kz_transaction:credit(AccountId, Balance));
 rollup(?NE_BINARY = AccountMODb, Balance) ->
-    AccountId = kz_util:format_account_id(AccountMODb, 'raw'),
+    AccountId = kzd_account:format_account_id(AccountMODb, 'raw'),
     lager:debug("creating monthly rollup for ~s as a debit for ~p", [AccountMODb, Balance]),
     rollup(kz_transaction:debit(AccountId, -1*Balance)).
 
@@ -568,7 +568,7 @@ update_rollup(Account, Balance, JObj) ->
         <<"debit">> when Balance < 0 ->
             update_existing_rollup(Account, Balance, Transaction);
         _Else ->
-            EncodedMODb = kz_util:format_account_modb(kazoo_modb:get_modb(Account), 'encoded'),
+            EncodedMODb = kzd_account:format_account_modb(kazoo_modb:get_modb(Account), 'encoded'),
             {'ok', _} = kz_datamgr:del_doc(EncodedMODb, JObj),
             rollup(Account, abs(Balance))
     end.

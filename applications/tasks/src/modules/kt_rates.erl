@@ -280,7 +280,7 @@ is_allowed(ExtraArgs) ->
     AccountId = maps:get('account_id', ExtraArgs),
     {'ok', AccountDoc} = kzd_account:fetch(AccountId),
     {'ok', AuthAccountDoc} = kzd_account:fetch(AuthAccountId),
-    kz_util:is_in_account_hierarchy(AuthAccountId, AccountId, 'true')
+    kzd_account:is_in_account_hierarchy(AuthAccountId, AccountId, 'true')
     %% Serve request for reseller rates
         andalso kzd_account:is_reseller(AccountDoc)
     %% or serve requests from SuperAdmin

@@ -236,8 +236,8 @@ cleanup_pass(Db) ->
 
 -spec db_to_trigger(ne_binary()) -> ne_binary().
 db_to_trigger(Db) ->
-    Classifiers = [{fun kz_util:is_account_db/1, ?TRIGGER_ACCOUNT}
-                  ,{fun kz_util:is_account_mod/1, ?TRIGGER_ACCOUNT_MOD}
+    Classifiers = [{fun kzd_account:is_account_db/1, ?TRIGGER_ACCOUNT}
+                  ,{fun kzd_account:is_account_mod/1, ?TRIGGER_ACCOUNT_MOD}
                   ,{fun is_system_db/1, ?TRIGGER_SYSTEM}
                   ],
     db_to_trigger(Db, Classifiers).

@@ -315,7 +315,7 @@ maybe_export_numbers(Db, [Number|Numbers]) ->
 
 -spec maybe_export_number(ne_binary(), api_binary(), api_binary()) -> 'ok'.
 maybe_export_number(Number, ?NUMBER_STATE_IN_SERVICE, AccountId) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     ViewOptions = [{'key', Number}
                   ,'include_docs'
                   ],
@@ -363,7 +363,7 @@ process_callflow(Number, AccountId, Flow) ->
 process_callflow(_, _, _, 'undefined') -> 'ok';
 process_callflow(Number, AccountId, <<"device">>, DeviceId) ->
     lager:debug("found device ~s associated with ~s", [DeviceId, Number]),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:open_cache_doc(AccountDb, DeviceId) of
         {'ok', JObj } -> process_device(Number, AccountId, JObj);
         {'error', _R} ->
@@ -372,7 +372,7 @@ process_callflow(Number, AccountId, <<"device">>, DeviceId) ->
     end;
 process_callflow(Number, AccountId, <<"user">>, UserId) ->
     lager:debug("found user ~s associated with ~s", [UserId, Number]),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     ViewOptions = [{'key', UserId}],
     case kz_datamgr:get_results(AccountDb, ?DEVICES_VIEW, ViewOptions) of
         {'ok', JObjs} ->

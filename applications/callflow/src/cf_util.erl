@@ -95,7 +95,7 @@ maybe_presence_parking_slot_resp(Username, Realm, AccountDb) ->
 
 -spec maybe_presence_parking_flow(ne_binary(), ne_binary(), ne_binary()) -> 'ok' | 'not_found'.
 maybe_presence_parking_flow(Username, Realm, AccountDb) ->
-    AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
     _ = cf_flow:lookup(Username, AccountId),
     case kz_cache:fetch_local(?CACHE_NAME, ?CF_FLOW_CACHE_KEY(Username, AccountDb)) of
         {'error', 'not_found'} -> 'not_found';
@@ -235,7 +235,7 @@ is_unsolicited_mwi_enabled(AccountId) ->
 unsolicited_owner_mwi_update('undefined', _) -> {'error', 'missing_account_db'};
 unsolicited_owner_mwi_update(_, 'undefined') -> {'error', 'missing_owner_id'};
 unsolicited_owner_mwi_update(AccountDb, OwnerId) ->
-    AccountId = kz_util:format_account_id(AccountDb),
+    AccountId = kzd_account:format_account_id(AccountDb),
     MWIUpdate = is_unsolicited_mwi_enabled(AccountId),
     unsolicited_owner_mwi_update(AccountDb, OwnerId, MWIUpdate).
 
@@ -248,7 +248,7 @@ unsolicited_owner_mwi_update(AccountDb, OwnerId, 'true') ->
     case kz_datamgr:get_results(AccountDb, <<"attributes/owned">>, ViewOptions) of
         {'ok', JObjs} ->
             {New, Saved} = vm_count_by_owner(AccountDb, OwnerId),
-            AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+            AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
             lists:foreach(
               fun(JObj) -> maybe_send_mwi_update(JObj, AccountId, New, Saved) end
                          ,JObjs
@@ -283,7 +283,7 @@ unsolicited_endpoint_mwi_update('undefined', _) ->
 unsolicited_endpoint_mwi_update(_, 'undefined') ->
     {'error', 'missing_owner_id'};
 unsolicited_endpoint_mwi_update(AccountDb, EndpointId) ->
-    AccountId = kz_util:format_account_id(AccountDb),
+    AccountId = kzd_account:format_account_id(AccountDb),
     MWIUpdate = is_unsolicited_mwi_enabled(AccountId),
     unsolicited_endpoint_mwi_update(AccountDb, EndpointId, MWIUpdate).
 
@@ -306,7 +306,7 @@ maybe_send_endpoint_mwi_update(AccountDb, JObj) ->
 maybe_send_endpoint_mwi_update(_AccountDb, _JObj, 'false') ->
     lager:debug("unsolicited mwi updates disabled for ~s/~s", [_AccountDb, kz_doc:id(_JObj)]);
 maybe_send_endpoint_mwi_update(AccountDb, JObj, 'true') ->
-    AccountId = kz_util:format_account_id(AccountDb, 'raw'),
+    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
     Username = kz_device:sip_username(JObj),
     Realm = kz_endpoint:get_sip_realm(JObj, AccountId),
     OwnerId = get_endpoint_owner(JObj),
@@ -471,7 +471,7 @@ get_endpoint_id_by_sip_username(AccountDb, Username) ->
 -spec get_operator_callflow(ne_binary()) -> {'ok', kz_json:object()} |
                                             kz_datamgr:data_error().
 get_operator_callflow(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     Options = [{'key', ?OPERATOR_KEY}
               ,'include_docs'
               ,'first_when_multiple'

@@ -300,7 +300,7 @@ add_multi_factor_metadata(AuthModule, JObj, AuthConfig) ->
 
 -spec get_metadata(ne_binary(), ne_binary()) -> api_object().
 get_metadata(AccountId, ConfigId) ->
-    case kz_datamgr:open_cache_doc(kz_util:format_account_db(AccountId), ConfigId) of
+    case kz_datamgr:open_cache_doc(kzd_account:format_account_db(AccountId), ConfigId) of
         {'ok', JObj} ->
             kz_json:from_list(
               [{<<"name">>, kz_json:get_value(<<"name">>, JObj)}
@@ -403,9 +403,9 @@ check_account_hierarchy(AuthModule, JObj, Context) ->
     AccountId = kz_json:get_ne_binary_value([<<"multi_factor">>, <<"account_id">>], JObj),
 
     case cb_context:is_superduper_admin(AuthAccountId)
-        orelse kz_util:is_in_account_hierarchy(AuthAccountId, AccountId, 'true')
+        orelse kzd_account:is_in_account_hierarchy(AuthAccountId, AccountId, 'true')
         orelse kz_json:is_false([<<"multi_factor">>, <<"include_subaccounts">>], JObj)
-        orelse kz_util:is_in_account_hierarchy(AccountId, AuthAccountId)
+        orelse kzd_account:is_in_account_hierarchy(AccountId, AuthAccountId)
     of
         'true' -> Context;
         'false' ->

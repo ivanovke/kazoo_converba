@@ -321,7 +321,7 @@ fix_number(N) ->
     PN = knm_number:phone_number(N),
     Num = knm_phone_number:number(PN),
     AuthBy = knm_phone_number:assigned_to(PN),
-    AccountDb = kz_util:format_account_db(AuthBy),
+    AccountDb = kzd_account:format_account_db(AuthBy),
     %% -- below is verbatim from maintenance module --
     UsedBy = kazoo_number_manager_maintenance:app_using(knm_converters:normalize(Num), AccountDb),
     Routines = [{fun knm_phone_number:set_used_by/2, UsedBy}

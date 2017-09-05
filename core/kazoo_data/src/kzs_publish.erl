@@ -147,8 +147,8 @@ doc_acct_id(Db, Doc) ->
 
 -spec maybe_account_id_from_db(atom(), ne_binary()) -> api_binary().
 maybe_account_id_from_db('account', Db) ->
-    kz_util:format_account_id(Db);
+    kzd_account:format_account_id(Db);
 maybe_account_id_from_db('modb', Db) ->
-    kz_util:format_account_id(Db);
+    kzd_account:format_account_id(Db);
 maybe_account_id_from_db(_, _) ->
     'undefined'.

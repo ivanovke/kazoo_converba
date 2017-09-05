@@ -149,7 +149,7 @@ new(?MATCH_ACCOUNT_RAW(AccountId)) ->
 base_service_object(AccountId, AccountJObj) ->
     ResellerId = get_reseller_id(AccountId),
     BaseJObj = kz_doc:update_pvt_parameters(kz_json:new()
-                                           ,kz_util:format_account_db(AccountId)
+                                           ,kzd_account:format_account_db(AccountId)
                                            ,[{'account_id', AccountId}
                                             ,{'crossbar_doc_vsn', <<"1">>}
                                             ,{'id', AccountId}
@@ -205,7 +205,7 @@ maybe_calc_updates(Services, 'true') ->
 %%--------------------------------------------------------------------
 -spec fetch(ne_binary()) -> services().
 fetch(Account=?NE_BINARY) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     case fetch_cached_services(AccountId) of
         {'ok', Services} -> Services;
         {'error', 'not_found'} ->
@@ -442,7 +442,7 @@ save_doc(JObj) ->
 %%--------------------------------------------------------------------
 -spec delete(ne_binary()) -> kz_std_return().
 delete(Account) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     %% TODO: support other bookkeepers, and just cancel subscriptions....
     _ = (catch braintree_customer:delete(AccountId)),
     case fetch_services_doc(AccountId, true) of
@@ -538,7 +538,7 @@ set_billing_id(BillingId, AccountId=?NE_BINARY) ->
 -spec get_billing_id(ne_binary() | services()) -> ne_binary().
 get_billing_id(#kz_services{billing_id = BillingId}) -> BillingId;
 get_billing_id(Account=?NE_BINARY) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     ?LOG_DEBUG("determining if account ~s is able to make updates", [AccountId]),
     case fetch_services_doc(AccountId) of
         {'error', _R} ->
@@ -751,7 +751,7 @@ find_reseller_id('undefined') ->
         {'ok', MasterAccountId} -> MasterAccountId
     end;
 find_reseller_id(Account) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     case fetch_services_doc(AccountId) of
         {'ok', JObj} ->
             case kzd_services:reseller_id(JObj) of
@@ -781,7 +781,7 @@ master_account_id() -> kz_config_accounts:master_account_id().
 %%--------------------------------------------------------------------
 -spec allow_updates(ne_binary() | services()) -> 'true'.
 allow_updates(Account=?NE_BINARY) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     case fetch_services_doc(AccountId) of
         {'error', _R} ->
             lager:debug("can't determine if account ~s can make updates: ~p", [AccountId, _R]),
@@ -1343,7 +1343,7 @@ cascade_quantities(Account=?NE_BINARY, 'true') ->
 
 -spec do_cascade_quantities(ne_binary(), ne_binary()) -> kz_json:object().
 do_cascade_quantities(Account, View) ->
-    case cascade_results(View, kz_util:format_account_id(Account)) of
+    case cascade_results(View, kzd_account:format_account_id(Account)) of
         {'error', _} -> kz_json:new();
         {'ok', JObjs} ->
             lists:foldl(fun do_cascade_quantities_fold/2, kz_json:new(), JObjs)

@@ -123,7 +123,7 @@ maybe_add_user_data(Key, Acc, DataJObj) ->
 -spec get_user(kz_json:object()) -> kz_json:object().
 get_user(DataJObj) ->
     AccountId = kz_json:get_value(<<"account_id">>, DataJObj),
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     UserId = kz_json:get_value(<<"user_id">>, DataJObj),
 
     case kz_datamgr:open_cache_doc(AccountDb, UserId) of

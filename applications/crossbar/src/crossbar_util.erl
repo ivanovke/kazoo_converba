@@ -427,7 +427,7 @@ move_account(?MATCH_ACCOUNT_RAW(AccountId), ToAccount=?NE_BINARY) ->
     end.
 
 move_account(AccountId, JObj, ToAccount, ToTree) ->
-    AccountDb = kz_util:format_account_db(AccountId),
+    AccountDb = kzd_account:format_account_db(AccountId),
     PreviousTree = kzd_account:tree(JObj),
     JObj1 = kz_json:set_values([{?SERVICES_PVT_TREE, ToTree}
                                ,{?SERVICES_PVT_TREE_PREVIOUSLY, PreviousTree}
@@ -490,13 +490,13 @@ update_descendants_tree([Descendant|Descendants], Tree, NewResellerId, MovedAcco
                      ,{?SERVICES_PVT_TREE_PREVIOUSLY, PreviousTree}
                      ,{?SERVICES_PVT_MODIFIED, kz_time:now_s()}
                      ],
-            AccountDb = kz_util:format_account_db(Descendant),
+            AccountDb = kzd_account:format_account_db(Descendant),
             %%FIXME: do something about setting pvt_auth_*_id
             case kz_datamgr:save_doc(AccountDb, kz_json:set_values(Values, AccountJObj)) of
                 {'error', _E}=Error -> Error;
                 {'ok', NewAccountJObj} ->
                     {'ok', _} = replicate_account_definition(NewAccountJObj),
-                    AccountId = kz_util:format_account_id(Descendant),
+                    AccountId = kzd_account:format_account_id(Descendant),
                     {'ok', _} = move_service(AccountId, ToTree, NewResellerId, 'undefined'),
                     update_descendants_tree(Descendants, Tree, NewResellerId, MovedAccountId)
             end
@@ -687,7 +687,7 @@ format_app(Lang, AppJObj) ->
 -spec change_pvt_enabled(boolean(), api_ne_binary()) -> ok | {error, any()}.
 change_pvt_enabled(_, 'undefined') -> 'ok';
 change_pvt_enabled(State, AccountId) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     try
         {'ok', JObj1} = kz_datamgr:open_doc(AccountDb, AccountId),
         lager:debug("set pvt_enabled to ~s on account ~s", [State, AccountId]),
@@ -837,7 +837,7 @@ create_auth_token(Context, AuthModule, JObj) ->
               ,{<<"method">>, kz_term:to_binary(AuthModule)}
               ]),
     JObjToken = kz_doc:update_pvt_parameters(kz_json:from_list(Token)
-                                            ,kz_util:format_account_id(AccountId, 'encoded')
+                                            ,kzd_account:format_account_id(AccountId, 'encoded')
                                             ,Token
                                             ),
 
@@ -860,7 +860,7 @@ create_auth_token(Context, AuthModule, JObj) ->
 -spec get_token_restrictions(atom(), ne_binary(), ne_binary()) ->
                                     api_object().
 get_token_restrictions(AuthModule, AccountId, OwnerId) ->
-    case kz_util:is_system_admin(AccountId) of
+    case kzd_account:is_system_admin(AccountId) of
         'true' -> 'undefined';
         'false' ->
             Restrictions =
@@ -877,7 +877,7 @@ get_token_restrictions(AuthModule, AccountId, OwnerId) ->
 get_priv_level(_AccountId, 'undefined') ->
     cb_token_restrictions:default_priv_level();
 get_priv_level(AccountId, OwnerId) ->
-    AccountDB = kz_util:format_account_db(AccountId),
+    AccountDB = kzd_account:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDB, OwnerId) of
         {'ok', Doc} -> kzd_user:priv_level(Doc);
         {'error', _} -> cb_token_restrictions:default_priv_level()
@@ -892,7 +892,7 @@ get_system_token_restrictions(AuthModule) ->
 
 -spec get_account_token_restrictions(ne_binary(), atom()) -> api_object().
 get_account_token_restrictions(AccountId, AuthModule) ->
-    AccountDB = kz_util:format_account_db(AccountId),
+    AccountDB = kzd_account:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDB, ?CB_ACCOUNT_TOKEN_RESTRICTIONS) of
         {'error', _} -> 'undefined';
         {'ok', RestrictionsDoc} ->
@@ -929,7 +929,7 @@ descendants_count() ->
     descendants_count(ViewOptions).
 
 descendants_count(<<_/binary>> = Account) ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
     descendants_count([{'key', AccountId}]);
 descendants_count(Opts) ->
     ViewOptions = [{'group_level', 1}
@@ -1133,7 +1133,7 @@ get_devices_by_owner(AccountDb, OwnerId) ->
 -spec get_account_devices(api_binary()) -> ne_binaries().
 get_account_devices('undefined') -> [];
 get_account_devices(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     case kz_datamgr:get_results(AccountDb, <<"devices/crossbar_listing">>, []) of
         {'ok', JObjs} -> [kz_json:get_value(<<"value">>, JObj) || JObj <- JObjs];
         {'error', _R} ->
@@ -1206,7 +1206,7 @@ maybe_update_descendants_count(AccountId, JObj, NewCount, _, Try) ->
 %%--------------------------------------------------------------------
 -spec update_descendants_count(ne_binary(), kz_json:object(), integer()) -> 'ok' | 'error'.
 update_descendants_count(AccountId, JObj, NewCount) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
+    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
     Doc = kz_json:set_value(<<"descendants_count">>, NewCount, JObj),
     %%FIXME: do something about setting pvt_auth_*_id
     case kz_datamgr:save_doc(AccountDb, Doc) of

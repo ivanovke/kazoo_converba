@@ -48,6 +48,29 @@
         ,home_zone/1, home_zone/2, set_home_zone/2
 
         ,preflow_id/1
+
+         %% Account naming-related functionality
+        ,format_account_id/1, format_account_id/2, format_account_id/3
+        ,format_account_mod_id/1, format_account_mod_id/2, format_account_mod_id/3
+        ,format_account_db/1
+        ,format_account_modb/1, format_account_modb/2
+
+        ,normalize_name/1
+        ,account_update/1, account_update/2
+
+        ,get_all_accounts/0, get_all_accounts/1
+        ,get_all_accounts_and_mods/0, get_all_accounts_and_mods/1
+        ,is_account_db/1, is_account_mod/1
+        ,is_in_account_hierarchy/2, is_in_account_hierarchy/3
+        ,is_account_enabled/1, is_account_expired/1
+
+        ,maybe_disable_account/1
+        ,disable_account/1
+        ,enable_account/1
+        ,is_system_admin/1
+
+        ,update_superduper_admin/2
+        ,update_allow_number_additions/2
         ]).
 
 -include("kz_documents.hrl").
@@ -81,8 +104,13 @@
 -define(SENT_INITIAL_REGISTRATION, [<<"notifications">>, <<"first_occurrence">>, <<"sent_initial_registration">>]).
 -define(SENT_INITIAL_CALL, [<<"notifications">>, <<"first_occurrence">>, <<"sent_initial_call">>]).
 
+-define(REPLICATE_ENCODING, 'encoded').
+
 -type doc() :: kz_json:object().
--export_type([doc/0]).
+
+-export_type([doc/0
+             ,account_format/0
+             ]).
 
 -spec get_inherited_value(api_binary(), fun()) -> any().
 get_inherited_value(Account, ValueFun) ->
@@ -157,8 +185,8 @@ fetch(Account=?NE_BINARY) ->
 fetch('undefined', _) ->
     {'error', 'invalid_db_name'};
 fetch(Account, 'account') ->
-    AccountId = kz_util:format_account_id(Account, 'raw'),
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     open_cache_doc(AccountDb, AccountId);
 fetch(AccountId, 'accounts') ->
     open_cache_doc(?KZ_ACCOUNTS_DB, AccountId).
@@ -788,3 +816,419 @@ preflow_id(Doc) ->
 
 preflow_id(Doc, Default) ->
     kz_json:get_ne_binary_value([<<"preflow">>, <<"always">>], Doc, Default).
+
+
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account return it in a 'encoded',
+%% unencoded or 'raw' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% Note: if given (Account, GregorianSeconds), it will return
+%%   an MODb in the 'encoded' format.
+%% @end
+%%--------------------------------------------------------------------
+-type account_format() :: 'unencoded' | 'encoded' | 'raw'.
+-spec format_account_id(api_binary()) -> api_binary().
+-spec format_account_id(api_binary(), account_format()) -> api_binary();
+                       (api_binary(), gregorian_seconds()) -> api_binary(). %% MODb!
+
+format_account_id(Account) ->
+    format_account_id(Account, 'raw').
+
+format_account_id('undefined', _Encoding) -> 'undefined';
+format_account_id(DbName, Timestamp)
+  when is_integer(Timestamp)
+       andalso Timestamp > 0 ->
+    {{Year, Month, _}, _} = calendar:gregorian_seconds_to_datetime(Timestamp),
+    format_account_id(DbName, Year, Month);
+format_account_id(<<"accounts">>, _) -> <<"accounts">>;
+
+format_account_id(?MATCH_ACCOUNT_RAW(_)=AccountId, 'raw') ->
+    AccountId;
+format_account_id(?MATCH_ACCOUNT_ENCODED(_)=AccountDb, 'encoded') ->
+    AccountDb;
+format_account_id(?MATCH_ACCOUNT_UNENCODED(_)=AccountDbUn, 'unencoded') ->
+    AccountDbUn;
+
+format_account_id(AccountId, 'raw') ->
+    raw_account_id(AccountId);
+format_account_id(AccountId, 'unencoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_id(AccountId),
+    kz_term:to_binary(["account/", A, "/", B, "/", Rest]);
+format_account_id(AccountId, 'encoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_id(AccountId),
+    kz_term:to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
+
+%% @private
+%% Returns account_id() | any()
+%% Passes input along if not account_id() | account_db() | account_db_unencoded().
+-spec raw_account_id(ne_binary()) -> ne_binary().
+raw_account_id(?MATCH_ACCOUNT_RAW(AccountId)) ->
+    AccountId;
+raw_account_id(?MATCH_ACCOUNT_UNENCODED(A, B, Rest)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_ACCOUNT_ENCODED(A, B, Rest)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_MODB_SUFFIX_RAW(AccountId, _, _)) ->
+    AccountId;
+raw_account_id(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, _, _)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, _, _)) ->
+    ?MATCH_ACCOUNT_RAW(A, B, Rest);
+raw_account_id(?MATCH_RESOURCE_SELECTORS_RAW(AccountId)) ->
+    AccountId;
+raw_account_id(?MATCH_RESOURCE_SELECTORS_UNENCODED(A, B, Rest)) ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+raw_account_id(?MATCH_RESOURCE_SELECTORS_ENCODED(A, B, Rest)) ->
+    ?MATCH_RESOURCE_SELECTORS_RAW(A, B, Rest);
+raw_account_id(<<"number/", _/binary>>=Other) ->
+    Other;
+raw_account_id(Other) ->
+    case lists:member(Other, ?KZ_SYSTEM_DBS) of
+        'true' -> Other;
+        'false' ->
+            lager:warning("raw account id doesn't process '~p'", [Other]),
+            Other
+    end.
+
+%% @private
+%% (modb()) -> modb_id() when modb() :: modb_id() | modb_db() | modb_db_unencoded()
+%% Crashes if given anything else.
+-spec raw_account_modb(ne_binary()) -> ne_binary().
+raw_account_modb(?MATCH_MODB_SUFFIX_RAW(_, _, _) = AccountId) ->
+    AccountId;
+raw_account_modb(?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, Year, Month)) ->
+    ?MATCH_MODB_SUFFIX_RAW(A, B, Rest, Year, Month);
+raw_account_modb(?MATCH_MODB_SUFFIX_UNENCODED(A, B, Rest, Year, Month)) ->
+    ?MATCH_MODB_SUFFIX_RAW(A, B, Rest, Year, Month).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% This function will return a list of all account database names
+%% in the requested encoding
+%% @end
+%%--------------------------------------------------------------------
+-spec get_all_accounts() -> ne_binaries().
+-spec get_all_accounts(?MODULE:account_format()) -> ne_binaries().
+get_all_accounts() -> get_all_accounts(?REPLICATE_ENCODING).
+
+get_all_accounts(Encoding) ->
+    {'ok', Dbs} = kz_datamgr:db_list_by_classifier('account'
+                                                  ,[{'startkey', <<"account/">>}
+                                                   ,{'endkey', <<"account0">>}
+                                                   ]),
+    [format_account_id(Db, Encoding)
+     || Db <- Dbs
+    ].
+
+-spec get_all_accounts_and_mods() -> ne_binaries().
+-spec get_all_accounts_and_mods(?MODULE:account_format()) -> ne_binaries().
+get_all_accounts_and_mods() ->
+    get_all_accounts_and_mods(?REPLICATE_ENCODING).
+
+get_all_accounts_and_mods(Encoding) ->
+    {'ok', Dbs} = kz_datamgr:db_list_by_classifier(['account', 'modb']
+                                                  ,[{'startkey', <<"account/">>}
+                                                   ,{'endkey', <<"account0">>}
+                                                   ]),
+    [format_db(Db, Encoding) || Db <- Dbs].
+
+-spec format_db(ne_binary(), ?MODULE:account_format()) -> ne_binary().
+format_db(Db, Encoding) ->
+    Fs = [{fun is_account_db/1, fun ?MODULE:format_account_id/2}
+         ,{fun is_account_mod/1, fun ?MODULE:format_account_modb/2}
+         ],
+    format_db(Db, Encoding, Fs).
+
+format_db(Db, Encoding, [{Predicate, Formatter}|Fs]) ->
+    case Predicate(Db) of
+        'true' -> Formatter(Db, Encoding);
+        'false' -> format_db(Db, Encoding, Fs)
+    end.
+
+-spec is_account_mod(ne_binary()) -> boolean().
+is_account_mod(Db) ->
+    kz_datamgr:db_classification(Db) =:= 'modb'.
+
+-spec is_account_db(ne_binary()) -> boolean().
+is_account_db(Db) ->
+    kz_datamgr:db_classification(Db) =:= 'account'.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account, build an MODb in an 'encoded' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_id(api_binary(), kz_year() | ne_binary(), kz_month() | ne_binary()) ->
+                               api_binary().
+format_account_id('undefined', _Year, _Month) -> 'undefined';
+format_account_id(AccountId, Year, Month) when not is_integer(Year) ->
+    format_account_id(AccountId, kz_term:to_integer(Year), Month);
+format_account_id(AccountId, Year, Month) when not is_integer(Month) ->
+    format_account_id(AccountId, Year, kz_term:to_integer(Month));
+format_account_id(Account, Year, Month) when is_integer(Year),
+                                             is_integer(Month) ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_id(Account),
+    ?MATCH_MODB_SUFFIX_ENCODED(A, B, Rest, kz_term:to_binary(Year), kz_time:pad_month(Month)).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account, build an MODb in an 'encoded' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_mod_id(api_binary()) -> api_binary().
+-spec format_account_mod_id(api_binary(), gregorian_seconds() | kz_now()) -> api_binary().
+-spec format_account_mod_id(api_binary(), kz_year() | ne_binary(), kz_month() | ne_binary()) ->
+                                   api_binary().
+
+format_account_mod_id(Account) ->
+    format_account_mod_id(Account, os:timestamp()).
+
+format_account_mod_id(AccountId, {_,_,_}=Timestamp) ->
+    {{Year, Month, _}, _} = calendar:now_to_universal_time(Timestamp),
+    format_account_id(AccountId, Year, Month);
+format_account_mod_id(AccountId, Timestamp) when is_integer(Timestamp) ->
+    {{Year, Month, _}, _} = calendar:gregorian_seconds_to_datetime(Timestamp),
+    format_account_id(AccountId, Year, Month).
+
+format_account_mod_id(AccountId, Year, Month) ->
+    format_account_id(AccountId, Year, Month).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an account return it in a 'encoded' format.
+%% Note: accepts MODbs as well as account IDs/DBs
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_db(api_binary()) -> api_binary().
+format_account_db(AccountId) ->
+    format_account_id(AccountId, 'encoded').
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Given a representation of an MODb return the MODb in the specified format.
+%% Note: crashes if given anything but an MODb (in any format).
+%% @end
+%%--------------------------------------------------------------------
+-spec format_account_modb(ne_binary()) -> ne_binary().
+-spec format_account_modb(ne_binary(), account_format()) -> ne_binary().
+format_account_modb(AccountId) ->
+    format_account_modb(AccountId, 'raw').
+format_account_modb(AccountId, 'raw') ->
+    raw_account_modb(AccountId);
+format_account_modb(AccountId, 'unencoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_modb(AccountId),
+    kz_term:to_binary(["account/", A, "/", B, "/", Rest]);
+format_account_modb(AccountId, 'encoded') ->
+    ?MATCH_ACCOUNT_RAW(A,B,Rest) = raw_account_modb(AccountId),
+    kz_term:to_binary(["account%2F", A, "%2F", B, "%2F", Rest]).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Normalize the account name by converting the name to lower case
+%% and then removing all non-alphanumeric characters.
+%%
+%% This can possibly return an empty binary.
+%% @end
+%%--------------------------------------------------------------------
+-spec normalize_name(api_binary()) -> api_binary().
+normalize_name('undefined') -> 'undefined';
+normalize_name(AccountName) ->
+    << <<Char>>
+       || <<Char>> <= kz_term:to_lower_binary(AccountName),
+          is_alphanumeric(Char)
+    >>.
+
+is_alphanumeric(Char)
+  when Char >= $a,
+       Char =< $z ->
+    true;
+is_alphanumeric(Char)
+  when Char >= $0,
+       Char =< $9 ->
+    true;
+is_alphanumeric(_) ->
+    false.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% Determine if the given account id/db exists in the hierarchy of
+%% the provided account id/db. Optionally consider the account in
+%% its own hierarchy.
+%% @end
+%%--------------------------------------------------------------------
+-spec is_in_account_hierarchy(api_binary(), api_binary()) -> boolean().
+-spec is_in_account_hierarchy(api_binary(), api_binary(), boolean()) -> boolean().
+
+is_in_account_hierarchy(CheckFor, InAccount) ->
+    is_in_account_hierarchy(CheckFor, InAccount, 'false').
+
+is_in_account_hierarchy('undefined', _, _) -> 'false';
+is_in_account_hierarchy(_, 'undefined', _) -> 'false';
+is_in_account_hierarchy(CheckFor, InAccount, IncludeSelf) ->
+    CheckId = format_account_id(CheckFor),
+    AccountId = format_account_id(InAccount),
+    case (IncludeSelf
+          andalso AccountId =:= CheckId
+         )
+        orelse ?MODULE:fetch(AccountId)
+    of
+        'true' ->
+            lager:debug("account ~s is the same as the account to fetch the hierarchy from", [CheckId]),
+            'true';
+        {'ok', JObj} ->
+            Tree = ?MODULE:tree(JObj),
+            case lists:member(CheckId, Tree) of
+                'true' ->
+                    lager:debug("account ~s is in the account hierarchy of ~s", [CheckId, AccountId]),
+                    'true';
+                'false' ->
+                    lager:debug("account ~s was not found in the account hierarchy of ~s", [CheckId, AccountId]),
+                    'false'
+            end;
+        {'error', _R} ->
+            lager:debug("failed to get the ancestry of the account ~s: ~p", [AccountId, _R]),
+            'false'
+    end.
+
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% checks the pvt_enabled flag and returns 'false' only if the flag is
+%% specificly set to 'false'.  If it is missing or set to anything else
+%% return 'true'.  However, if we cant find the account doc then return
+%% 'false'.
+%% @end
+%%--------------------------------------------------------------------
+-spec is_account_enabled(api_binary()) -> boolean().
+is_account_enabled('undefined') -> 'false';
+is_account_enabled(Account) ->
+    case ?MODULE:fetch(Account) of
+        {'error', _E} ->
+            lager:error("could not open account ~s", [Account]),
+            'false';
+        {'ok', JObj} ->
+            ?MODULE:is_enabled(JObj)
+    end.
+
+-spec is_account_expired(api_binary()) -> 'false' | {'true', gregorian_seconds()}.
+is_account_expired('undefined') -> 'false';
+is_account_expired(Account) ->
+    case ?MODULE:fetch(Account) of
+        {'error', _R} ->
+            lager:debug("failed to check if expired token auth, ~p", [_R]),
+            'false';
+        {'ok', JObj} ->
+            ?MODULE:is_expired(JObj)
+    end.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec maybe_disable_account(ne_binary()) ->
+                                   {'ok', kz_json:object()} |
+                                   {'error', any()}.
+maybe_disable_account(Account) ->
+    case is_account_enabled(Account) of
+        'false' -> 'ok';
+        'true' ->
+            disable_account(Account)
+    end.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec disable_account(ne_binary()) ->
+                             {'ok', kz_json:object()} |
+                             {'error', any()}.
+disable_account(Account) ->
+    account_update(Account, fun ?MODULE:disable/1).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec enable_account(ne_binary()) ->
+                            {'ok', kz_json:object()} |
+                            {'error', any()}.
+enable_account(Account) ->
+    account_update(Account, fun ?MODULE:enable/1).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+-spec is_system_admin(api_binary()) -> boolean().
+is_system_admin('undefined') -> 'false';
+is_system_admin(Account) ->
+    case ?MODULE:fetch(Account) of
+        {'ok', JObj} -> ?MODULE:is_superduper_admin(JObj);
+        {'error', _R} ->
+            lager:debug("unable to open account definition for ~s: ~p", [Account, _R]),
+            'false'
+    end.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec update_superduper_admin(ne_binary(), boolean()) ->
+                                     {'ok', kz_json:object()} |
+                                     {'error', any()}.
+update_superduper_admin(Account, IsAdmin) ->
+    account_update(Account, fun(J) -> ?MODULE:set_superduper_admin(J, IsAdmin) end).
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec update_allow_number_additions(ne_binary(), boolean()) ->
+                                           {'ok', kz_json:object()} |
+                                           {'error', any()}.
+update_allow_number_additions(Account, IsAllowed) ->
+    account_update(Account, fun(J) -> set_allow_number_additions(J, IsAllowed) end).
+
+%%--------------------------------------------------------------------
+%% @private
+%% @doc
+%% @end
+%%--------------------------------------------------------------------
+-spec account_update(doc()) ->
+                            {'ok', kz_json:object()} |
+                            {'error', any()}.
+-spec account_update(ne_binary(), function()) -> 'ok' | {'error', any()}.
+account_update(AccountJObj) ->
+    AccountDb = kz_doc:account_db(AccountJObj),
+    case kz_datamgr:ensure_saved(AccountDb, AccountJObj) of
+        {'error', _R}=E -> E;
+        {'ok', SavedJObj} ->
+            kz_datamgr:ensure_saved(?KZ_ACCOUNTS_DB, SavedJObj)
+    end.
+
+account_update(Account, UpdateFun) ->
+    case ?MODULE:fetch(Account) of
+        {'error', _R}=E -> E;
+        {'ok', AccountJObj} ->
+            account_update(UpdateFun(AccountJObj))
+    end.

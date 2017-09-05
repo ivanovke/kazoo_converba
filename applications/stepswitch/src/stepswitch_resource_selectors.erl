@@ -103,7 +103,7 @@ maybe_get_hunt_account(OffnetJObj) ->
     AccountId = kapi_offnet_resource:account_id(OffnetJObj),
     {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
     case kz_term:is_not_empty(HuntAccountId)
-        andalso kz_util:is_in_account_hierarchy(HuntAccountId, AccountId, 'true')
+        andalso kzd_account:is_in_account_hierarchy(HuntAccountId, AccountId, 'true')
     of
         'true' -> HuntAccountId;
         'false' -> MasterAccountId
@@ -113,7 +113,7 @@ maybe_get_hunt_account(OffnetJObj) ->
                                 {'ok', kz_json:objects()} |
                                 {'error', any()}.
 get_selector_rules(HuntAccountId) ->
-    Db = kz_util:format_account_db(HuntAccountId),
+    Db = kzd_account:format_account_db(HuntAccountId),
     case kz_datamgr:open_doc(Db, ?SRS_RULES_DOC) of
         {'ok', Doc} ->
             Rules = kz_json:get_list_value(<<"rules">>, Doc, ?DEFAULT_SRS_RULES),

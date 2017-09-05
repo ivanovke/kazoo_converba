@@ -153,7 +153,7 @@ init(Pid) ->
     _ = process_flag('trap_exit', 'true'),
     kz_util:put_callid(?SERVER),
     lager:debug("started ~s", [?SERVER]),
-    case kz_util:get_all_accounts('raw') of
+    case kzd_account:get_all_accounts('raw') of
         [] ->
             ?ERROR("********** no account found, going down **********", []),
             {'stop', #state{}};

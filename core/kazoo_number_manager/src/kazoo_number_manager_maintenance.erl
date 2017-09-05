@@ -199,7 +199,7 @@ refresh_numbers_db(_Thing) ->
 %% @public
 -spec update_number_services_view(ne_binary()) -> no_return.
 update_number_services_view(?MATCH_ACCOUNT_RAW(AccountId)) ->
-    update_number_services_view(kz_util:format_account_db(AccountId));
+    update_number_services_view(kzd_account:format_account_db(AccountId));
 update_number_services_view(?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
     ClassifiersJObj = knm_converters:available_classifiers(), %%TODO: per-account classifiers.
     Pairs = [{Classification, kz_json:get_value([Classification, <<"regex">>], ClassifiersJObj)}
@@ -236,7 +236,7 @@ update_number_services_view(?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
 -spec fix_accounts_numbers([ne_binary()]) -> 'ok'.
 -spec fix_account_numbers(ne_binary()) -> 'ok'.
 fix_accounts_numbers(Accounts) ->
-    AccountDbs = lists:usort([kz_util:format_account_db(Account) || Account <- Accounts]),
+    AccountDbs = lists:usort([kzd_account:format_account_db(Account) || Account <- Accounts]),
     _ = purge_discovery(),
     _ = purge_deleted(),
     foreach_pause_in_between(?TIME_BETWEEN_ACCOUNTS_MS, fun fix_account_numbers/1, AccountDbs).
@@ -279,7 +279,7 @@ fix_account_numbers(AccountDb = ?MATCH_ACCOUNT_ENCODED(A,B,Rest)) ->
     erase(trunkstore_DIDs),
     ?LOG("########## done fixing [~s] ##########", [AccountDb]);
 fix_account_numbers(Account = ?NE_BINARY) ->
-    fix_account_numbers(kz_util:format_account_db(Account)).
+    fix_account_numbers(kzd_account:format_account_db(Account)).
 
 log_alien(_AccountDb, _DID) ->
     ?LOG("########## found alien [~s] doc: ~s ##########", [_AccountDb, _DID]).
@@ -305,12 +305,12 @@ start_link() ->
 migrate() ->
     ensure_adminonly_features_are_reachable(),
     _ = refresh_numbers_dbs(),
-    pforeach(fun migrate/1, kz_util:get_all_accounts()),
+    pforeach(fun migrate/1, kzd_account:get_all_accounts()),
     migrate_unassigned_numbers().
 
 -spec migrate(ne_binary()) -> 'ok'.
 migrate(Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kzd_account:format_account_db(Account),
     fix_account_numbers(AccountDb),
     _ = kz_datamgr:del_doc(AccountDb, <<"phone_numbers">>),
     'ok'.
@@ -505,7 +505,7 @@ options() ->
 account_db_from_number_doc(NumDoc) ->
     case kz_json:get_ne_binary_value(?PVT_ASSIGNED_TO, NumDoc) of
         undefined -> undefined;
-        AccountId -> kz_util:format_account_db(AccountId)
+        AccountId -> kzd_account:format_account_db(AccountId)
     end.
 
 -spec fix_unassign_doc(ne_binary()) -> 'ok'.

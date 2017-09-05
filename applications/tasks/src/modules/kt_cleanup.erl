@@ -38,7 +38,7 @@ cleanup_soft_deletes(?KZ_ACCOUNTS_DB) ->
     do_cleanup(?KZ_ACCOUNTS_DB);
 cleanup_soft_deletes(Account) ->
     kz_datamgr:suppress_change_notice(),
-    case kz_util:is_account_db(Account) of
+    case kzd_account:is_account_db(Account) of
         'true' -> cleanup_account_soft_deletes(Account);
         'false' ->
             _ = kz_datamgr:enable_change_notice(),
@@ -52,7 +52,7 @@ cleanup_soft_deletes(Account) ->
 
 -spec cleanup_account_soft_deletes(ne_binary()) -> 'ok'.
 cleanup_account_soft_deletes(Account) ->
-    AccountDb = kz_util:format_account_id(Account, 'encoded'),
+    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
     do_cleanup(AccountDb).
 
 -spec do_cleanup(ne_binary()) -> 'ok'.

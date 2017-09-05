@@ -58,7 +58,7 @@ send_system_alert(Request) ->
 -spec add_limit_details(api_ne_binary(), ne_binary(), kz_proplist()) -> kz_proplist().
 add_limit_details('undefined', _, Props) -> Props;
 add_limit_details(Account, Prefix, Props) ->
-    AccountId = kz_util:format_account_id(Account),
+    AccountId = kzd_account:format_account_id(Account),
     Limits = j5_limits:get(AccountId),
     [{<<Prefix/binary, "-Enforce-Limits">>, kz_term:to_binary(j5_limits:enabled(Limits))}
     ,{<<Prefix/binary, "-Calls">>, kz_term:to_binary(calls(AccountId, Limits))}
@@ -98,7 +98,7 @@ max_postpay(Limits) ->
 get_account_name('undefined') -> <<"unknown">>;
 get_account_name(Account) ->
     case kzd_account:fetch_name(Account) of
-        undefined -> kz_util:format_account_id(Account);
+        undefined -> kzd_account:format_account_id(Account);
         Name -> Name
     end.
 
