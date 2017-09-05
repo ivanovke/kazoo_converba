@@ -6,7 +6,7 @@
 %%% @contributors
 %%%   James Aimonetti
 %%%-------------------------------------------------------------------
--module(kz_account).
+-module(kzd_account).
 
 -export([new/0
         ,type/0
