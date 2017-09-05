@@ -523,26 +523,26 @@ filter_messages(Messages, Filters, Context) ->
 
 %% Filter by folder
 filter_messages([], _Filters, _Context, Selected) -> Selected;
-filter_messages([Mess|Messages], <<"all">> = Filter, Context, Selected) ->
-    Id = kzd_box_message:media_id(Mess),
+filter_messages([Message|Messages], <<"all">> = Filter, Context, Selected) ->
+    Id = kzd_box_message:media_id(Message),
     filter_messages(Messages, Filter, Context, [Id|Selected]);
-filter_messages([Mess|Messages], <<_/binary>> = Filter, Context, Selected)
+filter_messages([Message|Messages], <<_/binary>> = Filter, Context, Selected)
   when Filter =:= ?VM_FOLDER_NEW;
        Filter =:= ?VM_FOLDER_SAVED;
        Filter =:= ?VM_FOLDER_DELETED ->
-    Id = kzd_box_message:media_id(Mess),
-    QsFiltered = crossbar_filter:by_doc(Mess, Context),
+    Id = kzd_box_message:media_id(Message),
+    QsFiltered = crossbar_filter:by_doc(Message, Context),
     case QsFiltered
-        orelse kzd_box_message:folder(Mess) =:= Filter
+        orelse Filter =:= kzd_box_message:folder(Message)
     of
         'true' -> filter_messages(Messages, Filter, Context, [Id|Selected]);
         'false' -> filter_messages(Messages, Filter, Context, Selected)
     end;
 %% Filter by Ids
 filter_messages(_, [], _Context, Selected) -> Selected;
-filter_messages([Mess|Messages], Filters, Context, Selected) ->
-    Id = kzd_box_message:media_id(Mess),
-    QsFiltered = crossbar_filter:by_doc(Mess, Context),
+filter_messages([Message|Messages], Filters, Context, Selected) ->
+    Id = kzd_box_message:media_id(Message),
+    QsFiltered = crossbar_filter:by_doc(Message, Context),
 
     case QsFiltered
         orelse lists:member(Id, Filters)
@@ -724,12 +724,11 @@ merge_summary_results(BoxSummary, AccountMsgCounts) ->
 merge_summary_fold(JObj, AccountMsgCounts) ->
     BoxId = kz_json:get_value(<<"id">>, JObj),
     case kz_json:get_value(BoxId, AccountMsgCounts) of
-        'undefined' ->
-            JObj;
-        J ->
+        'undefined' -> JObj;
+        BoxJObj ->
             BCount = kz_json:get_integer_value(?VM_KEY_MESSAGES, JObj, 0),
-            New = kz_json:get_integer_value(?VM_FOLDER_NEW, J, 0),
-            Saved = kz_json:get_integer_value(?VM_FOLDER_SAVED, J, 0),
+            New = kz_json:get_integer_value(?VM_FOLDER_NEW, BoxJObj, 0),
+            Saved = kz_json:get_integer_value(?VM_FOLDER_SAVED, BoxJObj, 0),
             kz_json:set_value(?VM_KEY_MESSAGES, BCount + New + Saved, JObj)
     end.
 

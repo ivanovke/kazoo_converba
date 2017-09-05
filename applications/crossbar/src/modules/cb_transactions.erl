@@ -574,4 +574,7 @@ send_resp({'ok', JObj}, Context) ->
                        ,{fun cb_context:set_resp_data/2, JObj}
                        ]);
 send_resp({'error', Details}, Context) ->
-    cb_context:add_system_error('bad_identifier', kz_json:from_list([{<<"cause">>, Details}]), Context).
+    cb_context:add_system_error('bad_identifier'
+                               ,kz_json:from_list([{<<"cause">>, Details}])
+                               ,Context
+                               ).

@@ -220,7 +220,9 @@ maybe_mark_as_complete(MigId, Account, Context) ->
             lager:info("migration ~p failed to complete", [MigId])
     end.
 
--spec mark_migration_complete(binary(), binary(), cb_context:context()) -> 'ok'.
+-spec mark_migration_complete(binary(), binary(), cb_context:context()) ->
+                                     {'ok', kz_json:object() | kz_json:objects()} |
+                                     kz_datamgr:data_error().
 mark_migration_complete(MigId, AccountId, Context) ->
     lager:info("migration ~p completed successfully on account ~p", [MigId, AccountId]),
 

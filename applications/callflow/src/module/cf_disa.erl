@@ -164,7 +164,7 @@ maybe_restrict_call(Data, Call, Number, Flow) ->
 should_use_account_cid(Data) ->
     kz_json:is_true(<<"use_account_caller_id">>, Data, ?DEFAULT_USE_ACCOUNT_CALLER_ID).
 
--spec maybe_update_caller_id(kz_json:object(), boolean()) -> kapps_call:call().
+-spec maybe_update_caller_id(kapps_call:call(), boolean()) -> kapps_call:call().
 maybe_update_caller_id(Call, 'true') -> use_account_cid(Call);
 maybe_update_caller_id(Call, 'false') -> keep_original_cid(Call).
 

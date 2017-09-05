@@ -151,9 +151,12 @@ base_call_cost(RateCost, RateMin, RateSurcharge)
 current_balance(Account) ->
     get_balance(Account, []).
 
--spec previous_balance(ne_binary(), ne_binary(), ne_binary()) -> balance_ret().
+-spec previous_balance(ne_binary(), ne_binary() | kz_year(), ne_binary() | kz_month()) ->
+                              balance_ret().
 previous_balance(Account, Year, Month) ->
-    Options = [{'year', kz_term:to_binary(Year)}, {'month', kz_date:pad_month(Month)}],
+    Options = [{'year', kz_term:to_binary(Year)}
+              ,{'month', kz_time:pad_month(Month)}
+              ],
     get_balance(Account, Options).
 
 -spec get_balance(ne_binary(), kazoo_modb:view_options()) -> balance_ret().

@@ -363,13 +363,10 @@ get_label(Doc) ->
          }
     of
         {'undefined', 'undefined'} ->
-            kz_json:get_value(<<"name">>, Doc);
-        {First, 'undefined'} ->
-            First;
-        {'undefined', Last} ->
-            Last;
-        {First, Last} ->
-            <<First/binary, " ", Last/binary>>
+            kz_json:get_ne_binary_value(<<"name">>, Doc);
+        {First, 'undefined'} -> First;
+        {'undefined', Last} -> Last;
+        {First, Last} -> <<First/binary, " ", Last/binary>>
     end.
 
 -spec get_feature_key(ne_binary(), ne_binary(), binary(), binary(), ne_binary(), kz_json:object()) -> api_object().

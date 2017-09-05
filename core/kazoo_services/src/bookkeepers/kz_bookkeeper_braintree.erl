@@ -110,10 +110,12 @@ sync([ServiceItem|ServiceItems], AccountId, Updates) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
+-type transaction_error() :: 'not_found' |
+                             'unknown_error'.
+
 -spec transactions(ne_binary(), gregorian_seconds(), gregorian_seconds()) ->
                           {'ok', kz_transaction:transactions()} |
-                          {'error', 'not_found'} |
-                          {'error', 'unknown_error'}.
+                          {'error', transaction_error()}.
 transactions(AccountId, From0, To0) ->
     From = timestamp_to_braintree(From0),
     To   = timestamp_to_braintree(To0),

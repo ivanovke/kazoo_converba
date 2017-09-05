@@ -44,7 +44,7 @@ maybe_publish_doc(Db, Doc, JObj) ->
         andalso kz_util:spawn(fun publish_doc/3, [Db, Doc, JObj]),
     kzs_cache:flush_cache_doc(Db, JObj).
 
--spec publish_db(ne_binary(), kapi_conf:action()) -> boolean().
+-spec publish_db(ne_binary(), kapi_conf:action()) -> 'true'.
 publish_db(DbName, Action) ->
     _ = kz_util:spawn(fun() -> do_publish_db(DbName, Action) end),
     'true'.

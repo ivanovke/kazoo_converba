@@ -379,8 +379,11 @@ max_recording_time_limit() ->
 %%     Port = kz_couch_connections:get_port(),
 %%     base_url(Host, Port).
 
--spec base_url(text(), text()) -> ne_binary().
--spec base_url(text(), text(), atom()) -> ne_binary().
+-type permission() :: 'proxy_store' |
+                      'proxy_playback'.
+
+-spec base_url(text(), text() | inet:port_number()) -> ne_binary().
+-spec base_url(text(), text() | inet:port_number(), permission()) -> ne_binary().
 base_url(Host, Port) ->
     base_url(Host, Port, 'proxy_playback').
 

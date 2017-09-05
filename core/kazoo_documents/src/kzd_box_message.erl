@@ -102,25 +102,26 @@ new(AccountId, Props) ->
 
     Name = create_message_name(props:get_value(<<"Box-Num">>, Props)
                               ,props:get_value(<<"Timezone">>, Props)
-                              ,UtcSeconds),
+                              ,UtcSeconds
+                              ),
     Description = props:get_value(<<"Description">>, Props, <<"voicemail message with media">>),
 
-    DocProps = props:filter_undefined(
-                 [{<<"_id">>, MsgId}
-                 ,{?KEY_NAME, Name}
-                 ,{?KEY_DESC, Description}
-                 ,{?KEY_SOURCE_TYPE, ?KEY_VOICEMAIL}
-                 ,{?KEY_SOURCE_ID, props:get_value(<<"Box-Id">>, Props)}
-                 ,{?KEY_MEDIA_SOURCE, <<"recording">>}
-                 ,{?KEY_MEDIA_FILENAME, props:get_value(<<"Attachment-Name">>, Props)}
-                 ,{?KEY_STREAMABLE, 'true'}
-                 ,{?KEY_UTC_SEC, UtcSeconds}
-                 ]),
-    kz_doc:update_pvt_parameters(
-      kz_json:from_list(DocProps), Db, [{'type', type()}
-                                       ,{'now', Timestamp}
-                                       ]
-     ).
+    DocProps = [{<<"_id">>, MsgId}
+               ,{?KEY_NAME, Name}
+               ,{?KEY_DESC, Description}
+               ,{?KEY_SOURCE_TYPE, ?KEY_VOICEMAIL}
+               ,{?KEY_SOURCE_ID, props:get_value(<<"Box-Id">>, Props)}
+               ,{?KEY_MEDIA_SOURCE, <<"recording">>}
+               ,{?KEY_MEDIA_FILENAME, props:get_value(<<"Attachment-Name">>, Props)}
+               ,{?KEY_STREAMABLE, 'true'}
+               ,{?KEY_UTC_SEC, UtcSeconds}
+               ],
+    kz_doc:update_pvt_parameters(kz_json:from_list(DocProps)
+                                ,Db
+                                ,[{'type', type()}
+                                 ,{'now', Timestamp}
+                                 ]
+                                ).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -176,8 +177,8 @@ build_metadata_object(Length, Call, MediaId, CIDNumber, CIDName, Timestamp) ->
 -spec get_msg_id(kz_json:object()) -> api_ne_binary().
 get_msg_id(JObj) ->
     Paths = [<<"_id">>
-            ,<<"media_id">>
-            ,[<<"metadata">>, <<"media_id">>]
+            ,?KEY_MEDIA_ID
+            ,[?KEY_METADATA, ?KEY_MEDIA_ID]
             ],
     kz_json:get_first_defined(Paths, JObj).
 
@@ -189,15 +190,15 @@ get_msg_id(JObj) ->
 -spec type() -> ne_binary().
 type() -> ?PVT_TYPE.
 
--spec folder(doc()) -> api_object().
+-spec folder(doc()) -> api_ne_binary().
 folder(Metadata) ->
     folder(Metadata, 'undefined').
 
--spec folder(doc(), Default) -> doc() | Default.
+-spec folder(doc(), Default) -> ne_binary() | Default.
 folder(Metadata, Default) ->
     kz_json:get_first_defined([[?KEY_METADATA, ?VM_KEY_FOLDER], ?VM_KEY_FOLDER], Metadata, Default).
 
--spec set_folder(api_binary(), doc()) -> doc().
+-spec set_folder(api_ne_binary(), doc()) -> doc().
 set_folder(Folder, Metadata) ->
     kz_json:set_value(?VM_KEY_FOLDER, Folder, Metadata).
 
