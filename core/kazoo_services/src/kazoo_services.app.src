@@ -11,7 +11,7 @@
                  , kazoo_config
                  , kazoo_data
                  , kazoo_modb
-                 
+
 
                  , lager
                  ]}

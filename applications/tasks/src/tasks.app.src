@@ -18,7 +18,7 @@
                  , kazoo_services
                  , kazoo_tasks
                  , kazoo_templates
-                 
+
 
                  ,lager
                  ]},

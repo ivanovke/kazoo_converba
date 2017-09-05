@@ -16,7 +16,7 @@
                  , kazoo_media
                  , kazoo_token_buckets
                  , kazoo_voicemail
-                 
+
 
                  , lager
                  ]}

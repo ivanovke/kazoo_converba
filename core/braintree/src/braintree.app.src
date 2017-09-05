@@ -1,6 +1,6 @@
 {application,braintree,
-             [{applications,[kazoo,kazoo_config,kazoo_web,lager,stdlib,xmerl]},
-              {description,"Braintree API interactions"},
-              {vsn,"4.0.0"},
-              {modules,[]},
-              {registered,[]}]}.
+ [{applications,[kazoo,kazoo_config,kazoo_web,lager,stdlib,xmerl]},
+  {description,"Braintree API interactions"},
+  {vsn,"4.0.0"},
+  {modules,[]},
+  {registered,[]}]}.

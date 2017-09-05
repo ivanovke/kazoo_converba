@@ -16,7 +16,7 @@
                  , kazoo_amqp
                  , kazoo_apps
                  , kazoo_data
-                 
+
 
                  , lager
                  ]},

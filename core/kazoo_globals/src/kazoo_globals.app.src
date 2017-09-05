@@ -1,8 +1,8 @@
 {application,kazoo_globals,
-             [{applications,[kazoo_data,kazoo_etsmgr,lager_syslog,syslog]},
-              {description,"Register processes across the cluster"},
-              {id,[]},
-              {vsn,"4.0.0"},
-              {modules,[]},
-              {registered,[kz_globals]},
-              {mod,{kazoo_globals_app,[]}}]}.
+ [{applications,[kazoo_data,kazoo_etsmgr,lager_syslog,syslog]},
+  {description,"Register processes across the cluster"},
+  {id,[]},
+  {vsn,"4.0.0"},
+  {modules,[]},
+  {registered,[kz_globals]},
+  {mod,{kazoo_globals_app,[]}}]}.

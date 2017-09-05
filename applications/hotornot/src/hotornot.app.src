@@ -12,7 +12,7 @@
                  , kazoo_apps
                  , kazoo_data
                  , kazoo_templates
-                 
+
 
                  , lager
                  ]}

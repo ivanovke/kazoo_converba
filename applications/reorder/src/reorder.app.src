@@ -1,8 +1,8 @@
 {application,reorder,
-             [{applications,[kazoo,kazoo_apps,kazoo_config,
-                             kazoo_number_manager,lager,stdlib]},
-              {description,"Reorder - "},
-              {vsn,"4.0.0"},
-              {modules,[]},
-              {registered,[reorder_sup]},
-              {mod,{reorder_app,[]}}]}.
+ [{applications,[kazoo,kazoo_apps,kazoo_config,
+                 kazoo_number_manager,lager,stdlib]},
+  {description,"Reorder - "},
+  {vsn,"4.0.0"},
+  {modules,[]},
+  {registered,[reorder_sup]},
+  {mod,{reorder_app,[]}}]}.
