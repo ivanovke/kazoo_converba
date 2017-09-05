@@ -135,7 +135,8 @@ circles(App) ->
     RemoteApps = remote_app_list(App),
     ?DEBUG("app ~p has remote apps ~p~n", [App, RemoteApps]),
     CircularDeps = circular_deps(App, RemoteApps),
-    ?DEBUG("app ~p has circular deps ~p~n", [App, CircularDeps]),
+    [] =/= CircularDeps
+        andalso ?DEBUG("app ~p has circular deps ~p~n", [App, CircularDeps]),
     {App, CircularDeps}.
 
 -spec remote_app_list(atom()) -> [atom()].
@@ -155,11 +156,12 @@ circles_fold(App, Dep, Acc) ->
                       ,[Dep, App, remote_app_list(Dep)]
                       ),
     case is_kazoo_app(Dep)
+        andalso is_app_not_lib(Dep)
         andalso [A || A <- remote_app_list(Dep), A =:= App]
     of
-        'false' -> ?DEBUG("dep ~p (of ~p) is not a kazoo app~n", [Dep, App]), Acc;
+        'false' -> ?DEBUG("dep ~p (of ~p) is not a kazoo app (may be a lib)~n", [Dep, App]), Acc;
         [] -> Acc;
-        _ -> [Dep|Acc]
+        _ -> ?DEBUG("adding dep ~s to list", [Dep]), [Dep|Acc]
     end.
 
 -spec is_kazoo_app(atom() | file:filename() | {'error', 'bad_name'}) -> boolean().
@@ -382,15 +384,32 @@ modules_with_apps(App, Modules) ->
     lists:usort([{M, AppOf}
                  || M <- Modules,
                     (AppOf = app_of(M)) =/= 'undefined',
-                    AppOf =/= App
+                    AppOf =/= App,
+                    is_app_not_lib(AppOf)
                 ]
                ).
+
+is_app_not_lib(App) ->
+    'true' = is_loaded(App),
+    case application:get_key(App, 'mod') of
+        {'ok', {_Mod, _Args}} -> 'true';
+        _ -> 'false'
+    end.
+
+-spec is_loaded(atom()) -> boolean().
+is_loaded(App) ->
+    case application:load(App) of
+        'ok' -> 'true';
+        {'error', {'already_loaded', App}} -> 'true';
+        _E -> io:format('user', "failed to load ~p:~p~n", [App, _E]), 'false'
+    end.
 
 modules_as_apps(App, Modules) ->
     lists:usort([AppOf
                  || M <- Modules,
                     (AppOf = app_of(M)) =/= 'undefined',
-                    AppOf =/= App
+                    AppOf =/= App,
+                    is_app_not_lib(AppOf)
                 ]
                ).
 
