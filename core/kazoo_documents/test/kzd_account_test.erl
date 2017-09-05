@@ -8,7 +8,27 @@
 %%%-------------------------------------------------------------------
 -module(kzd_account_test).
 
+-include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_stdlib/include/kz_databases.hrl").
+
+-ifdef(PROPER).
+-include_lib("proper/include/proper.hrl").
+-endif.
+
 -include_lib("eunit/include/eunit.hrl").
+
+%% For format_account_* tests
+-export([format_account_id_raw/1
+        ,format_account_id_encoded/1
+        ,format_account_id_unencoded/1
+        ,format_account_mod_id_from_year_month/1
+        ,format_account_mod_id_from_now/1
+        ,format_account_modb_raw/1
+        ,format_account_modb_encoded/1
+        ,format_account_modb_unencoded/1
+        ]).
+
+-define(AN_ACCOUNT_ID, <<"4fe69c5b61015084f1fe5684abc6e502">>).
 
 -define(ID, <<"_id">>).
 -define(TREE, <<"pvt_tree">>).
@@ -198,3 +218,111 @@ validate(Schema, Device) ->
                            ,Device
                            ,[{'schema_loader_fun', fun kz_json_schema:fload/1}]
                            ).
+
+normalize_account_name_test_() ->
+    [?_assertEqual(undefined, kzd_account:normalize_name(undefined))
+    ,?_assertEqual(<<"blip2blop">>, kzd_account:normalize_name(<<"Blip#2!Blop">>))
+    ].
+
+is_in_account_hierarchy_test_() ->
+    [?_assertEqual(false, kzd_account:is_in_account_hierarchy(undefined, ?AN_ACCOUNT_ID))
+    ,?_assertEqual(false, kzd_account:is_in_account_hierarchy(undefined, ?AN_ACCOUNT_ID))
+    ,?_assertEqual(false, kzd_account:is_in_account_hierarchy(undefined, ?AN_ACCOUNT_ID, true))
+    ,?_assertEqual(false, kzd_account:is_in_account_hierarchy(undefined, ?AN_ACCOUNT_ID, false))
+    ,?_assertEqual(false, kzd_account:is_in_account_hierarchy(?AN_ACCOUNT_ID, undefined, false))
+    ,?_assertEqual(false, kzd_account:is_in_account_hierarchy(?AN_ACCOUNT_ID, undefined, true))
+    ,?_assertEqual(true, kzd_account:is_in_account_hierarchy(?AN_ACCOUNT_ID, ?AN_ACCOUNT_ID, true))
+    ].
+
+is_system_admin_test_() ->
+    [?_assertEqual(false, kzd_account:is_system_admin(undefined))
+    ].
+
+is_account_enabled_test_() ->
+    [?_assertEqual(false, kzd_account:is_account_enabled(undefined))
+    ].
+
+is_account_expired_test_() ->
+    [?_assertEqual(false, kzd_account:is_account_expired(undefined))
+    ].
+
+account_formats_test_() ->
+    AccountId = <<A:2/binary, B:2/binary, Rest:28/binary>> = kz_binary:rand_hex(16),
+    AccountDbUn = list_to_binary(["account/", A, "/", B, "/", Rest]),
+    AccountDbEn = list_to_binary(["account%2F", A, "%2F", B, "%2F", Rest]),
+
+    {Y, M, _} = erlang:date(),
+    TS = kz_time:current_tstamp(),
+    Now = os:timestamp(),
+    Year = kz_term:to_binary(Y),
+    Month = kz_time:pad_month(M),
+
+    MODbId = list_to_binary([AccountId, "-", Year, Month]),
+    MODbEn = list_to_binary([AccountDbEn, "-", Year, Month]),
+    MODbUn = list_to_binary([AccountDbUn, "-", Year, Month]),
+
+    Formats = [AccountId, AccountDbUn, AccountDbEn
+              ,MODbId, MODbEn, MODbUn
+              ],
+    %% Note: the whole point of exporting some of these is so that function_clause can be caught
+    Funs = [{fun kzd_account:format_account_id/1, AccountId}
+           ,{fun ?MODULE:format_account_id_raw/1, AccountId}
+           ,{fun ?MODULE:format_account_id_encoded/1, AccountDbEn}
+           ,{fun ?MODULE:format_account_id_unencoded/1, AccountDbUn}
+           ,{fun kzd_account:format_account_db/1, AccountDbEn}
+           ,{fun kzd_account:format_account_mod_id/1, MODbEn}
+           ,{fun ?MODULE:format_account_mod_id_from_year_month/1, MODbEn}
+           ,{fun ?MODULE:format_account_mod_id_from_now/1, MODbEn}
+           ,{fun kzd_account:format_account_modb/1, MODbId}
+           ,{fun ?MODULE:format_account_modb_raw/1, MODbId}
+           ,{fun ?MODULE:format_account_modb_encoded/1, MODbEn}
+           ,{fun ?MODULE:format_account_modb_unencoded/1, MODbUn}
+           ],
+    [{format_title(Fun, Format, Expected)
+     ,format_assert(Fun, Format, Expected)
+     }
+     || {Fun, Expected} <- Funs,
+        Format <- Formats
+    ] ++
+        [?_assertEqual('undefined', kzd_account:format_account_id('undefined', 'raw'))
+        ,?_assertEqual(<<"accounts">>, kzd_account:format_account_id(<<"accounts">>, 'raw'))
+        ,?_assertEqual(MODbEn, kzd_account:format_account_id(AccountDbEn, TS))
+        ,?_assertEqual(MODbEn, kzd_account:format_account_mod_id(AccountDbEn, TS))
+        ,?_assertEqual(undefined, kzd_account:format_account_id('undefined', Year, Month))
+        ,?_assertEqual(MODbEn, kzd_account:format_account_id(AccountDbEn, Year, Month))
+        ,?_assertEqual(MODbEn, kzd_account:format_account_id(AccountDbEn, Year, M))
+        ,?_assertEqual(?KZ_TASKS_DB, kzd_account:format_account_id(?KZ_TASKS_DB, 'raw'))
+        ,?_assertEqual(<<"bla">>, kzd_account:format_account_id(<<"bla">>, 'raw'))
+        ].
+
+format_assert(Fun, Format, Expected) ->
+    Matchable = format_title(Fun, Format, Expected),
+    case {is_simple_modb_converter(Matchable), Format} of
+        {'true', ?MATCH_ACCOUNT_RAW(_)} -> ?_assertException('error', 'function_clause', Fun(Format));
+        {'true', ?MATCH_ACCOUNT_ENCODED(_)} -> ?_assertException('error', 'function_clause', Fun(Format));
+        {'true', ?MATCH_ACCOUNT_UNENCODED(_)} -> ?_assertException('error', 'function_clause', Fun(Format));
+        {_Else, Format} -> ?_assertEqual(Expected, Fun(Format))
+    end.
+
+format_title(Fun, Format, Expected) ->
+    lists:flatten(
+      io_lib:format("~p converting ~s to ~s", [Fun, Format, Expected])
+     ).
+
+is_simple_modb_converter("#Fun<kzd_account.format_account_modb.1>"++_) -> 'true';
+is_simple_modb_converter("#Fun<kzd_account_test.format_account_modb_raw.1>"++_) -> 'true';
+is_simple_modb_converter("#Fun<kzd_account_test.format_account_modb_encoded.1>"++_) -> 'true';
+is_simple_modb_converter("#Fun<kzd_account_test.format_account_modb_unencoded.1>"++_) -> 'true';
+is_simple_modb_converter(_Else) -> 'false'.
+
+format_account_id_raw(F) -> kzd_account:format_account_id(F, 'raw').
+format_account_id_encoded(F) -> kzd_account:format_account_id(F, 'encoded').
+format_account_id_unencoded(F) -> kzd_account:format_account_id(F, 'unencoded').
+format_account_mod_id_from_year_month(F) ->
+    {Year, Month, _} = erlang:date(),
+    kzd_account:format_account_mod_id(F, Year, Month).
+format_account_mod_id_from_now(F) ->
+    kzd_account:format_account_mod_id(F, os:timestamp()).
+format_account_modb_raw(F) -> kzd_account:format_account_modb(F, 'raw').
+format_account_modb_encoded(F) -> kzd_account:format_account_modb(F, 'encoded').
+format_account_modb_unencoded(F) -> kzd_account:format_account_modb(F, 'unencoded').

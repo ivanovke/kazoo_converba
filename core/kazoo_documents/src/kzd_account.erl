@@ -204,7 +204,8 @@ open_cache_doc(Db, AccountId) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec fetch_name(ne_binary()) -> api_ne_binary().
+-spec fetch_name(api_ne_binary()) -> api_ne_binary().
+fetch_name('undefined') -> 'undefined';
 fetch_name(<<_/binary>>=Account) ->
     case fetch(Account) of
         {'ok', JObj} -> name(JObj);
