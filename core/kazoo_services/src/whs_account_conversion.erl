@@ -28,7 +28,7 @@
 %%--------------------------------------------------------------------
 -spec promote(ne_binary()) -> {'error', _} | 'ok'.
 promote(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     case kz_config_accounts:is_master_account(AccountId) of
         'true' -> {'error', 'master_account'};
         'false' ->
@@ -40,7 +40,7 @@ promote(Account) ->
 
 -spec force_promote(ne_binary()) -> {'error', _} | 'ok'.
 force_promote(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     do_promote(AccountId).
 
 -spec do_promote(ne_binary()) -> {'error', _} | 'ok'.
@@ -59,7 +59,7 @@ do_promote(AccountId) ->
 %%--------------------------------------------------------------------
 -spec demote(ne_binary()) -> {'error', _} | 'ok'.
 demote(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     case kz_config_accounts:is_master_account(AccountId) of
         'true' -> {'error', 'master_account'};
         'false' ->
@@ -71,7 +71,7 @@ demote(Account) ->
 
 -spec force_demote(ne_binary()) -> {'error', _} | 'ok'.
 force_demote(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     do_demote(AccountId).
 
 -spec do_demote(ne_binary()) -> {'error', _} | 'ok'.
@@ -91,8 +91,8 @@ do_demote(AccountId) ->
 %%--------------------------------------------------------------------
 -spec cascade_reseller_id(ne_binary(), ne_binary()) -> {'error', _} | 'ok'.
 cascade_reseller_id(Reseller, Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
-    ResellerId = kzd_account:format_account_id(Reseller, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
+    ResellerId = kz_term:format_account_id(Reseller, 'raw'),
     ViewOptions = [{'startkey', [AccountId]}
                   ,{'endkey', [AccountId, kz_json:new()]}
                   ],
@@ -116,8 +116,8 @@ cascade_reseller_id(Reseller, Account) ->
 %%--------------------------------------------------------------------
 -spec set_reseller_id(ne_binary(), ne_binary()) -> {'error', _} | 'ok'.
 set_reseller_id(Reseller, Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
-    ResellerId = kzd_account:format_account_id(Reseller, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
+    ResellerId = kz_term:format_account_id(Reseller, 'raw'),
     io:format("setting account ~s reseller id to ~s~n", [AccountId, ResellerId]),
     _ = kzd_account:account_update(AccountId, fun(JObj) -> kzd_account:set_reseller_id(JObj, ResellerId) end),
     maybe_update_services(AccountId, ?SERVICES_PVT_RESELLER_ID, ResellerId).

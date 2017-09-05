@@ -76,7 +76,7 @@ find_numbers(Prefix, Quantity, Options) ->
                              {'error', any()}.
 do_find_numbers(<<"+",_/binary>>=Prefix, Quantity, Offset, AccountId, QID)
   when is_integer(Quantity), Quantity > 0 ->
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     ViewOptions = [{'startkey', Prefix}
                   ,{'endkey', <<Prefix/binary, "\ufff0">>}
                   ,{'limit', Quantity}

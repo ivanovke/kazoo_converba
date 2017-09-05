@@ -518,7 +518,7 @@ find_account_admin_email(AccountId, ResellerId) ->
 
 -spec query_account_for_admin_emails(ne_binary()) -> ne_binaries().
 query_account_for_admin_emails(<<_/binary>> = AccountId) ->
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     ViewOptions = [{'key', <<"user">>}
                   ,'include_docs'
                   ],
@@ -580,7 +580,7 @@ account_users(?AN_ACCOUNT_ID) ->
     {ok, [kz_json:from_list([{<<"doc">>, UserJObj}])]}.
 -else.
 account_users(AccountId) ->
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     ViewOptions = [{'key', <<"user">>}
                   ,'include_docs'
                   ],
@@ -632,7 +632,7 @@ is_account_notice_enabled('undefined', TemplateKey, _ResellerAccountId) ->
     lager:debug("no account id to check, checking system config for ~s", [TemplateKey]),
     is_notice_enabled_default(TemplateKey);
 is_account_notice_enabled(AccountId, TemplateKey, ResellerAccountId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     TemplateId = teletype_templates:doc_id(TemplateKey),
 
     case kz_datamgr:open_cache_doc(AccountDb, TemplateId) of

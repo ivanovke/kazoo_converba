@@ -125,7 +125,7 @@
                                                    ,{'restrict_to', ['sync', 'stats_req']}
                                                    ]}
                                    ,{'conf', [{'action', <<"*">>}
-                                             ,{'db', kzd_account:format_account_id(AcctId, 'encoded')}
+                                             ,{'db', kz_term:format_account_id(AcctId, 'encoded')}
                                              ,{'id', AgentId}
                                              ,'federate'
                                              ]}
@@ -1286,7 +1286,7 @@ stop_agent_leg(ACallId, ACtrlQ) ->
 
 find_account_id(JObj) ->
     case kz_doc:account_id(JObj) of
-        'undefined' -> kzd_account:format_account_id(kz_doc:account_db(JObj), 'raw');
+        'undefined' -> kz_term:format_account_id(kz_doc:account_db(JObj), 'raw');
         AcctId -> AcctId
     end.
 

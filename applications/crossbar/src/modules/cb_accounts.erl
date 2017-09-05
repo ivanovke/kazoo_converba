@@ -380,8 +380,8 @@ put(Context, AccountId, ?RESELLER) ->
 -spec delete(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 
 delete(Context, Account) ->
-    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountDb = kz_term:format_account_id(Account, 'encoded'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     case kzd_account:is_account_db(AccountDb) of
         'false' ->
             cb_context:add_system_error('bad_identifier', kz_json:from_list([{<<"cause">>, AccountId}]),  Context);
@@ -475,8 +475,8 @@ move_account(Context, AccountId) ->
 prepare_context('undefined', Context) ->
     cb_context:set_account_db(Context, ?KZ_ACCOUNTS_DB);
 prepare_context(Account, Context) ->
-    AccountId = kzd_account:format_account_id(Account),
-    AccountDb = kzd_account:format_account_db(Account),
+    AccountId = kz_term:format_account_id(Account),
+    AccountDb = kz_term:format_account_db(Account),
     prepare_context(Context, AccountId, AccountDb).
 
 prepare_context(Context, AccountId, AccountDb) ->
@@ -1175,7 +1175,7 @@ add_pvt_enabled(Context) ->
     JObj = cb_context:doc(Context),
     case lists:reverse(kzd_account:tree(JObj)) of
         [ParentId | _] ->
-            ParentDb = kzd_account:format_account_id(ParentId, 'encoded'),
+            ParentDb = kz_term:format_account_id(ParentId, 'encoded'),
             case (not kz_term:is_empty(ParentId))
                 andalso kz_datamgr:open_doc(ParentDb, ParentId)
             of
@@ -1229,8 +1229,8 @@ create_new_tree('undefined') ->
             end
     end;
 create_new_tree(Parent) when is_binary(Parent) ->
-    ParentId = kzd_account:format_account_id(Parent, 'raw'),
-    ParentDb = kzd_account:format_account_id(Parent, 'encoded'),
+    ParentId = kz_term:format_account_id(Parent, 'raw'),
+    ParentDb = kz_term:format_account_id(Parent, 'encoded'),
     case kz_datamgr:open_doc(ParentDb, ParentId) of
         {'error', _} -> create_new_tree('undefined');
         {'ok', JObj} ->
@@ -1262,7 +1262,7 @@ load_account_db(Context, [AccountId|_]) ->
 load_account_db(Context, AccountId) when is_binary(AccountId) ->
     case kzd_account:fetch(AccountId) of
         {'ok', JObj} ->
-            AccountDb = kzd_account:format_account_db(AccountId),
+            AccountDb = kz_term:format_account_db(AccountId),
             lager:debug("account ~s db exists, setting operating database as ~s", [AccountId, AccountDb]),
             ResellerId = kz_services:find_reseller_id(AccountId),
             cb_context:setters(Context
@@ -1357,7 +1357,7 @@ set_notification_preference(Context, Preference) ->
 
 -spec create_account_mod(ne_binary()) -> any().
 create_account_mod(AccountId) ->
-    Db = kzd_account:format_account_mod_id(AccountId),
+    Db = kz_term:format_account_mod_id(AccountId),
     kazoo_modb:create(Db).
 
 -spec create_first_transaction(ne_binary()) -> any().
@@ -1610,7 +1610,7 @@ delete_mod_dbs(Context) ->
     delete_mod_dbs(AccountId, Year, Month).
 
 delete_mod_dbs(AccountId, Year, Month) ->
-    Db = kzd_account:format_account_mod_id(AccountId, Year, Month),
+    Db = kz_term:format_account_mod_id(AccountId, Year, Month),
     case kz_datamgr:db_delete(Db) of
         'true' ->
             lager:debug("removed account mod: ~s", [Db]),

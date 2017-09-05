@@ -22,7 +22,7 @@
 %%--------------------------------------------------------------------
 -spec fetch(ne_binary(), ne_binary()) -> kzd_service_plan:api_doc().
 fetch(PlanId, VendorId) ->
-    VendorDb = kzd_account:format_account_db(VendorId),
+    VendorDb = kz_term:format_account_db(VendorId),
     case fetch_plan(VendorDb, PlanId) of
         {'ok', ServicePlan} ->
             ?LOG_DEBUG("found service plan ~s/~s", [VendorDb, PlanId]),

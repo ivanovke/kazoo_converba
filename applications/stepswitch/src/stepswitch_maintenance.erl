@@ -190,7 +190,7 @@ reload_resources() ->
 
 -spec reload_resources(ne_binary()) -> 'ok'.
 reload_resources(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     stepswitch_resources:fetch_local_resources(AccountId),
     'ok'.
 

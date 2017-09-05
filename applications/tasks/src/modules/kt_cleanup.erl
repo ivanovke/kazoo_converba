@@ -52,7 +52,7 @@ cleanup_soft_deletes(Account) ->
 
 -spec cleanup_account_soft_deletes(ne_binary()) -> 'ok'.
 cleanup_account_soft_deletes(Account) ->
-    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
+    AccountDb = kz_term:format_account_id(Account, 'encoded'),
     do_cleanup(AccountDb).
 
 -spec do_cleanup(ne_binary()) -> 'ok'.

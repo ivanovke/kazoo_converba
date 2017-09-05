@@ -83,7 +83,7 @@ count_none_deleted(AccountId, BoxId) ->
 %%--------------------------------------------------------------------
 -spec count_by_owner(ne_binary(), ne_binary()) -> count_result().
 count_by_owner(?MATCH_ACCOUNT_ENCODED(_)=AccountDb, OwnerId) ->
-    AccountId = kzd_account:format_account_id(AccountDb),
+    AccountId = kz_term:format_account_id(AccountDb),
     count_by_owner(AccountId, OwnerId);
 count_by_owner(AccountId, OwnerId) ->
     ViewOptions = [{'key', [OwnerId, <<"vmbox">>]}],

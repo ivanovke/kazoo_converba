@@ -286,7 +286,7 @@ maybe_get_account_default_number(Number, Name, Account, Call) ->
 
 -spec maybe_get_assigned_number(api_ne_binary(), api_ne_binary(), api_ne_binary()|kapps_call:call()) -> cid().
 maybe_get_assigned_number(CandidateNumber, Name, ?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
-    AccountId = kzd_account:format_account_id(AccountDb),
+    AccountId = kz_term:format_account_id(AccountDb),
     case knm_numbers:account_listing(AccountDb) of
         [_|_] = NumbersList ->
             Numbers = [Num

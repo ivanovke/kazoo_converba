@@ -133,7 +133,7 @@ add_pvt_account_id(JObj, 'undefined', Opts) ->
     end;
 add_pvt_account_id(JObj, DBName, Opts) ->
     case props:get_value('account_id', Opts) of
-        'undefined' -> kz_json:set_value(?KEY_ACCOUNT_ID, kzd_account:format_account_id(DBName, 'raw'), JObj);
+        'undefined' -> kz_json:set_value(?KEY_ACCOUNT_ID, kz_term:format_account_id(DBName, 'raw'), JObj);
         Id -> kz_json:set_value(?KEY_ACCOUNT_ID, Id, JObj)
     end.
 

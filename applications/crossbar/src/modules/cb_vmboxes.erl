@@ -599,7 +599,7 @@ normalize_upload(Context, FileJObj, UploadContentType) ->
 -spec normalization_format(cb_context:context()) -> ne_binary().
 normalization_format(Context) ->
     BoxId = kzd_box_message:source_id(cb_context:doc(Context)),
-    AccountDb = kzd_account:format_account_db(cb_context:account_id(Context)),
+    AccountDb = kz_term:format_account_db(cb_context:account_id(Context)),
     case kz_datamgr:open_cache_doc(AccountDb, BoxId) of
         {'ok', BoxJObj} -> kzd_voicemail_box:media_extension(BoxJObj);
         {'error', _} -> ?NORMALIZATION_FORMAT
@@ -1184,7 +1184,7 @@ maybe_migrate_vm_box(Box) ->
 %%--------------------------------------------------------------------
 -spec migrate(ne_binary()) -> 'ok'.
 migrate(Account) ->
-    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
+    AccountDb = kz_term:format_account_id(Account, 'encoded'),
     case kz_datamgr:get_results(AccountDb, ?CB_LIST, ['include_docs']) of
         {'ok', []} -> 'ok';
         {'error', _E} -> io:format("failed to check account ~s for voicemail boxes: ~p~n", [Account, _E]);

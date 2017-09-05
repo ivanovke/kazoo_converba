@@ -486,7 +486,7 @@ populate_new_account([], _, Results) ->
 
 populate_new_account([{<<"phone_numbers">>, Context}|Props], AccountDb, Results) ->
     Number = cb_context:fetch(Context, 'number'),
-    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
+    AccountId = kz_term:format_account_id(AccountDb, 'raw'),
     Payload = [cb_context:setters(Context, [{fun cb_context:set_resp_status/2, 'error'}
                                            ,{fun cb_context:set_account_db/2, AccountDb}
                                            ,{fun cb_context:set_auth_account_id/2, AccountId}
@@ -504,7 +504,7 @@ populate_new_account([{<<"phone_numbers">>, Context}|Props], AccountDb, Results)
     end;
 
 populate_new_account([{<<"braintree">>, Context}|Props], AccountDb, Results) ->
-    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
+    AccountId = kz_term:format_account_id(AccountDb, 'raw'),
     Payload = [cb_context:setters(Context, [{fun cb_context:set_resp_status/2, 'error'}
                                            ,{fun cb_context:set_account_db/2, AccountDb}
                                            ,{fun cb_context:set_account_id/2, AccountId}

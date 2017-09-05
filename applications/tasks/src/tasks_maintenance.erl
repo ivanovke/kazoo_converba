@@ -44,8 +44,8 @@ help(Category, Action) ->
 
 -spec add(text(), text(), text(), text(), text()) -> 'no_return'.
 add(AuthAccount, Account, Category, Action, CSVFile) ->
-    AuthAccountId = kzd_account:format_account_id(AuthAccount),
-    AccountId = kzd_account:format_account_id(Account),
+    AuthAccountId = kz_term:format_account_id(AuthAccount),
+    AccountId = kz_term:format_account_id(Account),
     case file:read_file(CSVFile) of
         {'ok', CSVBin} ->
             case kz_csv:count_rows(CSVBin) of
@@ -60,8 +60,8 @@ add(AuthAccount, Account, Category, Action, CSVFile) ->
 
 -spec add(text(), text(), text(), text()) -> 'no_return'.
 add(AuthAccount, Account, Category, Action) ->
-    AuthAccountId = kzd_account:format_account_id(AuthAccount),
-    AccountId = kzd_account:format_account_id(Account),
+    AuthAccountId = kz_term:format_account_id(AuthAccount),
+    AccountId = kz_term:format_account_id(Account),
     case kz_tasks:new(AuthAccountId
                      ,AccountId
                      ,Category
@@ -82,7 +82,7 @@ tasks() ->
 
 -spec tasks(text()) -> 'no_return'.
 tasks(Account) ->
-    AccountId = kzd_account:format_account_id(Account),
+    AccountId = kz_term:format_account_id(Account),
     Tasks = kz_tasks:all(AccountId),
     print_json(Tasks).
 

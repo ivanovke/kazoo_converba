@@ -1238,7 +1238,7 @@ request_media_url(MediaName, Type, CallId, JObj) ->
 media_url_cache_props(<<"/", _/binary>> = MediaName) ->
     case binary:split(MediaName, <<"/">>, ['global']) of
         [<<>>, AccountId, MediaId] ->
-            AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+            AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
             [{'origin', {'db', AccountDb, MediaId}}];
         _Parts -> []
     end;
@@ -1247,7 +1247,7 @@ media_url_cache_props(<<"prompt://", Prompt/binary>>) ->
         [?KZ_MEDIA_DB, _MediaId] ->
             [{'origin', {'db', ?KZ_MEDIA_DB, <<"media">>}}];
         [AccountId, _MediaId] ->
-            AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+            AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
             [{'origin', {'db', AccountDb, <<"media">>}}];
         _ -> []
     end;

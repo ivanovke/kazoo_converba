@@ -200,7 +200,7 @@ build_request(CallId, ToDID, AuthorizingId, Q, CtrlQ, AccountId, Action, RetainC
                                   ]),
     Diversions = case RetainCID of
                      <<"true">> ->
-                         AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+                         AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
                          {AccountNumber,_} = kz_attributes:maybe_get_assigned_number('undefined', 'undefined', AccountDb),
                          [{<<"Diversions">>, [<<"<sip:", AccountNumber/binary, "@", Realm/binary, ">;reason=unconditional">>]}];
                      <<"false">> -> []
@@ -257,7 +257,7 @@ maybe_outbound_call(ToDID, RetainNumber, RetainName, AccountId) ->
                 'true' ->
                     {knm_converters:normalize(RetainNumber), RetainName};
                 'false' ->
-                    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+                    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
                     kz_attributes:maybe_get_assigned_number('undefined', RetainName, AccountDb)
             end
     end.

@@ -107,7 +107,7 @@ process_account(AccountId, DataJObj) ->
             {'ok', UserJObj} = kzd_user:fetch(AccountId, UserId),
             [send_update_to_user(UserJObj, DataJObj)];
         _ ->
-            AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+            AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
             {'ok', Users} = kz_datamgr:get_results(AccountDb, ?ACC_USERS_LIST, []),
             lists:flatten(select_users_to_update([kz_json:get_value(<<"value">>, User) || User <- Users], DataJObj))
     end.

@@ -90,7 +90,7 @@ should_delete(AccountModb, Months) ->
 
 -spec delete_modb(ne_binary(), boolean()) -> 'ok'.
 delete_modb(?MATCH_MODB_SUFFIX_UNENCODED(_,_,_) = AccountModb, ShouldArchive) ->
-    delete_modb(kzd_account:format_account_db(AccountModb), ShouldArchive);
+    delete_modb(kz_term:format_account_db(AccountModb), ShouldArchive);
 delete_modb(?MATCH_MODB_SUFFIX_ENCODED(_,_,_) = AccountModb, ShouldArchive) ->
     'ok' = case ShouldArchive of
                'true' -> kz_datamgr:db_archive(AccountModb);
@@ -125,7 +125,7 @@ current_rollups() ->
 current_rollups([]) -> 'ok';
 current_rollups([Account|Accounts]) ->
     {Year, Month, _} = erlang:date(),
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     Remaining = length(Accounts),
     _ = case kazoo_modb:open_doc(AccountId, <<"monthly_rollup">>, Year, Month) of
             {'ok', JObj} ->
@@ -174,7 +174,7 @@ verify_rollups(Account, Options) ->
 -spec verify_rollups(ne_binary(), kz_year(), kz_month(), kz_proplist() | kz_json:object()) -> 'ok'.
 verify_rollups(AccountDb, Year, Month, Options) when is_list(Options) ->
     AllRollups = props:get_value('all_rollups', Options),
-    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
+    AccountId = kz_term:format_account_id(AccountDb, 'raw'),
     kazoo_modb:maybe_create(kazoo_modb:get_modb(AccountId, Year, Month)),
     case kazoo_modb:open_doc(AccountDb, <<"monthly_rollup">>, Year, Month) of
         {'ok', JObj} when AllRollups ->
@@ -195,7 +195,7 @@ verify_rollups(AccountDb, Year, Month, JObj) ->
 
 -spec verify_rollups(ne_binary(), kz_year(), kz_month(), kz_json:object(), kz_std_return()) -> 'ok'.
 verify_rollups(AccountDb, Year, Month, JObj, {'ok', Balance}) ->
-    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
+    AccountId = kz_term:format_account_id(AccountDb, 'raw'),
     case rollup_balance(JObj) of
         Balance ->
             io:format("    account ~s rollup for ~p-~p confirmed~n", [AccountId, Year, Month]);
@@ -205,7 +205,7 @@ verify_rollups(AccountDb, Year, Month, JObj, {'ok', Balance}) ->
                      )
     end;
 verify_rollups(AccountDb, Year, Month, _JObj, {'error', _R}) ->
-    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
+    AccountId = kz_term:format_account_id(AccountDb, 'raw'),
     io:format("    account ~s : error getting balance for ~b-~b: ~p~n"
              ,[AccountId, Year, Month, _R]
              ).
@@ -217,7 +217,7 @@ fix_rollup(Account) ->
 
 -spec fix_rollup(ne_binary(), kz_year(), kz_month()) -> 'ok'.
 fix_rollup(Account, Year, Month) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     Y = kz_term:to_integer(Year),
     M = kz_term:to_integer(Month),
     {PYear, PMonth} =  kazoo_modb_util:prev_year_month(Y, M),
@@ -247,7 +247,7 @@ rollup_account_fold(AccountDb, {Current, Total}) ->
 
 -spec rollup_account(ne_binary()) -> 'ok'.
 rollup_account(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     case wht_util:current_balance(AccountId) of
         {'ok', Balance} -> rollup_account(AccountId, Balance);
         {'error', _R} ->
@@ -270,7 +270,7 @@ rollup_balance(JObj) ->
 
 -spec dump_transactions(ne_binary(), ne_binary(), ne_binary()) -> 'no_return' | 'ok'.
 dump_transactions(Account, Year, Month) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     View = <<"transactions/by_timestamp">>,
     ViewOptions = ['include_docs'
                   ,{'year', kz_term:to_binary(Year)}

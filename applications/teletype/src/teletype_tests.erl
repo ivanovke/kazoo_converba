@@ -27,7 +27,7 @@ voicemail_to_email(?NE_BINARY=AccountId) ->
 
 -spec find_vmboxes(ne_binary()) -> kz_json:objects().
 find_vmboxes(?NE_BINARY=AccountId) ->
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     case kz_datamgr:get_results(AccountDb, <<"vmboxes/crossbar_listing">>, ['include_docs']) of
         {'ok', VMBoxes} -> VMBoxes;
         {'error', _E} ->
@@ -53,7 +53,7 @@ find_vmbox_messages(AccountId, [Box|Boxes]) ->
                                 {'ok', kz_json:objects()} |
                                 {'error', any()}.
 voicemail_to_email(AccountId, ?NE_BINARY=VoicemailBoxId) ->
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     {'ok', VMBox} = kz_datamgr:open_cache_doc(AccountDb, VoicemailBoxId),
     find_vmbox_messages(AccountId, [VMBox]).
 
@@ -68,7 +68,7 @@ voicemail_to_email(AccountId, VMBox,  [Message|_]) ->
            ,{<<"From-Realm">>, <<"TestFromRealm">>}
            ,{<<"To-User">>, <<"TestToUser">>}
            ,{<<"To-Realm">>, <<"TestToRealm">>}
-           ,{<<"Account-DB">>, kzd_account:format_account_db(AccountId)}
+           ,{<<"Account-DB">>, kz_term:format_account_db(AccountId)}
            ,{<<"Account-ID">>, AccountId}
            ,{<<"Voicemail-Box">>, kz_doc:id(VMBox)}
            ,{<<"Voicemail-ID">>, MediaId}
@@ -86,7 +86,7 @@ voicemail_to_email(AccountId, VMBox,  [Message|_]) ->
 
 -spec skel(ne_binary()) -> ok.
 skel(AccountId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:get_results(AccountDb, <<"users/crossbar_listing">>, ['include_docs']) of
         {'ok', Users} -> find_user_for_skel(AccountId, Users);
         {'error', _E} -> lager:debug("failed to find users for ~s: ~p", [AccountId, _E])
@@ -127,11 +127,11 @@ voicemail_full(AccountId) ->
 
 -spec voicemail_full(ne_binary(), ne_binary()) -> kz_amqp_worker:request_return().
 voicemail_full(AccountId, ?NE_BINARY=BoxId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     {'ok', Box} = kz_datamgr:open_cache_doc(AccountDb, BoxId),
     voicemail_full(AccountId, Box);
 voicemail_full(AccountId, Box) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     Props = [{<<"Account-DB">>, AccountDb}
             ,{<<"Account-ID">>, AccountId}
             ,{<<"Voicemail-Box">>, kz_doc:id(Box)}
@@ -145,7 +145,7 @@ voicemail_full(AccountId, Box) ->
 
 -spec fax_inbound_to_email(ne_binary()) -> ok.
 fax_inbound_to_email(AccountId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:get_results(AccountDb, <<"faxes/crossbar_listing">>, ['include_docs']) of
         {'ok', Faxes} -> find_fax_with_attachment(AccountId, Faxes);
         {'error', _E} ->
@@ -162,7 +162,7 @@ find_fax_with_attachment(AccountId, [Fax|Faxes]) ->
 
 -spec fax_inbound_to_email(ne_binary(), ne_binary()) -> kz_amqp_worker:request_return().
 fax_inbound_to_email(AccountId, ?NE_BINARY=FaxId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     {'ok', Fax} = kz_datamgr:open_cache_doc(AccountDb, FaxId),
     fax_inbound_to_email(AccountId, Fax);
 fax_inbound_to_email(AccountId, Fax) ->

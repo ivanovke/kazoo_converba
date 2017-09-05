@@ -383,12 +383,12 @@ modified(BTTransaction) ->
 -spec account_id(kz_json:object()) -> ne_binary().
 account_id(BTTransaction) ->
     CustomerId = kz_json:get_value([<<"customer">>, <<"id">>], BTTransaction),
-    kzd_account:format_account_id(CustomerId, 'raw').
+    kz_term:format_account_id(CustomerId, 'raw').
 
 -spec account_db(kz_json:object()) -> ne_binary().
 account_db(BTTransaction) ->
     CustormerId = kz_json:get_value([<<"customer">>, <<"id">>], BTTransaction),
-    kzd_account:format_account_db(CustormerId).
+    kz_term:format_account_db(CustormerId).
 
 -spec transaction_is_prorated(kz_json:object()) -> boolean().
 transaction_is_prorated(BTransaction) ->

@@ -171,7 +171,7 @@ init(Call, Data) ->
     RecordMinSec = kz_json:get_integer_value(<<"record_min_sec">>, Data, DefaultRecordMinSec),
     AccountId = kapps_call:account_id(Call),
     {Year, Month, _} = erlang:date(),
-    AccountDb = kzd_account:format_account_modb(kazoo_modb:get_modb(AccountId, Year, Month),'encoded'),
+    AccountDb = kz_term:format_account_modb(kazoo_modb:get_modb(AccountId, Year, Month),'encoded'),
     CallId = kapps_call:call_id(Call),
     CdrId = ?MATCH_MODB_PREFIX(kz_term:to_binary(Year), kz_date:pad_month(Month), CallId),
     RecordingId = kz_binary:rand_hex(16),
@@ -630,7 +630,7 @@ should_store_recording(AccountId, Url) ->
 
 -spec maybe_storage_plan(ne_binary()) -> store_url().
 maybe_storage_plan(AccountId) ->
-    AccountDb = kzd_account:format_account_mod_id(AccountId),
+    AccountDb = kz_term:format_account_mod_id(AccountId),
     Plan = kzs_plan:get_dataplan(AccountDb, <<"call_recording">>),
     case maps:get('tag', Plan, 'local') =/= 'local'
         orelse maps:is_key('att_handler', Plan) of

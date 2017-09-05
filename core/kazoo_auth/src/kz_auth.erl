@@ -115,7 +115,7 @@ validate_claims(#{user_map := #{<<"pvt_account_id">> := AccountId
             Props = [{<<"account_id">>, AccountId}
                     ,{<<"owner_id">>, OwnerId}
                     ],
-            case kz_datamgr:open_cache_doc(kzd_account:format_account_db(AccountId), OwnerId) of
+            case kz_datamgr:open_cache_doc(kz_term:format_account_db(AccountId), OwnerId) of
                 {'ok', _Doc} -> {'ok', kz_json:set_values(Props, kz_json:from_map(Payload))};
                 _ -> {'error', {403, <<"mapped account does not exist">>}}
             end;

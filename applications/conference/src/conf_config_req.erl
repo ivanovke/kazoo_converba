@@ -237,7 +237,7 @@ max_members_sound(Conference) ->
 
 -spec get_conference(ne_binary(), ne_binary()) -> kapps_conference:conference().
 get_conference(AccountId, ConferenceId) ->
-    case kz_datamgr:open_cache_doc(kzd_account:format_account_db(AccountId), ConferenceId) of
+    case kz_datamgr:open_cache_doc(kz_term:format_account_db(AccountId), ConferenceId) of
         {'ok', JObj} -> kapps_conference:from_conference_doc(JObj);
         {'error', _} ->
             Routines = [{fun kapps_conference:set_account_id/2, AccountId}

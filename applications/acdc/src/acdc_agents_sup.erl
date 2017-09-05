@@ -62,7 +62,7 @@ new(JObj) ->
 new(AcctId, AgentId) ->
     case find_agent_supervisor(AcctId, AgentId) of
         'undefined' ->
-            {'ok', Agent} = kz_datamgr:open_doc(kzd_account:format_account_id(AcctId, 'encoded'), AgentId),
+            {'ok', Agent} = kz_datamgr:open_doc(kz_term:format_account_id(AcctId, 'encoded'), AgentId),
             supervisor:start_child(?SERVER, [Agent]);
         P when is_pid(P) -> lager:debug("agent already started here: ~p", [P])
     end.

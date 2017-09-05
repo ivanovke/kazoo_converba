@@ -25,13 +25,13 @@
 %%--------------------------------------------------------------------
 -spec balance(ne_binary()) -> dollars().
 balance(Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     {'ok', Balance} = wht_util:current_balance(AccountId),
     wht_util:units_to_dollars(Balance).
 
 -spec balance(ne_binary(), ne_binary(), ne_binary()) -> dollars().
 balance(Account, Year, Month) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     {'ok', Balance} = wht_util:previous_balance(AccountId, Year, Month),
     wht_util:units_to_dollars(Balance).
 

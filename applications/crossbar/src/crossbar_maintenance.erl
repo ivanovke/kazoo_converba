@@ -200,13 +200,13 @@ find_account_by_number(Number) when not is_binary(Number) ->
 find_account_by_number(Number) ->
     case knm_number:lookup_account(Number) of
         {'ok', AccountId, _} ->
-            AccountDb = kzd_account:format_account_db(AccountId),
+            AccountDb = kz_term:format_account_db(AccountId),
             print_account_info(AccountDb, AccountId);
         {'error', {'not_in_service', AssignedTo}} ->
-            AccountDb = kzd_account:format_account_db(AssignedTo),
+            AccountDb = kz_term:format_account_db(AssignedTo),
             print_account_info(AccountDb, AssignedTo);
         {'error', {'account_disabled', AssignedTo}} ->
-            AccountDb = kzd_account:format_account_db(AssignedTo),
+            AccountDb = kz_term:format_account_db(AssignedTo),
             print_account_info(AccountDb, AssignedTo);
         {'error', Reason}=E ->
             io:format("failed to find account assigned to number '~s': ~p~n", [Number, Reason]),
@@ -279,7 +279,7 @@ find_account_by_realm(Realm) ->
                                 {'ok', ne_binary()} |
                                 {'error', any()}.
 find_account_by_id(Id) when is_binary(Id) ->
-    print_account_info(kzd_account:format_account_id(Id, 'encoded'));
+    print_account_info(kz_term:format_account_id(Id, 'encoded'));
 find_account_by_id(Id) ->
     find_account_by_id(kz_term:to_binary(Id)).
 
@@ -560,7 +560,7 @@ create_account(Context) ->
         _Status ->
             {'error', {_Code, _Msg, Errors}} = cb_context:response(Context1),
             AccountId = kz_doc:id(cb_context:req_data(Context)),
-            kz_datamgr:db_delete(kzd_account:format_account_db(AccountId)),
+            kz_datamgr:db_delete(kz_term:format_account_db(AccountId)),
 
             io:format("failed to create the account: ~p ~s", [_Code, _Msg]),
             throw(Errors)
@@ -588,7 +588,7 @@ create_user(Context) ->
 -spec print_account_info(ne_binary()) -> {'ok', ne_binary()}.
 -spec print_account_info(ne_binary(), ne_binary()) -> {'ok', ne_binary()}.
 print_account_info(AccountDb) ->
-    AccountId = kzd_account:format_account_id(AccountDb, 'raw'),
+    AccountId = kz_term:format_account_id(AccountDb, 'raw'),
     print_account_info(AccountDb, AccountId).
 print_account_info(AccountDb, AccountId) ->
     case kz_datamgr:open_doc(AccountDb, AccountId) of
@@ -613,8 +613,8 @@ print_account_info(AccountDb, AccountId) ->
 %%--------------------------------------------------------------------
 -spec move_account(ne_binary(), ne_binary()) -> 'ok'.
 move_account(Account, ToAccount) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
-    ToAccountId = kzd_account:format_account_id(ToAccount, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
+    ToAccountId = kz_term:format_account_id(ToAccount, 'raw'),
     maybe_move_account(AccountId, ToAccountId).
 
 -spec maybe_move_account(ne_binary(), ne_binary()) -> 'ok'.
@@ -649,7 +649,7 @@ migrate_ring_group_callflow(Account) ->
 
 -spec get_migrateable_ring_group_callflows(ne_binary()) -> kz_json:objects().
 get_migrateable_ring_group_callflows(Account) ->
-    AccountDb = kzd_account:format_account_id(Account, 'encoded'),
+    AccountDb = kz_term:format_account_id(Account, 'encoded'),
     case kz_datamgr:get_all_results(AccountDb, <<"callflows/crossbar_listing">>) of
         {'error', _M} ->
             io:format("error fetching callflows in ~p ~p~n", [AccountDb, _M]),

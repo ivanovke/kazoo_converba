@@ -42,7 +42,7 @@
 -spec reconcile(kz_services:services()) -> kz_services:services().
 -spec reconcile(kz_services:services(), pns()) -> kz_services:services().
 reconcile(Services) ->
-    AccountDb = kzd_account:format_account_db(kz_services:account_id(Services)),
+    AccountDb = kz_term:format_account_db(kz_services:account_id(Services)),
     case kz_datamgr:get_results(AccountDb, <<"numbers/reconcile_services">>) of
         {error, _R} ->
             lager:debug("unable to get reconcile_services for phone numbers: ~p", [_R]),

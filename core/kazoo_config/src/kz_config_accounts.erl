@@ -50,12 +50,12 @@ master_account_db() ->
     case master_account_id() of
         {'error', _}=E -> E;
         {'ok', AccountId} ->
-            {'ok', kzd_account:format_account_db(AccountId)}
+            {'ok', kz_term:format_account_db(AccountId)}
     end.
 
 -spec is_master_account(ne_binary()) -> boolean().
 is_master_account(Account) ->
-    AccountId = kzd_account:format_account_id(Account),
+    AccountId = kz_term:format_account_id(Account),
     case master_account_id() of
         {'ok', AccountId} -> 'true';
         _Else -> 'false'

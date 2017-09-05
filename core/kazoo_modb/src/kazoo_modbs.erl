@@ -26,7 +26,7 @@ list_all(Encoding) ->
                                            ,{'endkey', <<"account0">>}
                                            ]
                                           ),
-    [kzd_account:format_account_modb(Db, Encoding)
+    [kz_term:format_account_modb(Db, Encoding)
      || Db <- Databases,
         'modb' =:= kz_datamgr:db_classification(Db)
     ].
@@ -38,11 +38,11 @@ list_account(Account) ->
     list_account(Account, ?REPLICATE_ENCODING).
 
 list_account(Account, Encoding) ->
-    AccountId = kzd_account:format_account_id(Account, 'unencoded'),
+    AccountId = kz_term:format_account_id(Account, 'unencoded'),
     {'ok', MODBs} = kz_datamgr:db_list([{'startkey', <<AccountId/binary, "-">>}
                                        ,{'endkey', <<AccountId/binary, ".">>}
                                        ]),
 
-    [kzd_account:format_account_modb(MODb, Encoding)
+    [kz_term:format_account_modb(MODb, Encoding)
      || MODb <- MODBs
     ].

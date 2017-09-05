@@ -83,7 +83,7 @@
 -spec fetch(api_ne_binary(), api_ne_binary()) -> {'ok', doc()} |
                                                  {'error', any()}.
 fetch(Account=?NE_BINARY, DeviceId=?NE_BINARY) ->
-    AccountDb = kzd_account:format_account_db(Account),
+    AccountDb = kz_term:format_account_db(Account),
     open_cache_doc(AccountDb, DeviceId);
 fetch(_, _) ->
     {'error', 'invalid_parameters'}.

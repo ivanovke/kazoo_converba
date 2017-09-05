@@ -215,7 +215,7 @@ post(Context, ?RECOVERY) ->
     Context1 = crossbar_doc:save(Context),
     DocForCreation =
         kz_json:from_list(
-          [{<<"account_id">>, kzd_account:format_account_id(cb_context:account_db(Context1))}
+          [{<<"account_id">>, kz_term:format_account_id(cb_context:account_db(Context1))}
           ,{<<"owner_id">>, kz_doc:id(cb_context:doc(Context1))}
           ]),
     Context2 = cb_context:set_doc(Context1, DocForCreation),
@@ -288,8 +288,7 @@ maybe_authenticate_user(Context) ->
     end.
 
 maybe_authenticate_user(Context, Credentials, <<"md5">>, ?NE_BINARY=Account) ->
-    AccountDb = kzd_account:format_account_db(Account, 'encoded'),
-
+    AccountDb = kz_term:format_account_id(Account, 'encoded'),
     Context1 = crossbar_doc:load_view(?ACCT_MD5_LIST
                                      ,[{'key', Credentials}]
                                      ,cb_context:set_account_db(Context, AccountDb)
@@ -608,7 +607,7 @@ find_account('undefined', AccountRealm, AccountName, Context) ->
 find_account(PhoneNumber, AccountRealm, AccountName, Context) ->
     case knm_number:lookup_account(PhoneNumber) of
         {'ok', AccountId, _} ->
-            AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+            AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
             lager:debug("found account by phone number '~s': ~s", [PhoneNumber, AccountDb]),
             {'ok', AccountDb};
         {'error', _} ->

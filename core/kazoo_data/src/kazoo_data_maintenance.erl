@@ -44,11 +44,11 @@ flush_docs() ->
     io:format("flushed all cached docs~n").
 
 flush_docs(Account) ->
-    _ = kz_datamgr:flush_cache_docs(kzd_account:format_account_db(Account)),
+    _ = kz_datamgr:flush_cache_docs(kz_term:format_account_db(Account)),
     io:format("flushed all docs cached for account ~s~n", [Account]).
 
 flush_docs(Account, DocId) ->
-    _ = kz_datamgr:flush_cache_doc(kzd_account:format_account_db(Account), DocId),
+    _ = kz_datamgr:flush_cache_doc(kz_term:format_account_db(Account), DocId),
     io:format("flushed cached doc ~s for account ~s~n", [DocId, Account]).
 
 -spec trace_module(ne_binary()) -> 'ok'.

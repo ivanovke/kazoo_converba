@@ -129,7 +129,7 @@ find_attachment([Db = ?MEDIA_DB, Id, Attachment, Options])
                             }
     };
 find_attachment([?MATCH_ACCOUNT_RAW(Account), Id, Attachment, Options]) ->
-    AccountDb =  kzd_account:format_account_id(Account, 'encoded'),
+    AccountDb =  kz_term:format_account_id(Account, 'encoded'),
     {'ok', #media_store_path{db = AccountDb
                             ,id = Id
                             ,att = Attachment
@@ -137,7 +137,7 @@ find_attachment([?MATCH_ACCOUNT_RAW(Account), Id, Attachment, Options]) ->
                             }
     };
 find_attachment([?MATCH_ACCOUNT_UNENCODED(Account), Id, Attachment, Options]) ->
-    AccountDb =  kzd_account:format_account_id(Account, 'encoded'),
+    AccountDb =  kz_term:format_account_id(Account, 'encoded'),
     {'ok', #media_store_path{db = AccountDb
                             ,id = Id
                             ,att = Attachment
@@ -161,7 +161,7 @@ find_attachment([Db, Id, Attachment, Options]) ->
 maybe_find_attachment(?MEDIA_DB = Db, Id) ->
     maybe_find_attachment_in_db(Db, Id);
 maybe_find_attachment(Db, Id) ->
-    AccountDb = kzd_account:format_account_id(Db, 'encoded'),
+    AccountDb = kz_term:format_account_id(Db, 'encoded'),
     maybe_find_attachment_in_db(AccountDb, Id).
 
 -spec maybe_find_attachment_in_db(ne_binary(), ne_binary()) ->
@@ -183,7 +183,7 @@ maybe_find_attachment(Db, Id, JObj) ->
             lager:debug("media doc ~s in ~s has no attachments", [Id, Db]),
             {'error', 'no_data'};
         [AttachmentName | _] ->
-            AccountId = kzd_account:format_account_id(Db, 'raw'),
+            AccountId = kz_term:format_account_id(Db, 'raw'),
             lager:debug("found first attachment ~s on ~s in ~s", [AttachmentName, Id, Db]),
             find_attachment([AccountId, Id, AttachmentName, [{'doc_type', kz_doc:type(JObj)}
                                                             ,{'rev', kz_doc:revision(JObj)}

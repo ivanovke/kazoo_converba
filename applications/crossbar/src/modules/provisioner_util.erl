@@ -227,7 +227,7 @@ do_full_provision_contact_list(AccountId) when is_binary(AccountId) ->
                         end
                        ,fun(J) -> kz_json:delete_key(<<"available_apps">>, J) end
                        ,fun(J) ->
-                                AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+                                AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
                                 ContactList = provisioner_contact_list:build(AccountDb),
                                 kz_json:set_value(<<"directory">>, ContactList, J)
                         end
@@ -473,7 +473,7 @@ merge_device(MACAddress, Context) ->
 -spec get_owner(api_binary(), ne_binary()) -> kz_json:object().
 get_owner('undefined', _) -> kz_json:new();
 get_owner(OwnerId, AccountId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:open_cache_doc(AccountDb, OwnerId) of
         {'ok', Owner} -> Owner;
         {'error', _R} ->

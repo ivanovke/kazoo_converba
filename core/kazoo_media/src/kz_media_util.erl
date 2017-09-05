@@ -523,7 +523,7 @@ get_prompt(PromptId, Lang, _AccountId, 'false') ->
 get_account_prompt(Name, 'undefined', AccountId) ->
     PromptId = prompt_id(Name),
     lager:debug("getting account prompt for '~s'", [PromptId]),
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_prompt(Name, prompt_language(AccountId), 'undefined');
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -531,7 +531,7 @@ get_account_prompt(Name, 'undefined', AccountId) ->
 get_account_prompt(Name, <<_Primary:2/binary>> = Lang, AccountId) ->
     PromptId = prompt_id(Name, Lang),
     lager:debug("getting account prompt for '~s'", [PromptId]),
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, 'undefined', AccountId, Lang);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -539,7 +539,7 @@ get_account_prompt(Name, <<_Primary:2/binary>> = Lang, AccountId) ->
 get_account_prompt(Name, <<Primary:2/binary, "-", _SubTag:2/binary>> = Lang, AccountId) ->
     PromptId = prompt_id(Name, Lang),
     lager:debug("getting account prompt for '~s'", [PromptId]),
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, Primary, AccountId, Lang);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -547,7 +547,7 @@ get_account_prompt(Name, <<Primary:2/binary, "-", _SubTag:2/binary>> = Lang, Acc
 get_account_prompt(Name, <<Primary:5/binary, "_", _Secondary:5/binary>> = Lang, AccountId) ->
     PromptId = prompt_id(Name, Lang),
     lager:debug("getting account prompt for '~s'", [PromptId]),
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, Primary, AccountId, Lang);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -556,7 +556,7 @@ get_account_prompt(Name, Lang, AccountId) ->
     PromptId = prompt_id(Name, Lang),
     lager:debug("getting account prompt for '~s'", [PromptId]),
 
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, 'undefined', AccountId);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end.
@@ -564,7 +564,7 @@ get_account_prompt(Name, Lang, AccountId) ->
 get_account_prompt(Name, 'undefined', AccountId, OriginalLang) ->
     PromptId = prompt_id(Name),
     lager:debug("getting account prompt for '~s'", [PromptId]),
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_prompt(Name, OriginalLang, 'undefined');
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -572,7 +572,7 @@ get_account_prompt(Name, <<_:2/binary>> = Primary, AccountId, Original) ->
     PromptId = prompt_id(Name, Primary),
     lager:debug("getting account prompt for '~s'", [PromptId]),
 
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, 'undefined', AccountId, Original);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -580,7 +580,7 @@ get_account_prompt(Name, <<Primary:2/binary, "-", _Secondary:2/binary>> = Lang, 
     PromptId = prompt_id(Name, Lang),
     lager:debug("getting account prompt for '~s'", [PromptId]),
 
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, Primary, AccountId, Original);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end;
@@ -588,7 +588,7 @@ get_account_prompt(Name, Lang, AccountId, OriginalLang) ->
     PromptId = prompt_id(Name, Lang),
     lager:debug("getting account prompt for '~s'", [PromptId]),
 
-    case lookup_prompt(kzd_account:format_account_db(AccountId), PromptId) of
+    case lookup_prompt(kz_term:format_account_db(AccountId), PromptId) of
         {'error', 'not_found'} -> get_account_prompt(Name, 'undefined', AccountId, OriginalLang);
         {'ok', _} -> prompt_path(AccountId, PromptId)
     end.

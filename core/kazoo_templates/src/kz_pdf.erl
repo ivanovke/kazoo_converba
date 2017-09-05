@@ -46,7 +46,7 @@ find_template(AccountId, Props) ->
 
 -spec find_template(ne_binary(), ne_binary() | kz_proplist(), ne_binary()) -> ret().
 find_template(AccountId, DocType, AttachmentId) when is_binary(DocType) ->
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     case kz_datamgr:fetch_attachment(AccountDb, ?TEMPLATE_DOC_ID(DocType), AttachmentId) of
         {'ok', _}=OK -> OK;
         {'error', _R} ->
@@ -73,7 +73,7 @@ generate(AccountId, Props) ->
 
 -spec generate(ne_binary(), kz_proplist(), ne_binary()) -> ret().
 generate(Account, Props, Template) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     DocType = props:get_first_defined([<<"type">>, <<"pvt_type">>], Props),
 
     Rand = kz_binary:rand_hex(5),

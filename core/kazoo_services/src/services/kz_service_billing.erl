@@ -24,7 +24,7 @@
 -spec reconcile(kz_services:services()) -> kz_services:services().
 reconcile(Services) ->
     AccountId = kz_services:account_id(Services),
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     ViewOptions = ['reduce'
                   ,'group'
                   ],

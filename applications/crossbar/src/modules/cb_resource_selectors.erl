@@ -206,11 +206,11 @@ set_selectors_db(Context) ->
     case is_global_request(Context) of
         'true' ->
             {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
-            MasterSelectorsDb = kz_util:format_resource_selectors_db(MasterAccountId),
+            MasterSelectorsDb = kz_term:format_resource_selectors_db(MasterAccountId),
             cb_context:set_account_db(Context, MasterSelectorsDb);
         'false' ->
             AccountId = cb_context:account_id(Context),
-            SelectorsDb = kz_util:format_resource_selectors_db(AccountId),
+            SelectorsDb = kz_term:format_resource_selectors_db(AccountId),
             cb_context:set_account_db(Context, SelectorsDb)
     end.
 

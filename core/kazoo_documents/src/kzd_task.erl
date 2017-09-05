@@ -42,7 +42,7 @@
                    {error, any()}.
 fetch(Account, TaskId) ->
     View = ?KZ_TASKS_BY_ACCOUNT,
-    ViewOptions = [{'key', [kzd_account:format_account_id(Account), TaskId]}],
+    ViewOptions = [{'key', [kz_term:format_account_id(Account), TaskId]}],
     case kz_datamgr:get_single_result(?KZ_TASKS_DB, View, ViewOptions) of
         {'error', _}=E -> E;
         {'ok', JObj} -> kz_json:get_value(<<"value">>, JObj)

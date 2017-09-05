@@ -22,7 +22,7 @@
 -spec reconcile(kz_services:services()) -> kz_services:services().
 reconcile(Services) ->
     AccountId = kz_services:account_id(Services),
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:open_doc(AccountDb, <<"limits">>) of
         {'error', _R} ->
             lager:debug("unable to get current limits in service: ~p", [_R]),

@@ -103,7 +103,7 @@ update_pvt_parameters('undefined', _, JObj) ->
             ],
     kz_doc:update_pvt_parameters(JObj, ?KZ_ANONYMOUS_CDR_DB, Props);
 update_pvt_parameters(AccountId, Timestamp, JObj) ->
-    AccountMODb = kzd_account:format_account_id(AccountId, Timestamp),
+    AccountMODb = kz_term:format_account_id(AccountId, Timestamp),
     Props = [{'type', 'cdr'}
             ,{'crossbar_doc_vsn', 2}
             ,{'account_id', AccountId}

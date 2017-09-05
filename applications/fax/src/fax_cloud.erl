@@ -345,7 +345,7 @@ maybe_get_faxbox_owner_email(FaxBoxDoc) ->
                                     kz_json:object().
 get_faxbox_owner_email(FaxBoxDoc, OwnerId) ->
     AccountId = kz_doc:account_id(FaxBoxDoc),
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     case kz_datamgr:open_cache_doc(AccountDb, OwnerId) of
         {'ok', OwnerDoc} ->
             case kz_json:get_value(<<"email">>, OwnerDoc) of

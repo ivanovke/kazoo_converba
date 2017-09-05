@@ -118,7 +118,7 @@ check_credentials(Context, AccountId, Credentials, BasicType) ->
 
 -spec get_credential_doc(ne_binary(), ne_binary(), ne_binary()) -> api_object().
 get_credential_doc(AccountId, View, Key) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     Options = [{'key', Key}, 'include_docs'],
     case kz_datamgr:get_results(AccountDb, View, Options) of
         {'ok', [JObj]} -> kz_json:get_value(<<"doc">>, JObj);
@@ -130,7 +130,7 @@ get_credential_doc(AccountId, View, Key) ->
                         {'halt', cb_context:context()}.
 is_expired(Context, JObj) ->
     AccountId = kz_doc:account_id(JObj),
-    AccountDb = kzd_account:format_account_db(AccountId),
+    AccountDb = kz_term:format_account_db(AccountId),
     case kzd_account:is_account_expired(AccountId) of
         'false' ->
             EndpointId = kz_doc:id(JObj),

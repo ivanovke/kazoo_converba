@@ -900,7 +900,7 @@ fetch_global_resources() ->
 %%--------------------------------------------------------------------
 -spec fetch_local_resources(ne_binary()) -> resources().
 fetch_local_resources(AccountId) ->
-    AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+    AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
     ViewOptions = ['include_docs'],
     lager:debug("local resource cache miss, fetching from db ~s", [AccountDb]),
     case kz_datamgr:get_results(AccountDb, ?LIST_RESOURCES_BY_ID, ViewOptions) of

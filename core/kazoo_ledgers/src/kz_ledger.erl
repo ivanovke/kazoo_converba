@@ -133,7 +133,7 @@ create(LedgerId, Type, Ledger) ->
 %%--------------------------------------------------------------------
 -spec set_account(ledger(), ne_binary()) -> ledger().
 set_account(Ledger, Account) ->
-    AccountId = kzd_account:format_account_id(Account, 'raw'),
+    AccountId = kz_term:format_account_id(Account, 'raw'),
     Routines = [{fun kazoo_ledger:set_account_id/2, AccountId}
                ,{fun kazoo_ledger:set_account_name/2, kzd_account:fetch_name(AccountId)}
                ],

@@ -112,7 +112,7 @@ replicate_from_account(AccountDb, AccountDb, _) ->
     lager:debug("requested to replicate from db ~s to self, skipping", [AccountDb]),
     {'error', 'matching_dbs'};
 replicate_from_account(AccountDb, TargetDb, FilterDoc) ->
-    ReplicateProps = [{<<"source">>, kzd_account:format_account_id(AccountDb, ?REPLICATE_ENCODING)}
+    ReplicateProps = [{<<"source">>, kz_term:format_account_id(AccountDb, ?REPLICATE_ENCODING)}
                      ,{<<"target">>, TargetDb}
                      ,{<<"filter">>, FilterDoc}
                      ,{<<"create_target">>, 'true'}
@@ -163,7 +163,7 @@ account_descendants(?MATCH_ACCOUNT_RAW(AccountId)) ->
 %%--------------------------------------------------------------------
 -spec account_has_descendants(ne_binary()) -> boolean().
 account_has_descendants(Account) ->
-    AccountId = kzd_account:format_account_id(Account),
+    AccountId = kz_term:format_account_id(Account),
     [] =/= (account_descendants(AccountId) -- [AccountId]).
 
 %%--------------------------------------------------------------------
@@ -254,11 +254,11 @@ are_all_enabled(Things) ->
 is_enabled(_AccountId, {_Type, 'undefined'}) -> 'true';
 is_enabled(AccountId, {<<"device">>, DeviceId}) ->
     Default = kapps_config:get_is_true(<<"registrar">>, <<"device_enabled_default">>, 'true'),
-    {'ok', DeviceJObj} = kz_datamgr:open_cache_doc(kzd_account:format_account_db(AccountId), DeviceId),
+    {'ok', DeviceJObj} = kz_datamgr:open_cache_doc(kz_term:format_account_db(AccountId), DeviceId),
     kz_device:enabled(DeviceJObj, Default)
         orelse throw({'error', {'device_disabled', DeviceId}});
 is_enabled(AccountId, {<<"owner">>, OwnerId}) ->
-    case kz_datamgr:open_cache_doc(kzd_account:format_account_db(AccountId), OwnerId) of
+    case kz_datamgr:open_cache_doc(kz_term:format_account_db(AccountId), OwnerId) of
         {'ok', UserJObj} ->
             Default = kapps_config:get_is_true(<<"registrar">>, <<"owner_enabled_default">>, 'true'),
             kzd_user:is_enabled(UserJObj, Default)

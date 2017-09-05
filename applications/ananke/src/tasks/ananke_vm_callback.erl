@@ -37,7 +37,7 @@ check(AccountId, VMBoxId) ->
         'false' -> lager:info("no unread messages");
         'true' ->
             lager:info("found unread messages"),
-            AccountDb = kzd_account:format_account_id(AccountId, 'encoded'),
+            AccountDb = kz_term:format_account_id(AccountId, 'encoded'),
             handle_req(kz_json:from_list([{<<"Account-ID">>, AccountId}
                                          ,{<<"Account-DB">>, AccountDb}
                                          ,{<<"Voicemail-Box">>, VMBoxId}

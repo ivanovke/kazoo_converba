@@ -102,7 +102,7 @@ reconcile_allotment(Seconds, Allotment, Request, Limits) ->
     CallId = j5_request:call_id(Request),
     AccountId = j5_limits:account_id(Limits),
     Timestamp = kz_time:now_s(),
-    LedgerDb = kzd_account:format_account_mod_id(AccountId),
+    LedgerDb = kz_term:format_account_mod_id(AccountId),
     Id = <<CallId/binary, "-allotment-consumption">>,
     lager:debug("adding allotment debit ~s to ledger ~s for ~wsec"
                ,[Id, LedgerDb, Seconds]
@@ -188,7 +188,7 @@ allotment_consumed_so_far(Allotment, Limits) ->
 allotment_consumed_so_far(_, _, _, _, Attempts) when Attempts > 2 -> 0;
 allotment_consumed_so_far(CycleStart, CycleEnd, Classification, Limits, Attempts) ->
     AccountId = j5_limits:account_id(Limits),
-    LedgerDb = kzd_account:format_account_mod_id(AccountId),
+    LedgerDb = kz_term:format_account_mod_id(AccountId),
     ViewOptions = [{'startkey', [Classification, CycleStart]}
                   ,{'endkey', [Classification, CycleEnd]}
                   ,{'reduce', 'false'}

@@ -182,8 +182,8 @@ new(Ledger, Amount, Type) ->
                    ,pvt_amount = abs(Amount)
                    ,pvt_created = kz_time:now_s()
                    ,pvt_modified = kz_time:now_s()
-                   ,pvt_account_id = kzd_account:format_account_id(Ledger)
-                   ,pvt_account_db = kzd_account:format_account_mod_id(Ledger)
+                   ,pvt_account_id = kz_term:format_account_id(Ledger)
+                   ,pvt_account_db = kz_term:format_account_mod_id(Ledger)
                    }.
 
 %%--------------------------------------------------------------------

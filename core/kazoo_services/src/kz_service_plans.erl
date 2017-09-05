@@ -94,7 +94,7 @@ merge_plans(SerivcePlan, PlansJObj) ->
 %%--------------------------------------------------------------------
 -spec add_service_plan(ne_binary(), ne_binary(), kzd_services:doc()) -> kzd_services:doc().
 add_service_plan(PlanId, ResellerId, ServicesJObj) ->
-    ResellerDb = kzd_account:format_account_db(ResellerId),
+    ResellerDb = kz_term:format_account_db(ResellerId),
     case open_cache_doc(ResellerDb, PlanId) of
         {'error', _R} ->
             lager:info("failed to load service plan ~s from ~s: ~p", [PlanId, ResellerDb, _R]),
