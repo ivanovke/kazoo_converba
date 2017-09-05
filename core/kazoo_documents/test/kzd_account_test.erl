@@ -6,7 +6,7 @@
 %%% @contributors
 %%%   James Aimonetti
 %%%-------------------------------------------------------------------
--module(kz_account_test).
+-module(kzd_account_test).
 
 -include_lib("eunit/include/eunit.hrl").
 
