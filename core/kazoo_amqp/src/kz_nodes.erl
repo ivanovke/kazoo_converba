@@ -759,7 +759,11 @@ normalize_amqp_uri(URI) ->
 
 -spec add_kapps_data(kz_node()) -> kz_node().
 add_kapps_data(Node) ->
-    lists:foldl(fun kapp_data/2, Node, kapps_controller:list_apps()).
+    lists:foldl(fun kapp_data/2, Node, running_apps()).
+
+-spec running_apps() -> atoms().
+running_apps() ->
+    [App || {App, _, _} <- kz_util:get_running_apps()].
 
 -spec request(request_acc()) -> request_acc().
 request(Acc) ->

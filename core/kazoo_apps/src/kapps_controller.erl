@@ -21,7 +21,6 @@
 
 -include("kazoo_apps.hrl").
 
-
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -87,7 +86,7 @@ running_apps(Verbose) ->
 
 -spec running_apps_verbose() -> atoms() | string().
 running_apps_verbose() ->
-    case get_running_apps() of
+    case kz_util:get_running_apps() of
         [] -> "kapps have not started yet, check that rabbitmq and bigcouch/haproxy are running at the configured addresses";
         Resp ->
             lists:sort(
@@ -97,16 +96,9 @@ running_apps_verbose() ->
              )
     end.
 
--spec get_running_apps() -> [{atom(), string(), _}].
-get_running_apps() ->
-    [AppData
-     || {App, _Desc, _Vsn}=AppData <- application:which_applications(),
-        is_kapp(App)
-    ].
-
 -spec running_apps_list() -> atoms() | string().
 running_apps_list() ->
-    case get_running_apps() of
+    case kz_util:get_running_apps() of
         [] -> "kapps have not started yet, check that rabbitmq and bigcouch/haproxy are running at the configured addresses";
         Resp -> lists:sort([App || {App, _Desc, _Vsn} <- Resp])
     end.
@@ -150,7 +142,7 @@ maybe_start_from_env() ->
 -spec maybe_start_from_node_name() -> 'false' | atoms().
 maybe_start_from_node_name() ->
     KApp = kapp_from_node_name(),
-    case is_kapp(KApp) of
+    case kz_util:is_kazoo_app(KApp) of
         'false' -> 'false';
         _Else ->
             lager:info("starting application based on node name: ~s", [KApp]),
@@ -184,17 +176,8 @@ sysconf_first(_, _) -> 'true'.
 
 -spec list_apps() -> atoms().
 list_apps() ->
-    [App || {App, _, _} <- get_running_apps()].
+    [App || {App, _, _} <- kz_util:get_running_apps()].
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
--spec is_kapp(atom()) -> boolean().
-is_kapp(App) ->
-    case application:get_key(App, 'applications') of
-        {'ok', Deps} -> lists:member(?APP, Deps);
-        'undefined' ->
-            %% Race condition sometimes prevents from reading application key
-            'non_existing' =/= code:where_is_file(atom_to_list(App) ++ ".app")
-    end.

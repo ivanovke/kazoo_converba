@@ -11,6 +11,8 @@
 
 -export([log_stacktrace/0, log_stacktrace/1, log_stacktrace/2
 
+        ,get_running_apps/0
+        ,is_kazoo_app/1
         ]).
 
 -export([try_load_module/1]).
@@ -580,3 +582,19 @@ iolist_join(Sep, [H|T]) ->
 iolist_join_prepend(_, []) -> [];
 iolist_join_prepend(Sep, [H|T]) ->
     [Sep, H | iolist_join_prepend(Sep, T)].
+
+-spec get_running_apps() -> [{atom(), string(), _}].
+get_running_apps() ->
+    [AppData
+     || {App, _Desc, _Vsn}=AppData <- application:which_applications(),
+        is_kazoo_app(App)
+    ].
+
+-spec is_kazoo_app(atom()) -> boolean().
+is_kazoo_app(App) ->
+    case application:get_key(App, 'applications') of
+        {'ok', Deps} -> lists:member('kazoo_apps', Deps);
+        'undefined' ->
+            %% Race condition sometimes prevents from reading application key
+            'non_existing' =/= code:where_is_file(atom_to_list(App) ++ ".app")
+    end.
