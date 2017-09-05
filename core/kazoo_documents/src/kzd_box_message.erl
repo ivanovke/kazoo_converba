@@ -349,7 +349,7 @@ change_message_name(NBoxJ, MsgJObj) ->
 %%--------------------------------------------------------------------
 -spec change_to_sip_field(ne_binary(), doc(), doc()) -> doc().
 change_to_sip_field(AccountId, NBoxJ, MsgJObj) ->
-    Realm = kz_account:fetch_realm(AccountId),
+    Realm = kzd_account:fetch_realm(AccountId),
     BoxNum = kzd_voicemail_box:mailbox_number(NBoxJ),
     Metadata = metadata(MsgJObj),
     To = <<BoxNum/binary, "@", Realm/binary>>,

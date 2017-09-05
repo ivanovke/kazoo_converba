@@ -359,7 +359,7 @@ user_params(UserJObj) ->
 timezone(UserJObj) ->
     ?AN_ACCOUNT_ID = kz_doc:account_id(UserJObj),
     {ok,AccountJObj} = kz_json:fixture(?APP, "an_account.json"),
-    kz_account:timezone(AccountJObj).
+    kzd_account:timezone(AccountJObj).
 -else.
 timezone(UserJObj) -> kzd_user:timezone(UserJObj).
 -endif.
@@ -381,11 +381,11 @@ find_account_params(AccountId) ->
     case fetch_account_for_params(AccountId) of
         {'ok', AccountJObj} ->
             props:filter_undefined(
-              [{<<"name">>, kz_account:name(AccountJObj)}
-              ,{<<"realm">>, kz_account:realm(AccountJObj)}
-              ,{<<"id">>, kz_account:id(AccountJObj)}
-              ,{<<"language">>, kz_account:language(AccountJObj)}
-              ,{<<"timezone">>, kz_account:timezone(AccountJObj)}
+              [{<<"name">>, kzd_account:name(AccountJObj)}
+              ,{<<"realm">>, kzd_account:realm(AccountJObj)}
+              ,{<<"id">>, kzd_account:id(AccountJObj)}
+              ,{<<"language">>, kzd_account:language(AccountJObj)}
+              ,{<<"timezone">>, kzd_account:timezone(AccountJObj)}
                | maybe_add_parent_params(AccountId, AccountJObj)
               ]);
         {'error', _E} ->
@@ -398,19 +398,19 @@ fetch_account_for_params(?AN_ACCOUNT_ID) -> kz_json:fixture(?APP, "an_account.js
 fetch_account_for_params(?A_MASTER_ACCOUNT_ID) -> kz_json:fixture(?APP, "a_master_account.json");
 fetch_account_for_params(?MATCH_ACCOUNT_RAW(_)) -> {error, testing_too_hard}.
 -else.
-fetch_account_for_params(AccountId) -> kz_account:fetch(AccountId).
+fetch_account_for_params(AccountId) -> kzd_account:fetch(AccountId).
 -endif.
 
 -spec maybe_add_parent_params(ne_binary(), kz_json:object()) -> kz_proplist().
 maybe_add_parent_params(AccountId, AccountJObj) ->
-    case kz_account:parent_account_id(AccountJObj) of
+    case kzd_account:parent_account_id(AccountJObj) of
         'undefined' -> [];
         AccountId -> [];
         ParentAccountId ->
             {'ok', ParentAccountJObj} = fetch_account_for_params(ParentAccountId),
-            [{<<"parent_name">>, kz_account:name(ParentAccountJObj)}
-            ,{<<"parent_realm">>, kz_account:realm(ParentAccountJObj)}
-            ,{<<"parent_id">>, kz_account:id(ParentAccountJObj)}
+            [{<<"parent_name">>, kzd_account:name(ParentAccountJObj)}
+            ,{<<"parent_realm">>, kzd_account:realm(ParentAccountJObj)}
+            ,{<<"parent_id">>, kzd_account:id(ParentAccountJObj)}
             ]
     end.
 
@@ -608,8 +608,8 @@ should_handle_notification(_JObj, 'true') ->
 should_handle_notification(JObj, 'false') ->
     Account = kapi_notifications:account_id(JObj),
 
-    Config = kz_account:get_inherited_value(Account
-                                           ,fun kz_account:notification_preference/1
+    Config = kzd_account:get_inherited_value(Account
+                                           ,fun kzd_account:notification_preference/1
                                            ,kapps_config:get_ne_binary(?NOTIFY_CONFIG_CAT, <<"notification_app">>, ?APP_NAME)
                                            ),
 
@@ -663,8 +663,8 @@ is_notice_enabled_default(TemplateKey) ->
 
 -spec get_parent_account_id(ne_binary()) -> api_binary().
 get_parent_account_id(AccountId) ->
-    case kz_account:fetch(AccountId) of
-        {'ok', JObj} -> kz_account:parent_account_id(JObj);
+    case kzd_account:fetch(AccountId) of
+        {'ok', JObj} -> kzd_account:parent_account_id(JObj);
         {'error', _E} ->
             lager:error("failed to find parent account for ~s", [AccountId]),
             'undefined'

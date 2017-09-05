@@ -124,7 +124,7 @@ get_attribute(JObj, K, DefaultFun, FormatterFun) ->
 
 -spec konami_doc(ne_binary()) -> api_object().
 konami_doc(Account) ->
-    case kz_account:fetch(Account) of
+    case kzd_account:fetch(Account) of
         {'ok', JObj} -> kz_json:get_value(<<"metaflows">>, JObj);
         {'error', 'not_found'} -> 'undefined';
         {'error', _E} ->

@@ -73,9 +73,9 @@ api_key() ->
     end.
 
 api_key(MasterAccountId) ->
-    case kz_account:fetch(MasterAccountId) of
+    case kzd_account:fetch(MasterAccountId) of
         {'ok', MasterAccount} ->
-            APIKey = kz_account:api_key(MasterAccount),
+            APIKey = kzd_account:api_key(MasterAccount),
             case is_binary(APIKey) of
                 'true' -> APIKey;
                 'false' ->

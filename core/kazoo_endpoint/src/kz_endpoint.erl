@@ -217,14 +217,14 @@ attributes_keys() ->
     ].
 
 merge_attributes(Owner, <<"user">>, Keys) ->
-    case kz_account:fetch(kz_doc:account_id(Owner)) of
+    case kzd_account:fetch(kz_doc:account_id(Owner)) of
         {'ok', Account} -> merge_attributes(Keys, Account, kz_json:new(), Owner);
         {'error', _} -> merge_attributes(Keys, kz_json:new(), kz_json:new(), Owner)
     end;
 merge_attributes(Device, <<"device">>, Keys) ->
     Owner = get_user(kz_doc:account_db(Device), Device),
     Endpoint = kz_json:set_value(<<"owner_id">>, kz_doc:id(Owner), Device),
-    case kz_account:fetch(kz_doc:account_id(Device)) of
+    case kzd_account:fetch(kz_doc:account_id(Device)) of
         {'ok', Account} -> merge_attributes(Keys, Account, Endpoint, Owner);
         {'error', _} -> merge_attributes(Keys, kz_json:new(), Endpoint, Owner)
     end;
@@ -1871,7 +1871,7 @@ get_sip_realm(SIPJObj, AccountId) ->
 get_sip_realm(SIPJObj, AccountId, Default) ->
     case kz_device:sip_realm(SIPJObj) of
         'undefined' ->
-            case kz_account:fetch_realm(AccountId) of
+            case kzd_account:fetch_realm(AccountId) of
                 undefined -> Default;
                 Realm -> Realm
             end;

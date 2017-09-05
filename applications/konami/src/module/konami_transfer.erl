@@ -1329,7 +1329,7 @@ find_moh(Data, Call) ->
         MOH -> MOH
     end.
 find_moh(Call) ->
-    {'ok', JObj} = kz_account:fetch(kapps_call:account_id(Call)),
+    {'ok', JObj} = kzd_account:fetch(kapps_call:account_id(Call)),
     kz_json:get_value([<<"music_on_hold">>, <<"media_id">>], JObj).
 
 -spec issue_transferee_event(ne_binary(), kapps_call:call()) -> 'ok'.

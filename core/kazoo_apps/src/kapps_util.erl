@@ -134,8 +134,8 @@ replicate_from_account(AccountDb, TargetDb, FilterDoc) ->
 %%--------------------------------------------------------------------
 -spec account_depth(ne_binary()) -> api_non_neg_integer().
 account_depth(Account) ->
-    {'ok', JObj} = kz_account:fetch(Account),
-    length(kz_account:tree(JObj)).
+    {'ok', JObj} = kzd_account:fetch(Account),
+    length(kzd_account:tree(JObj)).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -150,7 +150,7 @@ account_descendants(?MATCH_ACCOUNT_RAW(AccountId)) ->
                   ,{endkey, [AccountId, kz_json:new()]}
                   ],
     case kz_datamgr:get_results(?KZ_ACCOUNTS_DB, View, ViewOptions) of
-        {ok, JObjs} -> [kz_account:id(JObj) || JObj <- JObjs];
+        {ok, JObjs} -> [kzd_account:id(JObj) || JObj <- JObjs];
         {error, _R} ->
             lager:debug("unable to get descendants of ~s: ~p", [AccountId, _R]),
             []

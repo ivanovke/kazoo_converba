@@ -355,7 +355,7 @@ timezone(Box, Default) ->
 owner_timezone(Box, Default) ->
     case kzd_user:fetch(kz_doc:account_db(Box), owner_id(Box)) of
         {'ok', OwnerJObj} -> kzd_user:timezone(OwnerJObj, Default);
-        {'error', _} -> kz_account:timezone(kz_doc:account_id(Box), Default)
+        {'error', _} -> kzd_account:timezone(kz_doc:account_id(Box), Default)
     end.
 
 -spec unsolicitated_mwi_updates(doc()) -> boolean().

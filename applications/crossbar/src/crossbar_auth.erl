@@ -196,7 +196,7 @@ get_inherited_config(Context) ->
 get_inherited_config(_, 'true') ->
     kapps_config:get_json(?AUTH_CONFIG_CAT, <<"auth_modules">>);
 get_inherited_config(AccountId, 'false') ->
-    ParentId = kz_account:get_parent_account_id(AccountId),
+    ParentId = kzd_account:get_parent_account_id(AccountId),
     kapps_account_config:get_hierarchy(ParentId, ?AUTH_CONFIG_CAT, <<"auth_modules">>).
 
 %% @private

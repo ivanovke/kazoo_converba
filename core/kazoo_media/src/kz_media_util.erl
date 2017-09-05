@@ -674,8 +674,8 @@ prompt_language(<<_/binary>> = AccountId, SystemDefault) ->
     case ?USE_ACCOUNT_OVERRIDES of
         'false' -> default_prompt_language();
         'true' ->
-            {'ok', AccountJObj} = kz_account:fetch(AccountId),
-            Default = kz_account:language(AccountJObj, SystemDefault),
+            {'ok', AccountJObj} = kzd_account:fetch(AccountId),
+            Default = kzd_account:language(AccountJObj, SystemDefault),
             kz_term:to_lower_binary(
               kapps_account_config:get_ne_binary(AccountId
                                                 ,?CONFIG_CAT

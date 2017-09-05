@@ -446,23 +446,23 @@ build_originate_req(Contact, Context) ->
                                         ),
 
     lager:debug("attempting clicktocall ~s in account ~s", [FriendlyName, AccountId]),
-    {'ok', AccountDoc} = kz_account:fetch(AccountId),
+    {'ok', AccountDoc} = kzd_account:fetch(AccountId),
 
     CCVs = [{<<"Account-ID">>, AccountId}
            ,{<<"Auto-Answer-Loopback">>, AutoAnswer}
            ,{<<"Authorizing-ID">>, kz_doc:id(JObj)}
            ,{<<"Inherit-Codec">>, <<"false">>}
            ,{<<"Authorizing-Type">>, <<"clicktocall">>}
-           ,{<<"Loopback-Request-URI">>, <<OutboundNumber/binary, "@", (kz_account:realm(AccountDoc))/binary>>}
-           ,{<<"From-URI">>, <<CalleeNumber/binary, "@", (kz_account:realm(AccountDoc))/binary>>}
-           ,{<<"Request-URI">>, <<OutboundNumber/binary, "@", (kz_account:realm(AccountDoc))/binary>>}
+           ,{<<"Loopback-Request-URI">>, <<OutboundNumber/binary, "@", (kzd_account:realm(AccountDoc))/binary>>}
+           ,{<<"From-URI">>, <<CalleeNumber/binary, "@", (kzd_account:realm(AccountDoc))/binary>>}
+           ,{<<"Request-URI">>, <<OutboundNumber/binary, "@", (kzd_account:realm(AccountDoc))/binary>>}
            ,{<<"Retain-CID">>, 'true'}
            ],
 
     Endpoint = [{<<"Invite-Format">>, <<"loopback">>}
                ,{<<"Route">>,  Callee#contact.route}
                ,{<<"To-DID">>, Callee#contact.route}
-               ,{<<"To-Realm">>, kz_account:realm(AccountDoc)}
+               ,{<<"To-Realm">>, kzd_account:realm(AccountDoc)}
                ,{<<"Custom-Channel-Vars">>, kz_json:from_list(CCVs)}
                ],
 

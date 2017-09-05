@@ -831,8 +831,8 @@ read_system_for_account(Context, Id, LoadFrom) ->
 
 -spec get_parent_account_id(ne_binary()) -> api_binary().
 get_parent_account_id(AccountId) ->
-    case kz_account:fetch(AccountId) of
-        {'ok', JObj} -> kz_account:parent_account_id(JObj);
+    case kzd_account:fetch(AccountId) of
+        {'ok', JObj} -> kzd_account:parent_account_id(JObj);
         {'error', _E} ->
             lager:error("failed to find parent account for ~s", [AccountId]),
             'undefined'
@@ -951,7 +951,7 @@ masquerade(Context, AccountId) ->
 -spec maybe_set_teletype_as_default(cb_context:context()) -> 'ok'.
 maybe_set_teletype_as_default(Context) ->
     AccountDb = cb_context:account_db(Context),
-    case kz_account:fetch(AccountDb) of
+    case kzd_account:fetch(AccountDb) of
         {'error', _E} -> lager:debug("failed to note preference: ~p", [_E]);
         {'ok', AccountJObj} ->
             maybe_set_teletype_as_default(Context, AccountDb, AccountJObj)
@@ -959,7 +959,7 @@ maybe_set_teletype_as_default(Context) ->
 
 -spec maybe_set_teletype_as_default(cb_context:context(), ne_binary(), kz_json:object()) -> 'ok'.
 maybe_set_teletype_as_default(Context, AccountDb, AccountJObj) ->
-    case kz_account:notification_preference(AccountJObj) of
+    case kzd_account:notification_preference(AccountJObj) of
         'undefined' -> set_teletype_as_default(Context, AccountDb, AccountJObj);
         <<"teletype">> -> lager:debug("account already prefers teletype");
         _Pref -> set_teletype_as_default(Context, AccountDb, AccountJObj)
@@ -967,7 +967,7 @@ maybe_set_teletype_as_default(Context, AccountDb, AccountJObj) ->
 
 -spec set_teletype_as_default(cb_context:context(), ne_binary(), kz_json:object()) -> 'ok'.
 set_teletype_as_default(Context, AccountDb, AccountJObj) ->
-    JObj = kz_account:set_notification_preference(AccountJObj, <<"teletype">>),
+    JObj = kzd_account:set_notification_preference(AccountJObj, <<"teletype">>),
     case kz_datamgr:save_doc(AccountDb, crossbar_doc:update_pvt_parameters(JObj, Context)) of
         {'ok', UpdatedAccountJObj} ->
             _ = cb_accounts:replicate_account_definition(UpdatedAccountJObj),

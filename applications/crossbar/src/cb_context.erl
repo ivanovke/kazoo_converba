@@ -243,11 +243,11 @@ account_modb(Context, Year, Month) ->
     kazoo_modb:get_modb(account_id(Context), Year, Month).
 
 account_realm(Context) ->
-    kz_account:realm(account_doc(Context)).
+    kzd_account:realm(account_doc(Context)).
 
 account_doc(#cb_context{account_id = undefined}) -> undefined;
 account_doc(#cb_context{account_id = AccountId}) ->
-    case kz_account:fetch(AccountId) of
+    case kzd_account:fetch(AccountId) of
         {ok, AccountJObj} -> AccountJObj;
         {error, _R} ->
             lager:warning("error fetching account doc for ~p: ~p", [AccountId,_R]),
@@ -299,7 +299,7 @@ auth_account_id(#cb_context{auth_account_id=AuthBy}) -> AuthBy.
 
 auth_account_doc(#cb_context{auth_account_id = undefined}) -> undefined;
 auth_account_doc(#cb_context{auth_account_id = AccountId}) ->
-    case kz_account:fetch(AccountId) of
+    case kzd_account:fetch(AccountId) of
         {ok, AuthAccountJObj} -> AuthAccountJObj;
         {error, _R} ->
             lager:warning("error fetching auth account doc for ~p: ~p", [AccountId,_R]),

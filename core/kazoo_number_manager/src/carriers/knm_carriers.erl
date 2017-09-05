@@ -220,7 +220,7 @@ usable_carriers() ->
 -spec allowed_creation_states(api_ne_binary()) -> ne_binaries().
 -ifdef(TEST).
 allowed_creation_states(AccountId=?RESELLER_ACCOUNT_ID) ->
-    AccountJObj = kz_account:set_allow_number_additions(?RESELLER_ACCOUNT_DOC, true),
+    AccountJObj = kzd_account:set_allow_number_additions(?RESELLER_ACCOUNT_DOC, true),
     Options = [{<<"auth_by_account">>, AccountJObj}],
     knm_number:allowed_creation_states(Options, AccountId);
 allowed_creation_states(AccountId) ->

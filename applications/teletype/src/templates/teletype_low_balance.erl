@@ -166,7 +166,7 @@ current_account_dollars(?AN_ACCOUNT_ID) -> {ok, 38.6592}.
 
 low_balance_threshold(?AN_ACCOUNT_ID) ->
     {ok,AccountJObj} = kz_json:fixture(?APP, "an_account.json"),
-    kz_account:low_balance_threshold(AccountJObj).
+    kzd_account:low_balance_threshold(AccountJObj).
 
 fetch_user(?AN_ACCOUNT_ID, ?AN_ACCOUNT_USER_ID) ->
     kz_json:fixture(?APP, "an_account_user.json").
@@ -175,7 +175,7 @@ current_account_dollars(AccountId) ->
     wht_util:current_account_dollars(AccountId).
 
 low_balance_threshold(AccountId) ->
-    kz_account:low_balance_threshold(AccountId).
+    kzd_account:low_balance_threshold(AccountId).
 
 fetch_user(AccountId, UserId) ->
     kzd_user:fetch(AccountId, UserId).

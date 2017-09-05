@@ -343,7 +343,7 @@ build_local_extension(#state{number_props=Props
 
 -spec get_account_realm(ne_binary()) -> ne_binary().
 get_account_realm(AccountId) ->
-    case kz_account:fetch_realm(AccountId) of
+    case kzd_account:fetch_realm(AccountId) of
         undefined -> AccountId;
         Realm -> Realm
     end.

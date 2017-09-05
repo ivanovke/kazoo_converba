@@ -140,8 +140,8 @@ reset_subscriber(User, Realm) ->
 
 -spec reset_account(ne_binary()) -> any().
 reset_account(AccountId) ->
-    case kz_account:fetch(AccountId) of
-        {'ok', JObj} -> reset_realm(kz_account:realm(JObj));
+    case kzd_account:fetch(AccountId) of
+        {'ok', JObj} -> reset_realm(kzd_account:realm(JObj));
         {'error', _} = Error -> Error
     end.
 

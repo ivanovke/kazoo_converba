@@ -253,7 +253,7 @@ get_service_props(Request, Account, ConfigCat) ->
                                       ,kapps_config:get_ne_binary(ConfigCat, <<"default_from">>, UnconfiguredFrom)),
     DefaultCharset = kz_json:get_ne_value(<<"template_charset">>, Request
                                          ,kapps_config:get_binary(ConfigCat, <<"default_template_charset">>, <<>>)),
-    JObj = find_notification_settings(binary:split(ConfigCat, <<".">>), kz_account:tree(Account)),
+    JObj = find_notification_settings(binary:split(ConfigCat, <<".">>), kzd_account:tree(Account)),
     [{<<"url">>, kz_json:get_value(<<"service_url">>, JObj, DefaultUrl)}
     ,{<<"name">>, kz_json:get_value(<<"service_name">>, JObj, DefaultName)}
     ,{<<"provider">>, kz_json:get_value(<<"service_provider">>, JObj, DefaultProvider)}
@@ -269,7 +269,7 @@ find_notification_settings(_, []) ->
     lager:debug("unable to get service props, pvt_tree for the account was empty", []),
     kz_json:new();
 find_notification_settings([_, Module], Tree) ->
-    case kz_account:fetch(lists:last(Tree)) of
+    case kzd_account:fetch(lists:last(Tree)) of
         {'error', _} -> kz_json:new();
         {'ok', JObj} ->
             lager:debug("looking for notifications '~s' service info in: ~s"
@@ -336,9 +336,9 @@ find_admin('undefined') -> kz_json:new();
 find_admin([]) -> kz_json:new();
 find_admin(Account) when is_binary(Account) ->
     AccountId = kz_util:format_account_id(Account, 'raw'),
-    case kz_account:fetch(Account) of
+    case kzd_account:fetch(Account) of
         {'error', _} -> find_admin([AccountId]);
-        {'ok', JObj} -> find_admin([AccountId | lists:reverse(kz_account:tree(JObj))])
+        {'ok', JObj} -> find_admin([AccountId | lists:reverse(kzd_account:tree(JObj))])
     end;
 find_admin([AcctId|Tree]) ->
     AccountDb = kz_util:format_account_id(AcctId, 'encoded'),
@@ -363,7 +363,7 @@ find_admin([AcctId|Tree]) ->
     end;
 find_admin(Account) ->
     find_admin([kz_doc:account_id(Account)
-                | lists:reverse(kz_account:tree(Account))
+                | lists:reverse(kzd_account:tree(Account))
                ]).
 
 %%--------------------------------------------------------------------
@@ -382,7 +382,7 @@ get_account_doc(JObj) ->
                                    ], JObj)
     of
         'undefined' -> 'undefined';
-        Account -> kz_account:fetch(Account)
+        Account -> kzd_account:fetch(Account)
     end.
 
 -spec category_to_file(ne_binary()) -> iolist() | 'undefined'.

@@ -260,9 +260,9 @@ fetch_rates(EntityList, IncludeRealm, MethodList, AccountDB) ->
 
 -spec fetch_from_parents(ne_binary(), ne_binaries(), ne_binary()) -> kz_json:objects().
 fetch_from_parents(AccountDb, MethodList, Realm) ->
-    case kz_account:fetch(AccountDb) of
+    case kzd_account:fetch(AccountDb) of
         {'ok', JObj} ->
-            Tree = lists:reverse(kz_account:tree(JObj)),
+            Tree = lists:reverse(kzd_account:tree(JObj)),
             check_fallbacks(Tree, MethodList, Realm);
         {'error', _Reason} ->
             lager:info("Cant't access to db: ~p", [_Reason])

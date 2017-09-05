@@ -296,6 +296,7 @@ kapps_util() {
 
     replace kz_account default_timezone kz_config_accounts default_timezone
 
+    replace kz_account "" kzd_account ""
 }
 
 echo "ensuring kz_term is used"

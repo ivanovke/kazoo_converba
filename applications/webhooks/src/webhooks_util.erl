@@ -92,9 +92,9 @@ to_json(#webhook{}=Hook) ->
 -spec find_webhooks(ne_binary(), api_binary()) -> webhooks().
 find_webhooks(_HookEvent, 'undefined') -> [];
 find_webhooks(HookEvent, AccountId) ->
-    case kz_account:fetch(AccountId, 'accounts') of
+    case kzd_account:fetch(AccountId, 'accounts') of
         {'ok', JObj} ->
-            Accounts = kz_account:tree(JObj) -- [AccountId],
+            Accounts = kzd_account:tree(JObj) -- [AccountId],
             find_webhooks(HookEvent, AccountId, Accounts);
         {'error', 'not_found'} -> []
     end.

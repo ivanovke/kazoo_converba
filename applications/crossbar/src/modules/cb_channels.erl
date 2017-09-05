@@ -355,7 +355,7 @@ account_summary(Context) ->
 %%--------------------------------------------------------------------
 -spec get_channels(cb_context:context(), kz_json:objects(), function()) -> cb_context:context().
 get_channels(Context, Devices, PublisherFun) ->
-    Realm = kz_account:fetch_realm(cb_context:account_id(Context)),
+    Realm = kzd_account:fetch_realm(cb_context:account_id(Context)),
     Paths = [[<<"doc">>, <<"sip">>, <<"username">>]
             ,[<<"sip">>, <<"username">>]
             ],

@@ -278,13 +278,13 @@ split_results([_|_] = JObjs) ->
 is_allowed(ExtraArgs) ->
     AuthAccountId = maps:get('auth_account_id', ExtraArgs),
     AccountId = maps:get('account_id', ExtraArgs),
-    {'ok', AccountDoc} = kz_account:fetch(AccountId),
-    {'ok', AuthAccountDoc} = kz_account:fetch(AuthAccountId),
+    {'ok', AccountDoc} = kzd_account:fetch(AccountId),
+    {'ok', AuthAccountDoc} = kzd_account:fetch(AuthAccountId),
     kz_util:is_in_account_hierarchy(AuthAccountId, AccountId, 'true')
     %% Serve request for reseller rates
-        andalso kz_account:is_reseller(AccountDoc)
+        andalso kzd_account:is_reseller(AccountDoc)
     %% or serve requests from SuperAdmin
-        orelse kz_account:is_superduper_admin(AuthAccountDoc).
+        orelse kzd_account:is_superduper_admin(AuthAccountDoc).
 
 -spec get_ratedeck_db(kz_tasks:extra_args()) -> ne_binary().
 get_ratedeck_db(_ExtraArgs) ->

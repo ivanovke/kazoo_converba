@@ -304,7 +304,7 @@ all_accounts_set_classifier_deny(Classifier) ->
 -spec set_account_classifier_action(ne_binary(), ne_binary(), ne_binary()) -> 'ok'.
 set_account_classifier_action(Action, Classifier, AccountDb) ->
     'true' = is_classifier(Classifier),
-    io:format("found account: ~p", [kz_account:fetch_name(AccountDb)]),
+    io:format("found account: ~p", [kzd_account:fetch_name(AccountDb)]),
     <<_/binary>> = AccountId = kz_util:format_account_id(AccountDb),
 
     {'ok', _} = kz_datamgr:update_doc(AccountDb

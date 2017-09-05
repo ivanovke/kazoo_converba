@@ -68,13 +68,13 @@ number_tree(DID) ->
 -spec number_tree(ne_binary(), kz_json:object()) -> 'ok'.
 number_tree(DID, AccountDoc) ->
     io:format("~s tree ", [DID]),
-    print_tree(kz_account:tree(AccountDoc)),
-    io:format(" ~s(~s)~n", [kz_account:name(AccountDoc), kz_doc:id(AccountDoc)]).
+    print_tree(kzd_account:tree(AccountDoc)),
+    io:format(" ~s(~s)~n", [kzd_account:name(AccountDoc), kz_doc:id(AccountDoc)]).
 
 -spec print_tree(ne_binaries()) -> 'ok'.
 print_tree([]) -> 'ok';
 print_tree([AccountId|Tree]) ->
-    io:format(" ~s(~s) ->", [kz_account:fetch_name(AccountId), AccountId]),
+    io:format(" ~s(~s) ->", [kzd_account:fetch_name(AccountId), AccountId]),
     print_tree(Tree).
 
 %%--------------------------------------------------------------------

@@ -97,7 +97,7 @@ max_postpay(Limits) ->
 -spec get_account_name(api_binary()) -> ne_binary().
 get_account_name('undefined') -> <<"unknown">>;
 get_account_name(Account) ->
-    case kz_account:fetch_name(Account) of
+    case kzd_account:fetch_name(Account) of
         undefined -> kz_util:format_account_id(Account);
         Name -> Name
     end.

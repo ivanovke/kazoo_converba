@@ -441,7 +441,7 @@ list_number(N) ->
 
 -spec account_name(api_ne_binary()) -> api_ne_binary().
 account_name(MaybeAccountId) ->
-    case kz_account:fetch_name(MaybeAccountId) of
+    case kzd_account:fetch_name(MaybeAccountId) of
         undefined -> undefined;
         Name -> quote(Name)
     end.

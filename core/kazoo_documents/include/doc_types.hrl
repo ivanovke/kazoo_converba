@@ -1,6 +1,6 @@
 -ifndef(KAZOO_DOC_TYPES_HRL).
 
--define(DOC_TYPES, [kz_account:type()
+-define(DOC_TYPES, [kzd_account:type()
                    ,kzd_callflow:type()
                    ,kz_device:type()
                    ,kzd_fax_box:type()

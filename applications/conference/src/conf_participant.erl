@@ -470,7 +470,7 @@ bridge_to_conference(Route, Conference, Call, Name) ->
 
 -spec get_account_realm(kapps_call:call()) -> ne_binary().
 get_account_realm(Call) ->
-    case kz_account:fetch_realm(kapps_call:account_id(Call)) of
+    case kzd_account:fetch_realm(kapps_call:account_id(Call)) of
         undefined -> <<"unknown">>;
         Realm -> Realm
     end.

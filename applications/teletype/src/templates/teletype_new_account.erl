@@ -149,7 +149,7 @@ list_users(?AN_ACCOUNT_DB) ->
     {ok, [kz_json:from_list([{<<"doc">>, UserJObj}])]}.
 -else.
 account_fetch(AccountId) ->
-    kz_account:fetch(AccountId).
+    kzd_account:fetch(AccountId).
 
 list_users(AccountDb) ->
     kz_datamgr:get_results(AccountDb, <<"users/crossbar_listing">>, ['include_docs']).

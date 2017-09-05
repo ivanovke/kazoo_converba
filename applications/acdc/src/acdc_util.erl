@@ -53,7 +53,7 @@ agent_presence_update(AcctId, AgentId) ->
 presence_update(AcctId, PresenceId, State) ->
     presence_update(AcctId, PresenceId, State, kz_term:to_hex_binary(crypto:hash('md5', PresenceId))).
 presence_update(AcctId, PresenceId, State, CallId) ->
-    {'ok', AcctDoc} = kz_account:fetch(AcctId),
+    {'ok', AcctDoc} = kzd_account:fetch(AcctId),
     To = <<PresenceId/binary, "@", (kz_json:get_value(<<"realm">>, AcctDoc))/binary>>,
 
     lager:debug("sending presence update '~s' to '~s'", [State, To]),
