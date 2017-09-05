@@ -1,0 +1,7 @@
+{application,kazoo_nodes,
+ [{applications,[]},
+  {description,"Handles Kazoo nodes' comings and goings"},
+  {vsn,"4.0.0"},
+  {modules,[]},
+  {mod, {kz_nodes, []}},
+  {registered,[kz_nodes]}]}.

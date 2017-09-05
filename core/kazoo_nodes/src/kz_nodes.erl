@@ -8,8 +8,12 @@
 %%%-------------------------------------------------------------------
 -module(kz_nodes).
 -behaviour(gen_listener).
+-behaviour(application).
 
--export([start_link/0]).
+-export([start_link/0
+        ,start/2
+        ,stop/1
+        ]).
 -export([is_up/1]).
 -export([whapp_count/1, whapp_count/2
         ,whapp_role_count/2, whapp_role_count/3
@@ -99,6 +103,14 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
+%% Application behaviour callbacks
+-spec start(any(), any()) -> {'ok', pid()}.
+start(_Type, _Args) ->
+    ?MODULE:start_link().
+
+-spec stop(any()) -> 'ok'.
+stop(_State) ->
+    gen_listener:stop(?SERVER).
 
 %%--------------------------------------------------------------------
 %% @doc Starts the server
