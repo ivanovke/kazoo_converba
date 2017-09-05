@@ -30122,6 +30122,17 @@
                     "type": "boolean"
                 },
                 "object_types": {
+                    "default": [
+                        "account",
+                        "callflow",
+                        "device",
+                        "faxbox",
+                        "media",
+                        "user",
+                        "vmbox",
+                        "fax",
+                        "mailbox_message"
+                    ],
                     "description": "webhooks object types",
                     "items": {
                         "type": "string"
