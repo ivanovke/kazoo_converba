@@ -300,10 +300,14 @@ kapps_util() {
 
     replace kz_util set_superduper_admin kzd_account update_superduper_admin
     replace kz_util set_allow_number_additions kzd_account update_allow_number_additions
-    replace kz_util format_account_id kzd_account format_account_id
-    replace kz_util format_account_mod_id kzd_account format_account_mod_id
-    replace kz_util format_account_db kzd_account format_account_db
-    replace kz_util format_account_modb kzd_account format_account_modb
+
+    replace kz_util format_account_id kz_term format_account_id
+    replace kz_util format_account_mod_id kz_term format_account_mod_id
+    replace kz_util format_account_db kz_term format_account_db
+    replace kz_util format_account_modb kz_term format_account_modb
+
+    replace kz_util format_resource_selectors_id kz_term format_resource_selectors_id
+    replace kz_util format_resource_selectors_db kz_term format_resource_selectors_db
 
     replace kz_util normalize_account_name kzd_account normalize_name
     replace kz_util account_update kzd_account account_update
