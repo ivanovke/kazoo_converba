@@ -16,24 +16,26 @@
 -define(NOTIFY_CAT, <<"notify">>).
 
 -define(DEFAULT_TIMEOUT, 10 * ?MILLISECONDS_IN_SECOND).
--define(TIMEOUT, kapps_config:get_pos_integer(?NOTIFY_CAT, <<"notify_publisher_timeout_ms">>, ?DEFAULT_TIMEOUT)).
-
--define(DEFAULT_PUBLISHER_ENABLED,
-        kapps_config:get_is_true(?NOTIFY_CAT, <<"notify_persist_enabled">>, true)
+-define(TIMEOUT
+       ,kapps_config:get_pos_integer(?NOTIFY_CAT, <<"notify_publisher_timeout_ms">>, ?DEFAULT_TIMEOUT)
        ).
--define(ACCOUNT_SHOULD_PRESIST(AccountId),
-        kapps_account_config:get_global(AccountId, ?NOTIFY_CAT, <<"should_persist_for_retry">>, true)
+
+-define(DEFAULT_PUBLISHER_ENABLED
+       ,kapps_config:get_is_true(?NOTIFY_CAT, <<"notify_persist_enabled">>, true)
+       ).
+-define(ACCOUNT_SHOULD_PRESIST(AccountId)
+       ,kapps_account_config:get_global(AccountId, ?NOTIFY_CAT, <<"should_persist_for_retry">>, true)
        ).
 
 -define(DEFAULT_TYPE_EXCEPTION, [<<"system_alert">>
                                 ,<<"voicemail_save">>
                                 ,<<"register">>
                                 ]).
--define(GLOBAL_FORCE_NOTIFY_TYPE_EXCEPTION,
-        kapps_config:get_ne_binaries(?NOTIFY_CAT, <<"notify_persist_temporary_force_exceptions">>, [])
+-define(GLOBAL_FORCE_NOTIFY_TYPE_EXCEPTION
+       ,kapps_config:get_ne_binaries(?NOTIFY_CAT, <<"notify_persist_temporary_force_exceptions">>, [])
        ).
--define(NOTIFY_TYPE_EXCEPTION(AccountId),
-        kapps_account_config:get_global(AccountId, ?NOTIFY_CAT, <<"notify_persist_exceptions">>, ?DEFAULT_TYPE_EXCEPTION)
+-define(NOTIFY_TYPE_EXCEPTION(AccountId)
+       ,kapps_account_config:get_global(AccountId, ?NOTIFY_CAT, <<"notify_persist_exceptions">>, ?DEFAULT_TYPE_EXCEPTION)
        ).
 
 -type failure_reason() :: {ne_binary(), api_object()}.
