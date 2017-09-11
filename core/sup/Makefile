@@ -10,6 +10,6 @@ $(ESCRIPT):
 	@$(REBAR) compile escriptize
 
 clean-escript:
-	@$(REBAR) clean
+	$(if $(wildcard sup), @$(REBAR) clean)
 
 include $(ROOT)/make/kz.mk
