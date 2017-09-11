@@ -1146,11 +1146,9 @@ replace_in_list(N, V1, [V | Vs], Acc) ->
 -spec load_fixture_from_file(atom(), text()) ->
                                     object() |
                                     {'error', atom()}.
-
 -spec load_fixture_from_file(atom(), text(), text()) ->
                                     object() |
                                     {'error', atom()}.
-
 load_fixture_from_file(App, File) ->
     load_fixture_from_file(App, <<"couchdb">>, File).
 
