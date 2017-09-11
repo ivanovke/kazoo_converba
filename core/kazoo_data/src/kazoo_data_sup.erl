@@ -33,7 +33,6 @@
                   ,?WORKER('kz_dataconnections')
                   ,?WORKER('kazoo_data_bootstrap')
                   ,?WORKER('kz_data_tracing')
-                  ,?WORKER('kz_data_maint_listener')
                   ]).
 
 %% ===================================================================

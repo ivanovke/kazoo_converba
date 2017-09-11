@@ -19,6 +19,7 @@
 
 -define(CHILDREN, [?WORKER('kapps_config_maint_listener')
                   ,?WORKER('kazoo_oauth_maint_listener')
+                  ,?WORKER('kz_data_maint_listener')
                   ]).
 
 %% ===================================================================
