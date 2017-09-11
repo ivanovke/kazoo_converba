@@ -215,7 +215,7 @@ start_link(Name, Module, Params, InitArgs, Options) when is_atom(Module),
                                                          ->
     gen_server:start_link(Name, ?MODULE, [Module, Params, InitArgs], Options).
 
--spec stop(gen_server_name()) -> 'ok'.
+-spec stop(server_ref()) -> 'ok'.
 stop(Name) ->
     gen_server:stop(Name, 'normal', 5000).
 
