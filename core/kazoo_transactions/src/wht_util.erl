@@ -155,7 +155,7 @@ current_balance(Account) ->
                               balance_ret().
 previous_balance(Account, Year, Month) ->
     Options = [{'year', kz_term:to_binary(Year)}
-              ,{'month', kz_time:pad_month(Month)}
+              ,{'month', kz_date:pad_month(Month)}
               ],
     get_balance(Account, Options).
 

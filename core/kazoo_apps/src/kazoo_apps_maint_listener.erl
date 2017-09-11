@@ -93,14 +93,14 @@ handle_refresh(MaintJObj, <<"refresh_database">>, Database, _Class) ->
     refresh_database(MaintJObj, Database);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_SIP_DB, _Class) ->
     Views = [kapps_util:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)],
-    Updated = kapps_util:update_views(?KZ_SIP_DB, Views, 'true'),
+    Updated = kz_datamgr:db_view_update(?KZ_SIP_DB, Views, 'true'),
     send_resp(MaintJObj, Updated);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_ACCOUNTS_DB, _Class) ->
     Views = [kapps_util:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)
             ,kapps_util:get_view_json('kazoo_apps', ?ACCOUNTS_AGG_VIEW_FILE)
             ,kapps_util:get_view_json('kazoo_apps', ?SEARCH_VIEW_FILE)
             ],
-    Updated = kapps_util:update_views(?KZ_ACCOUNTS_DB, Views, 'true'),
+    Updated = kz_datamgr:db_view_update(?KZ_ACCOUNTS_DB, Views, 'true'),
     send_resp(MaintJObj, Updated);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_DEDICATED_IP_DB, _Class) ->
     Revised = kz_datamgr:revise_docs_from_folder(?KZ_DEDICATED_IP_DB
@@ -235,8 +235,8 @@ code_change(_OldVsn, State, _Extra) ->
 
 -spec refresh_account_db(ne_binary()) -> 'ok'.
 refresh_account_db(Database) ->
-    AccountDb = kz_util:format_account_id(Database, 'encoded'),
-    AccountId = kz_util:format_account_id(Database, 'raw'),
+    AccountDb = kz_term:format_account_id(Database, 'encoded'),
+    AccountId = kz_term:format_account_id(Database, 'raw'),
     _ = remove_depreciated_account_views(AccountDb),
     _ = ensure_account_definition(AccountDb, AccountId),
     %% ?VIEW_NUMBERS_ACCOUNT gets updated/created in KNM maintenance
@@ -248,7 +248,7 @@ refresh_account_db(Database) ->
                 ViewListing = {?VIEW_NUMBERS_ACCOUNT, ViewJObj},
                 lists:keyreplace(?VIEW_NUMBERS_ACCOUNT, 1, kapps_maintenance:get_all_account_views(), ViewListing)
         end,
-    _ = kapps_util:update_views(AccountDb, AccountViews, 'true'),
+    _ = kz_datamgr:db_view_update(AccountDb, AccountViews, 'true'),
     _ = kazoo_number_manager_maintenance:update_number_services_view(AccountDb),
     kapps_account_config:migrate(AccountDb),
     _ = kazoo_bindings:map(kapps_maintenance:binding({'refresh_account', AccountDb}), AccountId),
