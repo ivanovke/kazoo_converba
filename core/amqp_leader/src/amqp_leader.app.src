@@ -1,8 +1,8 @@
 {application,amqp_leader,
- [{applications,[kazoo,kazoo_globals,lager,stdlib]},
-  {description,"a leader for AMQP"},
-  {vsn,"1.0.0"},
-  {modules,[]},
-  {registered,[amqp_leader_sup]},
-  {mod,{amqp_leader_app,[]}},
-  {env,[]}]}.
+             [{applications,[kazoo_amqp,lager]},
+              {description,"a leader for AMQP"},
+              {vsn,"1.0.0"},
+              {modules,[]},
+              {registered,[amqp_leader_sup]},
+              {mod,{amqp_leader_app,[]}},
+              {env,[]}]}.

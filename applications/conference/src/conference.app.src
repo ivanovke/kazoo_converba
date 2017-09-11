@@ -1,19 +1,8 @@
-{application, conference,
- [
-  {description, "Conferencing Service Provider"},
-  {vsn, "4.0.0"},
-  {modules, []},
-  {registered, [conference_sup, conf_participant_sup]},
-  {applications, [ kernel
-                 , stdlib
-                 , crypto
-
-                 , kazoo_amqp
-                 , kazoo_apps
-                 , kazoo_data
-
-
-                 , lager
-                 ]},
-  {mod, {conference_app, []}}
- ]}.
+{application,conference,
+             [{applications,[kazoo_amqp,kazoo_apps,kazoo_call,kazoo_config,
+                             kazoo_data,kazoo_media,lager]},
+              {description,"Conferencing Service Provider"},
+              {vsn,"4.0.0"},
+              {modules,[]},
+              {registered,[conference_sup,conf_participant_sup]},
+              {mod,{conference_app,[]}}]}.

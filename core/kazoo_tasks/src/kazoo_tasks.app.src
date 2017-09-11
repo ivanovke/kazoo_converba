@@ -1,13 +1,6 @@
-{application, kazoo_tasks,
- [
-  {description, "Kazoo Tasks - Application library for Tasks"},
-  {vsn, "4.0.0"},
-  {modules, []},
-  {registered, []},
-  {applications, [kernel
-                 ,stdlib
-
-                 ,kazoo
-                 ,kazoo_csv
-                 ]}
- ]}.
+{application,kazoo_tasks,
+             [{applications,[kazoo_amqp,kazoo_data,lager]},
+              {description,"Kazoo Tasks - Application library for Tasks"},
+              {vsn,"4.0.0"},
+              {modules,[]},
+              {registered,[]}]}.

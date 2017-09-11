@@ -1,33 +1,12 @@
-{application, kazoo_apps,
- [{description, "Applications on top of Kazoo"}
- ,{id, "9fd3b140-8727-11e0-9d78-0800200c9a66"}
- ,{vsn, "4.0.0"}
- ,{modules, []}
- ,{registered, [kazoo_apps_sup, kz_hooks_cache, kz_hooks_listener, kz_hooks_listener_sup, kz_nodes, kz_hooks_shared_listener, kapps_sup]}
- ,{applications, [ kernel
-                 , stdlib
-
-                 , syslog
-                 , lager
-                 , lager_syslog
-                 , gproc
-                 , eflame
-
-                 , kazoo
-                 , kazoo_amqp
-                 , kazoo_bindings
-                 , kazoo_caches
-                 , kazoo_call
-                 , kazoo_config
-                 , kazoo_data
-                 , kazoo_documents
-                 , kazoo_globals
-                 , kazoo_number_manager
-                 , kazoo_services
-                 , kazoo_token_buckets
-                 , kazoo_web
-                 , kazoo_globals
-                 , kazoo_maintenance
-                 ]}
- ,{mod, {kazoo_apps_app, []}}
- ]}.
+{application,kazoo_apps,
+             [{applications,[gproc,kazoo_amqp,kazoo_bindings,kazoo_caches,
+                             kazoo_call,kazoo_config,kazoo_data,kazoo_media,
+                             kazoo_number_manager,lager]},
+              {description,"Applications on top of Kazoo"},
+              {id,"9fd3b140-8727-11e0-9d78-0800200c9a66"},
+              {vsn,"4.0.0"},
+              {modules,[]},
+              {registered,[kazoo_apps_sup,kz_hooks_cache,kz_hooks_listener,
+                           kz_hooks_listener_sup,kz_nodes,
+                           kz_hooks_shared_listener,kapps_sup]},
+              {mod,{kazoo_apps_app,[]}}]}.

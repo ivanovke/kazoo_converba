@@ -1,10 +1,6 @@
-{application, kazoo_stdlib
-,[
-  {description, "Erlang Term handlers"}
- ,{vsn, "4.0.0"}
- ,{modules, []}
- ,{registered, [ ]}
- ,{applications, [ kernel
-                 , stdlib
-                 ]}
- ]}.
+{application,kazoo_stdlib,
+             [{applications,[kazoo_config,lager]},
+              {description,"Erlang Term handlers"},
+              {vsn,"4.0.0"},
+              {modules,[]},
+              {registered,[]}]}.

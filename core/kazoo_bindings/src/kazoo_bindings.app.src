@@ -1,7 +1,7 @@
 {application,kazoo_bindings,
- [{applications,[kazoo,lager,stdlib]},
-  {description,"Bindings Server - routing things to places"},
-  {vsn,"4.0.0"},
-  {modules,[]},
-  {registered,[kazoo_bindings,kazoo_bindings_sup]},
-  {mod,{kazoo_bindings_app,[]}}]}.
+             [{applications,[lager]},
+              {description,"Bindings Server - routing things to places"},
+              {vsn,"4.0.0"},
+              {modules,[]},
+              {registered,[kazoo_bindings,kazoo_bindings_sup]},
+              {mod,{kazoo_bindings_app,[]}}]}.

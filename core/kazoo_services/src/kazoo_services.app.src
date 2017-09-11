@@ -1,32 +1,15 @@
-{application, kazoo_services,
- [
-  {description, "Kazoo Services provides billing and service limit support"},
-  {vsn, "4.0.0"},
-  {modules, []},
-  {registered, [kazoo_services_cache, kazoo_services_sup]},
-  {applications, [ kernel
-                 , stdlib
-
-                 , braintree
-                 , kazoo_config
-                 , kazoo_data
-                 , kazoo_modb
-
-
-                 , lager
-                 ]}
- ,{mod, {kazoo_services_app, []}}
- ,{env, [{service_modules, ['kz_service_devices'
-                           ,'kz_service_ips'
-                           ,'kz_service_ledgers'
-                           ,'kz_service_limits'
-                           ,'kz_service_phone_numbers'
-                           ,'kz_service_ui_apps'
-                           ,'kz_service_users'
-                           ,'kz_service_whitelabel'
-                           ,'kz_service_billing'
-                           ,'kz_service_ratedeck'
-                           ]}
-
-        ]}
- ]}.
+{application,kazoo_services,
+             [{applications,[kazoo_amqp,kazoo_apps,kazoo_caches,kazoo_config,
+                             kazoo_data,kazoo_number_manager,lager]},
+              {description,"Kazoo Services provides billing and service limit support"},
+              {vsn,"4.0.0"},
+              {modules,[]},
+              {registered,[kazoo_services_cache,kazoo_services_sup]},
+              {mod,{kazoo_services_app,[]}},
+              {env,[{service_modules,[kz_service_devices,kz_service_ips,
+                                      kz_service_ledgers,kz_service_limits,
+                                      kz_service_phone_numbers,
+                                      kz_service_ui_apps,kz_service_users,
+                                      kz_service_whitelabel,
+                                      kz_service_billing,
+                                      kz_service_ratedeck]}]}]}.
