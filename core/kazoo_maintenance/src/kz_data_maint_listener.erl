@@ -21,7 +21,7 @@
         ,code_change/3
         ]).
 
--include("kz_data.hrl").
+-include("kazoo_maintenance.hrl").
 -include_lib("kazoo_amqp/include/kz_amqp.hrl").
 
 -define(SERVER, ?MODULE).
