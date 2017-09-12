@@ -1,5 +1,6 @@
 {application,kazoo_tasks,
-             [{applications,[kazoo_amqp,kazoo_data,lager]},
+             [{applications,[kazoo_amqp,kazoo_csv,kazoo_data,kazoo_documents,
+                             kazoo_stdlib,lager,stdlib]},
               {description,"Kazoo Tasks - Application library for Tasks"},
               {vsn,"4.0.0"},
               {modules,[]},

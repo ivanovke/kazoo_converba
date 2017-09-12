@@ -1,5 +1,6 @@
 {application,kazoo_speech,
-             [{applications,[kazoo_config,kazoo_data,lager]},
+             [{applications,[kazoo,kazoo_config,kazoo_data,kazoo_stdlib,
+                             kazoo_web,lager,stdlib]},
               {description,"Kazoo Speech providers - TTS and ASR"},
               {vsn,"4.0.0"},
               {modules,[]},

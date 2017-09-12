@@ -1,5 +1,6 @@
 {application,skel,
-             [{applications,[kazoo_amqp,kazoo_call,lager]},
+             [{applications,[kazoo,kazoo_amqp,kazoo_call,kazoo_stdlib,lager,
+                             stdlib]},
               {description,"Skel - A skeleton application useful for quickly creating services"},
               {vsn,"4.0.0"},
               {modules,[]},

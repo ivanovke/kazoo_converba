@@ -1,5 +1,5 @@
 {application,kazoo_xml,
-             [{applications,[lager]},
+             [{applications,[kazoo_stdlib,lager,stdlib,xmerl]},
               {description,"Helpers for manipulating XML records"},
               {vsn,"4.0.0"},
               {modules,[]},

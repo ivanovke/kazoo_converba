@@ -1,5 +1,5 @@
 {application,kazoo_caches,
-             [{applications,[kazoo_amqp,lager]},
+             [{applications,[kazoo,kazoo_amqp,kazoo_stdlib,lager,stdlib]},
               {description,"Caches - Make sure system caches are available for system processes"},
               {vsn,"4.0.0"},
               {modules,[]},

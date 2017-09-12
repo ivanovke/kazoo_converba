@@ -1,5 +1,6 @@
 {application,kazoo_ledgers,
-             [{applications,[kazoo_config,lager]},
+             [{applications,[kazoo_config,kazoo_documents,kazoo_modb,
+                             kazoo_stdlib,lager,stdlib]},
               {description,"Kazoo ledgers management"},
               {vsn,"4.0.0"},
               {modules,[]},

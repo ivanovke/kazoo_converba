@@ -1,5 +1,6 @@
 {application,stats,
-             [{applications,[kazoo_amqp,kazoo_caches,lager,snmp]},
+             [{applications,[kazoo,kazoo_amqp,kazoo_caches,kazoo_stdlib,lager,
+                             snmp,stdlib]},
               {description,"Stats - Kazoo"},
               {vsn,"4.0.0"},
               {modules,[]},

@@ -125,9 +125,12 @@ app_src_filename(App) ->
 
 -spec circles() -> [{atom(), [atom()]}].
 circles() ->
-    [circles(App)
-     || App <- kz_ast_util:project_apps()
-    ].
+    {'ok', Cache} = kz_cache:start_link(?MODULE),
+    Circles = [circles(App)
+               || App <- kz_ast_util:project_apps()
+              ],
+    kz_cache:stop_local(Cache),
+    Circles.
 
 -spec circles(atom()) -> {atom(), [atom()]}.
 circles(App) ->
@@ -142,6 +145,27 @@ circles(App) ->
 -spec remote_app_list(atom()) -> [atom()].
 remote_app_list(App) ->
     lists:usort([A || {_Module, A} <- remote_apps(App)]).
+
+-spec remote_apps(atom()) -> [{atom(), atom()}].
+remote_apps(App) ->
+    case whereis(?MODULE) of
+        'undefined' -> uncached(App);
+        _Cache ->
+            check_cache_first(App)
+    end.
+
+uncached(App) ->
+    modules_with_apps(App, remote_calls(App)).
+
+check_cache_first(App) ->
+    case kz_cache:fetch_local(?MODULE, App) of
+        {'ok', Remote} -> Remote;
+        {'error', 'not_found'} ->
+            Remote = uncached(App),
+            ?DEBUG("caching deps for ~p", [App]),
+            kz_cache:store_local(?MODULE, App, Remote),
+            Remote
+    end.
 
 -spec circular_deps(atom(), any()) -> [atom()].
 circular_deps(App, RemoteApps) ->
@@ -174,12 +198,14 @@ is_kazoo_app(Path) when is_list(Path) ->
 -type apps_deps() :: [app_deps()].
 -spec process_project() -> apps_deps().
 process_project() ->
+    {'ok', Cache} = kz_cache:start_link(?MODULE),
     io:format("processing application dependencies: "),
     Discrepencies = lists:foldl(fun process_app/2
                                ,[]
                                ,kz_ast_util:project_apps()
                                ),
     io:format(" done~n"),
+    kz_cache:stop_local(Cache),
     lists:keysort(1, Discrepencies).
 
 -spec process_app(atom()) -> apps_deps().
@@ -214,10 +240,6 @@ process_app(App, Acc, ExistingApps) ->
         {[], []} -> Acc;
         _ -> [{App, Missing, Unneeded} | Acc]
     end.
-
--spec remote_apps(atom()) -> [{atom(), atom()}].
-remote_apps(App) ->
-    modules_with_apps(App, remote_calls(App)).
 
 -spec remote_calls(atom()) -> [atom()].
 remote_calls(App) ->

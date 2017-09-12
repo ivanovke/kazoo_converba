@@ -107,6 +107,8 @@ start_link(Name, ExpirePeriod, Props) ->
             gen_server:start_link({'local', Name}, ?MODULE, [Name, ExpirePeriod, Props], []);
         BindingProps ->
             lager:debug("started new cache process (gen_listener): ~s", [Name]),
+            kapi_conf:declare_exchanges(),
+
             Bindings = [{'conf', ['federate' | P]} || P <- maybe_add_db_binding(BindingProps)],
             gen_listener:start_link({'local', Name}
                                    ,?MODULE
@@ -352,7 +354,6 @@ wait_for_key_local(Srv, Key, Timeout) ->
 -spec init(list()) -> {'ok', state()}.
 init([Name, ExpirePeriod, Props]) ->
     kz_util:put_callid(Name),
-    kapi_conf:declare_exchanges(),
 
     Tab = ets:new(Name
                  ,['set', 'public', 'named_table', {'keypos', #cache_obj.key}]

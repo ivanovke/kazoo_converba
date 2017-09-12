@@ -1,5 +1,5 @@
 {application,kazoo_web,
-             [{applications,[lager]},
+             [{applications,[kazoo_stdlib,lager,stdlib]},
               {description,"Utility functions for HTTP / HTML manipulation"},
               {vsn,"4.0.0"},
               {modules,[]},

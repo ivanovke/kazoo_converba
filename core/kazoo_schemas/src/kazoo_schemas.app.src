@@ -1,5 +1,5 @@
 {application,kazoo_schemas,
-             [{applications,[kazoo_data,lager]},
+             [{applications,[jesse,kazoo_data,kazoo_stdlib,lager,stdlib]},
               {description,"JSON Schema handling"},
               {vsn,"4.0.0"},
               {modules,[]},

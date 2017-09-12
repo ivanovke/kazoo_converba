@@ -1,5 +1,6 @@
 {application,kazoo_templates,
-             [{applications,[kazoo_config,kazoo_data,lager]},
+             [{applications,[erlydtl,kazoo,kazoo_config,kazoo_data,
+                             kazoo_documents,kazoo_stdlib,lager,stdlib]},
               {description,"Blowing pigment over documents like never before"},
               {vsn,"4.0.0"},
               {modules,[]},

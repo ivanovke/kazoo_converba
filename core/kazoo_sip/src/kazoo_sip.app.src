@@ -1,5 +1,5 @@
 {application,kazoo_sip,
-             [{applications,[nklib]},
+             [{applications,[kazoo_stdlib,nklib,stdlib]},
               {description,"Kazoo SIP Utilities"},
               {vsn,"4.0.0"},
               {modules,[]},
