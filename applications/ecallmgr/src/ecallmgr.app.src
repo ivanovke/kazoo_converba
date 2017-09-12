@@ -1,7 +1,7 @@
 {application,ecallmgr,
     [{applications,
          [gproc,kazoo,kazoo_amqp,kazoo_apps,kazoo_bindings,kazoo_caches,
-          kazoo_call,kazoo_documents,kazoo_number_manager,kazoo_sip,
+          kazoo_call,kazoo_documents,kazoo_ips,kazoo_number_manager,kazoo_sip,
           kazoo_speech,kazoo_stdlib,kazoo_transactions,kazoo_web,kazoo_xml,
           lager,xmerl]},
      {description,"Manage resource requests and interface with FreeSWITCH"},
