@@ -156,7 +156,6 @@ circles_fold(App, Dep, Acc) ->
                       ,[Dep, App, remote_app_list(Dep)]
                       ),
     case is_kazoo_app(Dep)
-        andalso is_app_not_lib(Dep)
         andalso [A || A <- remote_app_list(Dep), A =:= App]
     of
         'false' -> ?DEBUG("dep ~p (of ~p) is not a kazoo app (may be a lib)~n", [Dep, App]), Acc;
@@ -384,32 +383,15 @@ modules_with_apps(App, Modules) ->
     lists:usort([{M, AppOf}
                  || M <- Modules,
                     (AppOf = app_of(M)) =/= 'undefined',
-                    AppOf =/= App,
-                    is_app_not_lib(AppOf)
+                    AppOf =/= App
                 ]
                ).
-
-is_app_not_lib(App) ->
-    'true' = is_loaded(App),
-    case application:get_key(App, 'mod') of
-        {'ok', {_Mod, _Args}} -> 'true';
-        _ -> 'false'
-    end.
-
--spec is_loaded(atom()) -> boolean().
-is_loaded(App) ->
-    case application:load(App) of
-        'ok' -> 'true';
-        {'error', {'already_loaded', App}} -> 'true';
-        _E -> io:format('user', "failed to load ~p:~p~n", [App, _E]), 'false'
-    end.
 
 modules_as_apps(App, Modules) ->
     lists:usort([AppOf
                  || M <- Modules,
                     (AppOf = app_of(M)) =/= 'undefined',
-                    AppOf =/= App,
-                    is_app_not_lib(AppOf)
+                    AppOf =/= App
                 ]
                ).
 
