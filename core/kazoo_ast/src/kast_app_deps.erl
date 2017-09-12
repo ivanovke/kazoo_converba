@@ -16,8 +16,8 @@
 
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 
-%% -define(DEBUG(_Fmt, _Args), 'ok').
--define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
+-define(DEBUG(_Fmt, _Args), 'ok').
+%%-define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
 
 -spec dot_file() -> 'ok' |
                     {'error', file:posix() | 'badarg' | 'terminated' | 'system_limit'}.
@@ -61,16 +61,16 @@ app_markup(App, RemoteApps) ->
 fix_project_deps() ->
     Deps = process_project(),
     io:format("processing app files "),
-    [fix_app_deps(App, Missing, Unneeded)
-     || {App, Missing, Unneeded} <- Deps
-    ],
+    _ = [fix_app_deps(App, Missing, Unneeded)
+         || {App, Missing, Unneeded} <- Deps
+        ],
     io:format(" done.~n").
 
 -spec fix_app_deps(atom()) -> 'ok'.
 fix_app_deps(App) ->
-    [fix_app_deps(App, Missing, Unneeded)
-     || {_App, Missing, Unneeded} <- process_app(App)
-    ],
+    _ = [fix_app_deps(App, Missing, Unneeded)
+         || {_App, Missing, Unneeded} <- process_app(App)
+        ],
     'ok'.
 
 -spec configured_dep_apps(atom()) -> [atom()].
@@ -126,15 +126,17 @@ app_src_filename(App) ->
 -spec circles() -> [{atom(), [atom()]}].
 circles() ->
     {'ok', Cache} = kz_cache:start_link(?MODULE),
+    io:format("finding circular dependencies "),
     Circles = [circles(App)
                || App <- kz_ast_util:project_apps()
               ],
     kz_cache:stop_local(Cache),
+    io:format(" done~n"),
+    io:format("used: ~p~n", [kz_util:pretty_print_bytes(erlang:memory('total'), 'truncated')]),
     Circles.
 
 -spec circles(atom()) -> {atom(), [atom()]}.
 circles(App) ->
-    io:format("finding circular deps for ~s: ", [App]),
     RemoteApps = remote_app_list(App),
     ?DEBUG("app ~p has remote apps ~p~n", [App, RemoteApps]),
     CircularDeps = circular_deps(App, RemoteApps),
@@ -162,7 +164,7 @@ check_cache_first(App) ->
         {'ok', Remote} -> Remote;
         {'error', 'not_found'} ->
             Remote = uncached(App),
-            ?DEBUG("caching deps for ~p", [App]),
+            ?DEBUG("caching deps for ~p~n", [App]),
             kz_cache:store_local(?MODULE, App, Remote),
             Remote
     end.
