@@ -1,5 +1,6 @@
 {application,call_inspector,
-             [{applications,[hep,kazoo,kazoo_amqp,kazoo_stdlib,lager,stdlib]},
+             [{applications,[hep,kazoo,kazoo_amqp,kazoo_apps,kazoo_stdlib,
+                             lager]},
               {description,"An inspectortron application useful for quickly troubleshooting issues"},
               {vsn,"4.0.0"},
               {modules,[]},
