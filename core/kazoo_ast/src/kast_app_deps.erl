@@ -132,7 +132,6 @@ circles() ->
               ],
     kz_cache:stop_local(Cache),
     io:format(" done~n"),
-    io:format("used: ~p~n", [kz_util:pretty_print_bytes(erlang:memory('total'), 'truncated')]),
     Circles.
 
 -spec circles(atom()) -> {atom(), [atom()]}.
