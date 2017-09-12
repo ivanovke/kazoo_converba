@@ -32,7 +32,6 @@
         ,naptrtuple_to_binary/1
         ,mxtuple_to_binary/1
         ]).
--export([pretty_print_bytes/1]).
 
 -export([lookup_dns/2
         ,lookup_dns/3
@@ -421,25 +420,6 @@ naptrtuple_to_binary({Order, Preference, Flags, Services, Regexp, Domain}) ->
 -spec mxtuple_to_binary(mxtuple()) -> ne_binary().
 mxtuple_to_binary({_Priority, Domain}) ->
     <<(kz_binary:strip_right(kz_term:to_binary(Domain), $.))/binary>>.
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec pretty_print_bytes(non_neg_integer()) -> iolist().
-pretty_print_bytes(Bytes)
-  when Bytes div 1073741824 > 0 ->
-    io_lib:format("~.2fGB", [Bytes/1073741824]);
-pretty_print_bytes(Bytes)
-  when Bytes div 1048576 > 0 ->
-    io_lib:format("~.2fMB", [Bytes/1048576]);
-pretty_print_bytes(Bytes)
-  when Bytes div 1024 > 0 ->
-    io_lib:format("~.2fKB", [Bytes/1024]);
-pretty_print_bytes(Bytes) ->
-    io_lib:format("~BB", [Bytes]).
 
 %%--------------------------------------------------------------------
 %% @public

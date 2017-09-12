@@ -281,7 +281,7 @@ print_node_status(#kz_node{zone=NodeZone
                           }=Node
                  ,Zone
                  ) ->
-    MemoryUsage = kz_network_utils:pretty_print_bytes(UsedMemory),
+    MemoryUsage = kz_util:pretty_print_bytes(UsedMemory, 'truncated'),
     io:format(?SIMPLE_ROW_STR, [<<"Node">>, N]),
     _ = maybe_print_md5(MD5),
     io:format(?SIMPLE_ROW_STR, [<<"Version">>, Version]),
