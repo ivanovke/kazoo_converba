@@ -59,16 +59,12 @@ unix_seconds_to_gregorian_seconds(UnixSeconds) ->
 unix_timestamp_to_gregorian_seconds(UnixTimestamp) ->
     ?UNIX_EPOCH_IN_GREGORIAN + (kz_term:to_integer(UnixTimestamp) div ?MILLISECONDS_IN_SECOND).
 
--spec to_gregorian_seconds(kz_datetime(), api_ne_binary()) -> gregorian_seconds().
+-spec to_gregorian_seconds(kz_datetime(), ne_binary()) -> gregorian_seconds().
 -ifdef(TEST).
-to_gregorian_seconds(Datetime, 'undefined') ->
-    to_gregorian_seconds(Datetime, <<"America/Los_Angeles">>);
 to_gregorian_seconds({{_,_,_},{_,_,_}}=Datetime, ?NE_BINARY=FromTimezone) ->
     calendar:datetime_to_gregorian_seconds(
       localtime:local_to_local(Datetime, binary_to_list(FromTimezone), "Etc/UTC")).
 -else.
-to_gregorian_seconds(Datetime, 'undefined') ->
-    to_gregorian_seconds(Datetime, kz_config_accounts:default_timezone());
 to_gregorian_seconds({{_,_,_},{_,_,_}}=Datetime, ?NE_BINARY=FromTimezone) ->
     calendar:datetime_to_gregorian_seconds(
       localtime:local_to_local(Datetime, binary_to_list(FromTimezone), "Etc/UTC")

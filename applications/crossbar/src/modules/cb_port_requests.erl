@@ -366,7 +366,7 @@ maybe_set_scheduled_date_from_schedule_on(Doc) ->
     case kz_json:get_ne_value(<<"schedule_on">>, Doc) of
         undefined -> Doc;
         DateJObj ->
-            TZ = kz_json:get_ne_binary_value(<<"timezone">>, DateJObj),
+            TZ = kz_json:get_ne_binary_value(<<"timezone">>, DateJObj, kz_config_accounts:default_timezone()),
             Datetime = kz_json:get_ne_binary_value(<<"date_time">>, DateJObj),
             Scheduled = date_as_configured_timezone(Datetime, TZ),
             lager:debug("date ~s (~s) translated to ~p", [Datetime, TZ, Scheduled]),
@@ -376,7 +376,7 @@ maybe_set_scheduled_date_from_schedule_on(Doc) ->
 -spec date_as_configured_timezone(ne_binary(), ne_binary()) -> gregorian_seconds().
 date_as_configured_timezone(<<YYYY:4/binary, $-, MM:2/binary, $-, DD:2/binary, $\s,
                               HH:2/binary, $:, Mm:2/binary>>
-                           ,FromTimezone
+                           ,<<_/binary>>=FromTimezone
                            ) ->
     Date = {kz_term:to_integer(YYYY), kz_term:to_integer(MM), kz_term:to_integer(DD)},
     Time = {kz_term:to_integer(HH), kz_term:to_integer(Mm), 0},
