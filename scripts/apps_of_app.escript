@@ -36,25 +36,26 @@ handle(_, _) ->
     print_help().
 
 list_remote_apps(App) ->
-    Apps =  kast_app_deps:remote_apps(list_to_atom(App)),
+    Apps = kast_app_deps:remote_apps(list_to_atom(App)),
     io:format("~n~p~n", [lists:keysort(2, Apps)]).
 
 print_circles(Circles) ->
-    [print_circle(App, Deps)
-     || {App, Deps} <- Circles,
-        Deps =/= []
-    ],
+    _ = lists:foldl(fun print_circle_fold/2, 1, Circles),
     'ok'.
 
-print_circle(App, [Dep]) ->
-    io:format("app ~s has circular a dep: ~s~n"
-             ,[App, Dep]
-             );
-print_circle(App, Deps) ->
-    io:format("app ~s has circular deps: '~s'~n"
-             ,[App, kz_binary:join(Deps, <<"', '">>)]
-             ).
+print_circle_fold({_App, []}, Index) -> Index;
+print_circle_fold({App, Deps}, Index) ->
+    print_circle(App, Deps, Index),
+    Index+1.
 
+print_circle(App, [Dep], Index) ->
+    io:format("~p: ~s has circular a dep: ~s~n"
+             ,[Index, App, Dep]
+             );
+print_circle(App, Deps, Index) ->
+    io:format("~p: ~s has circular deps: '~s'~n"
+             ,[Index, App, kz_binary:join(Deps, <<"', '">>)]
+             ).
 
 %%     case kast_app_deps:process_project() of
 %%         [] -> 'ok';
