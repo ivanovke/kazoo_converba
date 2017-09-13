@@ -659,10 +659,15 @@ is_dirty5_test_() ->
                   )
 
     ,?_assertEqual(features_5(OldJObj)
-                  ,kz_json:to_map(kz_json:get_value(<<"pvt_features">>, JObj)))
+                  ,kz_json:to_map(kz_json:get_value(<<"pvt_features">>, JObj))
+                  )
     ,?_assertEqual(features_5(OldJObj)
-                  ,kz_json:to_map(kz_json:get_value(<<"pvt_features">>, NewJObj)))
-    ,?_assert(kz_json:are_equal(features_5(OldJObj), knm_phone_number:features(PN)))
+                  ,kz_json:to_map(kz_json:get_value(<<"pvt_features">>, NewJObj))
+                  )
+    ,?_assert(kz_json:are_equal(kz_json:from_map(features_5(OldJObj))
+                               ,knm_phone_number:features(PN)
+                               )
+             )
 
     ,?_assertEqual(<<"trunkstore">>, kz_json:get_value(<<"used_by">>, OldJObj))
     ,?_assertEqual(undefined, kz_json:get_value(<<"used_by">>, JObj))
