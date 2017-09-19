@@ -303,7 +303,7 @@ maybe_authenticate_user(Context, Credentials, <<"md5">>, ?NE_BINARY=Account) ->
             cb_context:add_system_error('invalid_credentials', Context1)
     end;
 maybe_authenticate_user(Context, Credentials, <<"sha">>, ?NE_BINARY=Account) ->
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kz_term:format_account_db(Account),
     Context1 = crossbar_doc:load_view(?ACCT_SHA1_LIST
                                      ,[{'key', Credentials}]
                                      ,cb_context:set_account_db(Context, AccountDb)
@@ -424,7 +424,7 @@ maybe_load_user_doc_via_creds(Context) ->
 -spec maybe_load_user_doc_by_username(ne_binary(), cb_context:context()) -> cb_context:context().
 maybe_load_user_doc_by_username(Account, Context) ->
     JObj = cb_context:doc(Context),
-    AccountDb = kz_util:format_account_db(Account),
+    AccountDb = kz_term:format_account_db(Account),
     lager:debug("attempting to lookup user name in db: ~s", [AccountDb]),
     AuthType = <<"user_auth_recovery">>,
     Username = kz_json:get_value(<<"username">>, JObj),
