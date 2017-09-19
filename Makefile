@@ -197,7 +197,7 @@ code_checks: apps_of_app
 	@$(ROOT)/scripts/check-spelling.bash
 	@$(ROOT)/scripts/kz_diaspora.bash
 
-apps_of_app:
+apps_of_app: kazoo
 	@ERL_LIBS=deps/:core/:applications/ $(ROOT)/scripts/apps_of_app.escript -p
 
 apis:
