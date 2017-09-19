@@ -32,7 +32,7 @@ test:
     - ./scripts/code_checks.bash $($CHANGED)
     - |
       if [[ ! -z "$($CHANGED_FMT)" ]]; then
-        TO_FMT="$(echo $($CHANGED_FMT))" make fmt
+        TO_FMT="$(echo $CHANGED_FMT)" make fmt
       fi
     - if [[ "$CIRCLE_BRANCH" = 'master' ]]; then make bump-copyright; fi
     - . ~/.kerl/$OTP_VERSION/activate && make
