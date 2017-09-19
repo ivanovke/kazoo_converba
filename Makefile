@@ -188,7 +188,7 @@ bump-copyright:
 $(FMT):
 	wget -qO - 'https://codeload.github.com/fenollp/erlang-formatter/tar.gz/master' | tar xz -C $(ROOT)/make/
 
-fmt: TO_FMT ?= $(shell find applications core -iname '*.erl' -or -iname '*.hrl')
+fmt: TO_FMT ?= $(shell find applications core scripts -iname '*.erl' -or -iname '*.hrl')
 fmt: $(FMT)
 	@$(if $(TO_FMT), @$(FMT) $(TO_FMT))
 
