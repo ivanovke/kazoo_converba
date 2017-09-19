@@ -143,12 +143,17 @@ $(PLT):
 build-plt: $(PLT)
 
 dialyze-kazoo: TO_DIALYZE  = $(shell find $(ROOT)/applications $(ROOT)/core -name ebin)
-dialyze-kazoo: dialyze
+dialyze-kazoo: dialyze-it
+
 dialyze-apps:  TO_DIALYZE  = $(shell find $(ROOT)/applications -name ebin)
-dialyze-apps: dialyze
+dialyze-apps:  TO_DIALYZE  += $(shell find $(ROOT)/core -name gen_listener.beam)
+dialyze-apps: dialyze-it
+
 dialyze-core:  TO_DIALYZE  = $(shell find $(ROOT)/core         -name ebin)
-dialyze-core: dialyze
+dialyze-core: dialyze-it
+
 dialyze:       TO_DIALYZE ?= $(shell find $(ROOT)/applications -name ebin)
+dialyze:       TO_DIALYZE += $(shell find $(ROOT)/core -name gen_listener.beam)
 dialyze: dialyze-it
 
 dialyze-it: $(PLT)
