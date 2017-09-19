@@ -217,7 +217,7 @@ process_app('kazoo_ast', Acc) -> Acc;
 process_app(App, Acc) ->
     case application:get_key(App, 'applications') of
         'undefined' ->
-            application:load(App),
+            'ok' = application:load(App),
             process_app(App, Acc);
         {'ok', ExistingApps} ->
             ?DEBUG("app ~p~n existing: ~p~n", [App, ExistingApps]),
