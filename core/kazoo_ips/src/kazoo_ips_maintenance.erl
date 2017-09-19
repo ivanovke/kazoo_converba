@@ -72,7 +72,7 @@ assign() ->
 
 -spec assign(ne_binary(), ne_binary()) -> 'no_return'.
 assign(IP, Account) ->
-    case kz_account:fetch(Account) of
+    case kzd_account:fetch(Account) of
         {'ok', _} -> do_assignment(Account, IP);
         {'error', _R} ->
             io:format("unable to find account: ~p~n", [_R])
