@@ -4,6 +4,7 @@ PROJECT = kazoo_couch
 all: compile
 
 compile: compile-first
+compile-test: compile-first
 
 compile-first:
 	$(MAKE) -C $(ROOT)/core/kazoo_data/ $(ACTION)
