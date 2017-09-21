@@ -223,7 +223,7 @@ maybe_return({'ok', JObj}, N) ->
         'true' -> N;
         'false' ->
             Reason = kz_json:get_ne_binary_value(<<"msg">>, JObj),
-            maybe_return({'error', Reason}, N)
+            knm_errors:by_carrier(?MODULE, Reason, N)
     end.
 
 -spec to_json(atom(), any(), soap_response()) -> to_json_ret().

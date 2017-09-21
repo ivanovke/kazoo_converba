@@ -53,7 +53,7 @@
 -type nums() :: [num()].
 -type ok() :: knm_number:knm_number() | knm_phone_number:knm_phone_number().
 -type oks() :: [ok()].
--type ko() :: knm_errors:error() | atom() | todo().
+-type ko() :: knm_errors:error() | atom() | #{num() => kz_json:object()}.
 -type kos() :: #{num() => ko()}.
 -type ret() :: #{ok => oks()
                 ,ko => kos()
@@ -70,22 +70,21 @@
 
 -type todo() :: oks() | nums().
 
--type t() :: t(oks(), todo()).
--type t(OKs, TODOs) :: #{todo => TODOs
-                        ,ok => OKs
-                        ,ko => kos()
+-type t() :: #{todo => todo()
+              ,ok => oks() | knm_phone_number:knm_phone_number()
+              ,ko => kos()
 
-                        ,options => options()
-                        ,plan => plan()
-                        ,services => services()
-                        ,transactions => transactions()
-                        ,charges => charges()
-                        }.
+              ,options => options()
+              ,plan => plan()
+              ,services => services()
+              ,transactions => transactions()
+              ,charges => charges()
+              }.
 
--type t_pn() :: t(knm_phone_number:knm_phone_number(), todo()).
+-type t_pn() :: t().
 
--opaque collection() :: t(oks(), todo()).
--opaque pn_collection() :: t_pn().
+-type collection() :: t().
+-type pn_collection() :: t_pn().
 -export_type([collection/0, pn_collection/0]).
 
 -type options() :: knm_number_options:options().

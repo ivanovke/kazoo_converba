@@ -56,7 +56,7 @@ change_state(T, ?NUMBER_STATE_PORT_IN) ->
                      ,fun to_port_in/1
                      ]);
 change_state(T, _State) ->
-    Ns = knm_numbes:todo(T),
+    Ns = knm_numbers:todo(T),
     lager:debug("unhandled state change to ~p", [_State]),
     Error = knm_errors:to_json('invalid_state'),
     knm_numbers:ko(Ns, Error, T).
@@ -266,7 +266,8 @@ move_phone_number_to_state(PhoneNumber, ToState, AssignedTo, AssignTo) ->
 
 
 %% @private
--spec invalid_state_transition(knm_numbers:collection(), api_ne_binary(), ne_binary()) -> knm_numbers:collection().
+-spec invalid_state_transition(knm_numbers:collection(), api_ne_binary(), ne_binary()) ->
+                                      knm_numbers:collection().
 invalid_state_transition(T, FromState, ToState) ->
     Ns = knm_numbers:todo(T),
     {'error', A, B, C} = (catch knm_errors:invalid_state_transition(undefined, FromState, ToState)),
@@ -280,7 +281,7 @@ fail_if_mdn(T, ToState) ->
         {[], _} -> knm_numbers:ok(Ns, T);
         {MDNs, OtherNs} ->
             Ta = knm_numbers:ok(OtherNs, T),
-            Tb = invalid_state_transition(knm_number:set_todo(T, MDNs), <<"'MDN'">>, ToState),
+            Tb = invalid_state_transition(knm_numbers:set_todo(T, MDNs), <<"'MDN'">>, ToState),
             knm_numbers:merge_okkos(Ta, Tb)
     end.
 

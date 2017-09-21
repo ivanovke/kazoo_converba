@@ -123,7 +123,7 @@ by_carrier(Carrier, E, Number) ->
                      error().
 -spec to_json(reason(), api_ne_binary()) ->
                      error().
--spec to_json(reason(), api_ne_binary(), api_ne_binary()) ->
+-spec to_json(reason(), api_ne_binary(), atom() | ne_binary()) ->
                      error().
 to_json(Reason)->
     to_json(Reason, 'undefined').
@@ -176,7 +176,7 @@ to_json(Reason, _, Cause) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec build_error(integer(), atom(), api_ne_binary(), api_ne_binary()) ->
+-spec build_error(integer(), atom(), api_ne_binary(), atom() | ne_binary()) ->
                          error().
 build_error(Code, Error, Message, Cause) ->
     kz_json:from_list(

@@ -225,7 +225,9 @@ reserve(Num, Options) ->
     ?TRY2(reserve, Num, Options).
 
 -spec ensure_can_create(knm_numbers:collection()) -> knm_numbers:collection().
-ensure_can_create(T0=#{todo := Nums, options := Options}) ->
+ensure_can_create(T0) ->
+    Nums = knm_numbers:todo(T0),
+    Options = knm_numbers:options(T0),
     F = fun(Num, T) ->
                 case attempt(fun ensure_can_create/2, [Num, Options]) of
                     {error, R} -> knm_numbers:ko(Num, R, T);

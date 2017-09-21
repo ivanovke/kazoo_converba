@@ -119,19 +119,19 @@ batch_run(Options, Default) ->
 
 -spec mdn_run(options()) -> boolean().
 mdn_run(Options) ->
-    R = props:get_is_true(mdn_run, Options, false),
+    R = props:get_is_true('mdn_run', Options, 'false'),
     _ = R
         andalso lager:debug("mdn_run-ing btw"),
     R.
 
--spec assign_to(options()) -> api_binary().
+-spec assign_to(options()) -> api_ne_binary().
 -spec assign_to(options(), Default) -> ne_binary() | Default.
 assign_to(Options) ->
     assign_to(Options, 'undefined').
 assign_to(Options, Default) ->
     props:get_binary_value('assign_to', Options, Default).
 
--spec auth_by(options()) -> api_binary().
+-spec auth_by(options()) -> api_ne_binary().
 -spec auth_by(options(), Default) -> ne_binary() | Default.
 auth_by(Options) ->
     auth_by(Options, 'undefined').
@@ -142,7 +142,7 @@ auth_by(Options, Default) ->
 public_fields(Options) ->
     props:get_value('public_fields', Options, kz_json:new()).
 
--spec state(options()) -> api_binary().
+-spec state(options()) -> api_ne_binary().
 -spec state(options(), Default) -> ne_binary() | Default.
 state(Options) ->
     state(Options, 'undefined').
@@ -151,7 +151,7 @@ state(Options, Default) ->
 
 -spec ported_in(options()) -> boolean().
 ported_in(Options) ->
-    props:get_is_true('ported_in', Options, false).
+    props:get_is_true('ported_in', Options, 'false').
 
 -spec module_name(options()) -> ne_binary().
 module_name(Options) ->
