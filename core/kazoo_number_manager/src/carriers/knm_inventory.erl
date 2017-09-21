@@ -31,8 +31,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 10
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 10}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -41,7 +40,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %%--------------------------------------------------------------------
@@ -50,9 +49,8 @@ is_local() -> 'false'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -62,7 +60,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_search:options()) ->
-                          {'ok', knm_number:knm_numbers()} |
+                          {'ok', knm_search:find_results()} |
                           {'error', any()}.
 find_numbers(Prefix, Quantity, Options) ->
     case knm_carriers:account_id(Options) of
@@ -74,7 +72,7 @@ find_numbers(Prefix, Quantity, Options) ->
     end.
 
 -spec do_find_numbers(ne_binary(), pos_integer(), non_neg_integer(), ne_binary(), ne_binary()) ->
-                             {'ok', knm_number:knm_numbers()} |
+                             {'ok', knm_search:find_results()} |
                              {'error', any()}.
 do_find_numbers(<<"+",_/binary>>=Prefix, Quantity, Offset, AccountId, QID)
   when is_integer(Quantity), Quantity > 0 ->
@@ -82,7 +80,7 @@ do_find_numbers(<<"+",_/binary>>=Prefix, Quantity, Offset, AccountId, QID)
     ViewOptions = [{'startkey', [?NUMBER_STATE_AVAILABLE, Module, Prefix]}
                   ,{'endkey', [?NUMBER_STATE_AVAILABLE, Module, <<"\ufff0">>]}
                   ,{'limit', Quantity}
-                  ,{skip, Offset}
+                  ,{'skip', Offset}
                   ],
     case
         'undefined' /= (DB = knm_converters:to_db(Prefix))
@@ -103,8 +101,8 @@ do_find_numbers(<<"+",_/binary>>=Prefix, Quantity, Offset, AccountId, QID)
 do_find_numbers(_, _, _, _, _) ->
     {'error', 'not_available'}.
 
--spec find_more(ne_binary(), pos_integer(), non_neg_integer(), ne_binary(), non_neg_integer(), ne_binary(), knm_number:knm_numbers()) ->
-                       {'ok', knm_number:knm_numbers()}.
+-spec find_more(ne_binary(), pos_integer(), non_neg_integer(), ne_binary(), non_neg_integer(), ne_binary(), knm_search:find_results()) ->
+                       {'ok', knm_search:find_results()}.
 find_more(Prefix, Quantity, Offset, AccountId, NotEnough, QID, Numbers)
   when NotEnough < Quantity ->
     case do_find_numbers(Prefix, Quantity - NotEnough, Offset + NotEnough, AccountId, QID) of
@@ -114,10 +112,17 @@ find_more(Prefix, Quantity, Offset, AccountId, NotEnough, QID, Numbers)
 find_more(_, _, _, _, _Enough, _, Numbers) ->
     {'ok', Numbers}.
 
+-spec format_numbers(ne_binary(), kz_json:objects()) ->
+                            knm_search:find_results().
 format_numbers(QID, JObjs) ->
     Nums = [kz_doc:id(JObj) || JObj <- JObjs],
     #{ok := Ns} = knm_numbers:get(Nums),
-    [{QID, {knm_phone_number:number(PN), knm_phone_number:module_name(PN), knm_phone_number:state(PN), knm_phone_number:carrier_data(PN)}}
+    [{QID, {knm_phone_number:number(PN)
+           ,knm_phone_number:module_name(PN)
+           ,knm_phone_number:state(PN)
+           ,knm_phone_number:carrier_data(PN)
+           }
+     }
      || N <- Ns,
         PN <- [knm_number:phone_number(N)]
     ].
@@ -127,7 +132,7 @@ format_numbers(QID, JObjs) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'false'.
 is_number_billable(_Number) -> 'false'.
 
 %%--------------------------------------------------------------------

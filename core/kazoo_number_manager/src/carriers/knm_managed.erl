@@ -34,8 +34,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 15
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 15}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -44,7 +43,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'true'.
 is_local() -> 'true'.
 
 %%--------------------------------------------------------------------
@@ -53,9 +52,8 @@ is_local() -> 'true'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -65,7 +63,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_search:options()) ->
-                          {'ok', knm_number:knm_numbers()} |
+                          {'ok', knm_search:find_results()} |
                           {'error', any()}.
 find_numbers(<<"+", _/binary>>=Prefix, Quantity, Options) ->
     AccountId = knm_search:account_id(Options),
@@ -74,7 +72,7 @@ find_numbers(Prefix, Quantity, Options) ->
     find_numbers(<<"+",Prefix/binary>>, Quantity, Options).
 
 -spec find_numbers_in_account(ne_binary(), pos_integer(), api_binary(), knm_search:options()) ->
-                                     {'ok', knm_number:knm_numbers()} |
+                                     {'ok', knm_search:find_results()} |
                                      {'error', any()}.
 find_numbers_in_account(Prefix, Quantity, AccountId, Options) ->
     case do_find_numbers_in_account(Prefix, Quantity, AccountId, Options) of
@@ -91,7 +89,7 @@ find_numbers_in_account(Prefix, Quantity, AccountId, Options) ->
     end.
 
 -spec do_find_numbers_in_account(ne_binary(), pos_integer(), api_binary(), knm_search:options()) ->
-                                        {'ok', list()} |
+                                        {'ok', knm_search:find_results()} |
                                         {'error', any()}.
 do_find_numbers_in_account(Prefix, Quantity, AccountId, Options) ->
     ViewOptions = [{'startkey', [AccountId, ?NUMBER_STATE_AVAILABLE, Prefix]}
@@ -111,12 +109,14 @@ do_find_numbers_in_account(Prefix, Quantity, AccountId, Options) ->
             E
     end.
 
--spec format_numbers_resp(kz_json:objects(), knm_search:options()) -> {'ok', list()}.
+-spec format_numbers_resp(kz_json:objects(), knm_search:options()) ->
+                                 {'ok', knm_search:find_results()}.
 format_numbers_resp(JObjs, Options) ->
     QID = knm_search:query_id(Options),
     Numbers = [format_number_resp(QID, JObj) || JObj <- JObjs],
     {'ok', Numbers}.
 
+-spec format_number_resp(ne_binary(), kz_json:object()) -> knm_search:find_result().
 format_number_resp(QID, JObj) ->
     Num = kz_doc:id(kz_json:get_value(<<"doc">>, JObj)),
     {QID, {Num, ?MODULE, ?NUMBER_STATE_DISCOVERY, kz_json:new()}}.

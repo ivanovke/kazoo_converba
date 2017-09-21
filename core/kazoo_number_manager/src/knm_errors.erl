@@ -165,7 +165,7 @@ to_json('by_carrier', Num, {_Carrier,_Cause}) ->
     build_error(500, 'unspecified_fault', <<"fault by carrier">>, Num);
 to_json(Reason, _, Cause) ->
     ?LOG_ERROR("funky 500 error: ~p/~p", [Reason, Cause]),
-    build_error(500, 'unspecified_fault', Reason, Cause).
+    build_error(500, 'unspecified_fault', kz_term:to_binary(Reason), Cause).
 
 %%%===================================================================
 %%% Internal functions
@@ -176,7 +176,7 @@ to_json(Reason, _, Cause) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec build_error(integer(), atom(), api_binary(), api_binary()) ->
+-spec build_error(integer(), atom(), api_ne_binary(), api_ne_binary()) ->
                          error().
 build_error(Code, Error, Message, Cause) ->
     kz_json:from_list(

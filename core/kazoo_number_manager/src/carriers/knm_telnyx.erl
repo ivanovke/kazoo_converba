@@ -40,8 +40,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 3
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 3}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -50,11 +49,11 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %% @public
--spec is_number_billable(knm_number:knm_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'true'.
 is_number_billable(_Number) -> 'true'.
 
 %%--------------------------------------------------------------------
@@ -63,10 +62,8 @@ is_number_billable(_Number) -> 'true'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
-
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -75,7 +72,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_search:options()) ->
-                          {'ok', knm_number:knm_numbers()}.
+                          {'ok', knm_search:find_results()}.
 find_numbers(<<"+1", Prefix:3/binary, _/binary>>, Quantity, Options)
   when ?IS_US_TOLLFREE(Prefix) ->
     Results = numbers('tollfree', Quantity, Prefix, 'undefined'),
@@ -169,6 +166,8 @@ numbers(SearchKind, Quantity, Prefix, NXX) ->
         _ -> kz_json:get_value(<<"result">>, Rep)
     end.
 
+-spec numbers(kz_json:object(), knm_search:options()) ->
+                     knm_search:find_results().
 numbers(JObjs, Options) ->
     QID = knm_search:query_id(Options),
     [{QID, {Num, ?MODULE, ?NUMBER_STATE_DISCOVERY, Data}}
@@ -176,6 +175,8 @@ numbers(JObjs, Options) ->
         Num <- [kz_json:get_ne_binary_value(<<"number_e164">>, Data)]
     ].
 
+-spec international_numbers(kz_json:object(), knm_search:options()) ->
+                                   knm_search:find_results().
 international_numbers(JObjs, Options) ->
     Dialcode = knm_search:dialcode(Options),
     QID = knm_search:query_id(Options),

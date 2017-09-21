@@ -428,14 +428,14 @@ cnam_provider(AccountId) -> ?CNAM_PROVIDER(AccountId).
 -type exec_action() :: 'save' | 'delete'.
 
 -spec do_exec(knm_numbers:collection(), exec_action()) -> knm_numbers:collection().
-do_exec(T0=#{todo := Ns}, Action) ->
+do_exec(T0, Action) ->
     F = fun (N, T) ->
                 case knm_number:attempt(fun exec/2, [N, Action]) of
                     {ok, NewN} -> knm_numbers:ok(NewN, T);
                     {error, R} -> knm_numbers:ko(N, R, T)
                 end
         end,
-    lists:foldl(F, T0, Ns).
+    lists:foldl(F, T0, knm_numbers:todo(T0)).
 
 -spec exec(knm_number:knm_number(), exec_action()) -> knm_number:knm_number().
 -spec exec(knm_number:knm_number(), exec_action(), ne_binaries()) ->

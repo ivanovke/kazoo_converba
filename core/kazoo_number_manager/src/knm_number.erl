@@ -226,7 +226,7 @@ reserve(Num, Options) ->
 
 -spec ensure_can_create(knm_numbers:collection()) -> knm_numbers:collection().
 ensure_can_create(T0=#{todo := Nums, options := Options}) ->
-    F = fun (Num, T) ->
+    F = fun(Num, T) ->
                 case attempt(fun ensure_can_create/2, [Num, Options]) of
                     {error, R} -> knm_numbers:ko(Num, R, T);
                     true ->
@@ -236,7 +236,7 @@ ensure_can_create(T0=#{todo := Nums, options := Options}) ->
         end,
     lists:foldl(F, T0, Nums).
 
--spec ensure_can_create(ne_binary(), knm_number_options:options()) -> 'true'.
+-spec ensure_can_create(knm_numbers:num(), knm_number_options:options()) -> 'true'.
 ensure_can_create(Num, Options) ->
     ensure_account_can_create(Options, knm_number_options:auth_by(Options))
         andalso ensure_number_is_not_porting(Num, Options).
@@ -271,7 +271,7 @@ ensure_account_can_create(_, _NotAnAccountId) ->
     ?LOG_DEBUG("'~p' is not an account id", [_NotAnAccountId]),
     knm_errors:unauthorized().
 
--spec ensure_number_is_not_porting(ne_binary(), knm_number_options:options()) -> 'true'.
+-spec ensure_number_is_not_porting(knm_numbers:num(), knm_number_options:options()) -> 'true'.
 -ifdef(TEST).
 ensure_number_is_not_porting(?TEST_CREATE_NUM, _Options) -> 'true';
 ensure_number_is_not_porting(?TEST_AVAILABLE_NUM = Num, _Options) ->

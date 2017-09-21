@@ -69,8 +69,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 10
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 10}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -79,7 +78,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %%--------------------------------------------------------------------
@@ -90,8 +89,8 @@ is_local() -> 'false'.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_search:options()) ->
-                          {'ok', list()} |
-                          {'bulk', list()} |
+                          {'ok', knm_search:find_results()} |
+                          {'bulk', knm_search:find_results()} |
                           {'error', any()}.
 find_numbers(Prefix, Quantity, Options) ->
     case ?PHONEBOOK_URL(Options) of
@@ -138,7 +137,7 @@ check_numbers(Numbers) ->
 %% in a rate center
 %% @end
 %%--------------------------------------------------------------------
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'true'.
 is_number_billable(_Number) -> 'true'.
 
 %%--------------------------------------------------------------------
@@ -240,7 +239,7 @@ format_check_numbers_success(Body) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec get_numbers(ne_binary(), ne_binary(), ne_binary(), knm_search:options()) ->
-                         {'ok', list()} |
+                         {'ok', knm_search:find_results()} |
                          {'error', 'not_available'}.
 get_numbers(Url, Prefix, Quantity, Options) ->
     Offset = props:get_binary_value('offset', Options, <<"0">>),
@@ -261,7 +260,7 @@ query_for_numbers(Uri) ->
 -endif.
 
 -spec handle_number_query_results(kz_http:http_ret(), knm_search:options()) ->
-                                         {'ok', list()} |
+                                         {'ok', knm_search:find_results()} |
                                          {'error', 'not_available'}.
 handle_number_query_results({'error', _Reason}, _Options) ->
     lager:error("number query failed: ~p", [_Reason]),
@@ -273,7 +272,7 @@ handle_number_query_results({'ok', _Status, _Headers, _Body}, _Options) ->
     {'error', 'not_available'}.
 
 -spec format_numbers_resp(kz_json:object(), knm_search:options()) ->
-                                 {'ok', list()} |
+                                 {'ok', knm_search:find_results()} |
                                  {'error', 'not_available'}.
 format_numbers_resp(JObj, Options) ->
     case kz_json:get_value(<<"status">>, JObj) of
@@ -289,6 +288,8 @@ format_numbers_resp(JObj, Options) ->
             {'error', 'not_available'}
     end.
 
+-spec format_found(ne_binary(), ne_binary(), kz_json:object()) ->
+                          knm_search:find_result().
 format_found(QID, DID, CarrierData) ->
     {QID, {DID, ?MODULE, ?NUMBER_STATE_DISCOVERY, CarrierData}}.
 
@@ -330,7 +331,7 @@ get_blocks(Url, Prefix, Quantity, Options) ->
 -endif.
 
 -spec format_blocks_resp(kz_json:object(), knm_search:options()) ->
-                                {'bulk', list()} |
+                                {'bulk', knm_search:find_results()} |
                                 {'error', 'not_available'}.
 format_blocks_resp(JObj, Options) ->
     case kz_json:get_value(<<"status">>, JObj) of
@@ -346,6 +347,8 @@ format_blocks_resp(JObj, Options) ->
             {'error', 'not_available'}
     end.
 
+-spec format_block_resp_fold(kz_json:object(), ne_binary()) ->
+                                    knm_search:find_results().
 format_block_resp_fold(Block, QID) ->
     StartNumber = kz_json:get_value(<<"start_number">>, Block),
     EndNumber = kz_json:get_value(<<"end_number">>, Block),

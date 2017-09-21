@@ -86,8 +86,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 3
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 3}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -96,7 +95,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %% @public
@@ -109,10 +108,8 @@ is_number_billable(_Number) -> 'true'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
-
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -121,7 +118,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_search:options()) ->
-                          {'ok', list()} |
+                          {'ok', knm_search:find_results()} |
                           {'error', any()}.
 find_numbers(<<"+", Rest/binary>>, Quantity, Options) ->
     find_numbers(Rest, Quantity, Options);
@@ -201,13 +198,18 @@ should_lookup_cnam() -> 'true'.
     Else.
 
 -spec to_numbers(to_json_ret(), ne_binary()) ->
-                        {'ok', [tuple()]} |
+                        {'ok', knm_search:find_results()} |
                         {'error', any()}.
 to_numbers({'error',_R}=Error, _) ->
     Error;
 to_numbers({'ok',JObjs}, QID) ->
     Numbers =
-        [{QID, {kz_json:get_value(<<"e164">>, JObj), ?MODULE, ?NUMBER_STATE_DISCOVERY, JObj}}
+        [{QID, {kz_json:get_ne_binary_value(<<"e164">>, JObj)
+               ,?MODULE
+               ,?NUMBER_STATE_DISCOVERY
+               ,JObj
+               }
+         }
          || JObj <- JObjs
         ],
     {'ok', Numbers}.
@@ -217,10 +219,10 @@ to_numbers({'ok',JObjs}, QID) ->
 maybe_return({'error', Reason}, N) ->
     knm_errors:by_carrier(?MODULE, Reason, N);
 maybe_return({'ok', JObj}, N) ->
-    case ?API_SUCCESS == kz_json:get_value(<<"code">>, JObj) of
+    case ?API_SUCCESS =:= kz_json:get_ne_binary_value(<<"code">>, JObj) of
         'true' -> N;
         'false' ->
-            Reason = kz_json:get_value(<<"msg">>, JObj),
+            Reason = kz_json:get_ne_binary_value(<<"msg">>, JObj),
             maybe_return({'error', Reason}, N)
     end.
 
@@ -231,14 +233,14 @@ to_json('find_numbers', Quantity, {'ok', Xml}) ->
     DIDs = xmerl_xpath:string(XPath, Xml),
     lager:debug("found ~p numbers", [length(DIDs)]),
     {'ok',
-     [ kz_json:from_list(
-         [{<<"e164">>, knm_converters:normalize(kz_xml:get_value("//tn/text()", DID))}
-         ,{<<"rate_center">>, kz_xml:get_value("//rateCenter/text()", DID)}
-         ,{<<"state">>, kz_xml:get_value("//state/text()", DID)}
-         ,{<<"cnam">>, kz_term:is_true(kz_xml:get_value("//outboundCNAM/text()", DID))}
-         ,{<<"t38">>, kz_term:is_true(kz_xml:get_value("//t38/text()", DID))}
-         ])
-       || DID=#xmlElement{} <- lists:sublist(DIDs, Quantity)
+     [kz_json:from_list(
+        [{<<"e164">>, knm_converters:normalize(kz_xml:get_value("//tn/text()", DID))}
+        ,{<<"rate_center">>, kz_xml:get_value("//rateCenter/text()", DID)}
+        ,{<<"state">>, kz_xml:get_value("//state/text()", DID)}
+        ,{<<"cnam">>, kz_term:is_true(kz_xml:get_value("//outboundCNAM/text()", DID))}
+        ,{<<"t38">>, kz_term:is_true(kz_xml:get_value("//t38/text()", DID))}
+        ])
+      || DID=#xmlElement{} <- lists:sublist(DIDs, Quantity)
      ]
     };
 
@@ -318,7 +320,8 @@ soap_envelope(Action, Props) ->
      "<tns:secret>", ?VI_PASSWORD, "</tns:secret>"
      "</tns:", Action, ">"
      "</env:Body>"
-     "</env:Envelope>"].
+     "</env:Envelope>"
+    ].
 
 -spec body(nonempty_string(), any()) -> iolist().
 
@@ -345,23 +348,27 @@ body("getDIDs", Props) ->
     ];
 
 body("assignDID", Numbers=[_|_]) ->
-    ["<tns:didParams>",
-     [ ["<tns:DIDParam>"
+    ["<tns:didParams>"
+    ,[ ["<tns:DIDParam>"
         "<tns:tn>", Number, "</tns:tn>"
         "<tns:epg>", ?VI_ENDPOINT_GROUP, "</tns:epg>"
-        "</tns:DIDParam>"]
+        "</tns:DIDParam>"
+       ]
        || Number <- Numbers
-     ],
-     "</tns:didParams>"];
+     ]
+    ,"</tns:didParams>"
+    ];
 
 body("releaseDID", Numbers=[_|_]) ->
-    ["<tns:didParams>",
-     [ ["<tns:DIDParam>"
+    ["<tns:didParams>"
+    ,[ ["<tns:DIDParam>"
         "<tns:tn>", Number, "</tns:tn>"
-        "</tns:DIDParam>"]
+        "</tns:DIDParam>"
+       ]
        || Number <- Numbers
-     ],
-     "</tns:didParams>"].
+     ]
+    ,"</tns:didParams>"
+    ].
 
 -spec soap_request(nonempty_string(), iolist()) -> soap_response().
 soap_request(Action, Body) ->

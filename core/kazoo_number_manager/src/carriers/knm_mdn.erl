@@ -29,8 +29,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 0
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 0}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -39,7 +38,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %%--------------------------------------------------------------------
@@ -48,9 +47,8 @@ is_local() -> 'false'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -60,8 +58,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_carriers:options()) ->
-                          {'ok', knm_number:knm_numbers()} |
-                          {'error', any()}.
+                          {'error', 'not_available'}.
 find_numbers(_Prefix, _Quantity, _Options) ->
     {'error', 'not_available'}.
 
@@ -70,7 +67,7 @@ find_numbers(_Prefix, _Quantity, _Options) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'false'.
 is_number_billable(_Number) -> 'false'.
 
 %%--------------------------------------------------------------------

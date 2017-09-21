@@ -24,7 +24,6 @@
 -include("knm.hrl").
 -include("knm_vitelity.hrl").
 
-
 %%--------------------------------------------------------------------
 %% @public
 %% @doc
@@ -32,8 +31,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 3
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 3}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -42,7 +40,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %%--------------------------------------------------------------------
@@ -51,9 +49,8 @@ is_local() -> 'false'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -63,7 +60,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_carriers:options()) ->
-                          {'ok', knm_number:knm_numbers()} |
+                          {'ok', knm_search:find_results()} |
                           {'error', any()}.
 find_numbers(<<"+1",Prefix/binary>>, Quantity, Options) ->
     find_numbers(Prefix, Quantity, Options);
@@ -124,7 +121,7 @@ should_lookup_cnam() -> 'false'.
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'true'.
 is_number_billable(_) -> 'true'.
 
 %%%===================================================================
@@ -138,7 +135,7 @@ is_number_billable(_) -> 'true'.
 %% @end
 %%--------------------------------------------------------------------
 -spec classify_and_find(ne_binary(), pos_integer(), knm_carriers:options()) ->
-                               {'ok', knm_number:knm_numbers()} |
+                               {'ok', knm_search:find_results()} |
                                {'error', any()}.
 classify_and_find(Prefix, Quantity, Options) ->
     case knm_converters:classify(Prefix) of
@@ -214,7 +211,7 @@ local_options(Prefix, Options) ->
 %% @end
 %%--------------------------------------------------------------------
 -spec find(ne_binary(), pos_integer(), knm_carriers:options(), knm_vitelity_util:query_options()) ->
-                  {'ok', knm_number:knm_numbers()} |
+                  {'ok', knm_search:find_results()} |
                   {'error', any()}.
 find(Prefix, Quantity, Options, VitelityOptions) ->
     case query_vitelity(Prefix, Quantity, VitelityOptions) of
@@ -222,6 +219,8 @@ find(Prefix, Quantity, Options, VitelityOptions) ->
         {'ok', JObj} -> response_to_numbers(JObj, Options)
     end.
 
+-spec response_to_numbers(kz_json:object(), knm_search:options()) ->
+                                 {'ok', knm_search:find_results()}.
 response_to_numbers(JObj, Options) ->
     QID = knm_search:query_id(Options),
     Ns = [to_number(Num, CarrierData, QID)
@@ -229,9 +228,10 @@ response_to_numbers(JObj, Options) ->
          ],
     {'ok', Ns}.
 
+-spec to_number(ne_binary(), kz_json:object(), ne_binary()) ->
+                       knm_search:find_result().
 to_number(DID, CarrierData, QID) ->
     {QID, {DID, ?MODULE, ?NUMBER_STATE_DISCOVERY, CarrierData}}.
-
 
 %%--------------------------------------------------------------------
 %% @private

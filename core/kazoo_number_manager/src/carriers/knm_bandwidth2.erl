@@ -96,7 +96,8 @@
 -define(BW_ORDER_ID_XPATH, "Order/id/text()").
 -define(BW_ORDER_STATUS_XPATH, "OrderStatus/text()").
 
--type search_ret() :: {'ok', knm_number:knm_numbers()} | {'error', any()}.
+-type search_ret() :: {'ok', knm_search:find_results()} |
+                      {'error', any()}.
 
 %%% API
 
@@ -107,8 +108,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 3
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 3}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -117,11 +117,11 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %% @public
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'true'.
 is_number_billable(_Number) -> 'true'.
 
 %%--------------------------------------------------------------------
@@ -130,9 +130,8 @@ is_number_billable(_Number) -> 'true'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -178,7 +177,7 @@ find_numbers(Search, Quantity, Options) ->
     Result = search(Search, Params),
     process_search_response(Result, Options).
 
--spec process_tollfree_search_response(xml_el(), knm_search:options()) -> {'ok', list()}.
+-spec process_tollfree_search_response(xml_el(), knm_search:options()) -> {'ok', knm_search:find_results()}.
 process_tollfree_search_response(Result, Options) ->
     QID = knm_search:query_id(Options),
     Found = [N
@@ -187,7 +186,7 @@ process_tollfree_search_response(Result, Options) ->
             ],
     {'ok', Found}.
 
--spec process_search_response(xml_el(), knm_search:options()) -> {'ok', list()}.
+-spec process_search_response(xml_el(), knm_search:options()) -> {'ok', knm_search:find_results()}.
 process_search_response(Result, Options) ->
     QID = knm_search:query_id(Options),
     Found = [N
@@ -239,7 +238,7 @@ acquire_number(Number) ->
             end
     end.
 
--spec check_order(api_binary(), api_binary(), xml_el(), knm_number:knm_number(), knm_number:knm_number()) -> knm_number:knm_number().
+-spec check_order(api_ne_binary(), api_ne_binary(), xml_el(), knm_phone_number:knm_phone_number(), knm_number:knm_number()) -> knm_number:knm_number().
 check_order(OrderId, <<"RECEIVED">>, _Response, PhoneNumber, Number) ->
     timer:sleep(?BW2_ORDER_POLL_INTERVAL),
     Url = ["orders/", kz_term:to_list(OrderId)],
@@ -466,7 +465,7 @@ number_order_response_to_json(Xml) ->
      ).
 
 %% @private
--spec search_response_to_KNM(xml_els() | xml_el(), ne_binary()) -> tuple().
+-spec search_response_to_KNM(xml_els() | xml_el(), ne_binary()) -> knm_search:find_result().
 search_response_to_KNM([Xml], QID) ->
     search_response_to_KNM(Xml, QID);
 search_response_to_KNM(Xml, QID) ->
@@ -479,7 +478,7 @@ search_response_to_KNM(Xml, QID) ->
     {QID, {Num, ?MODULE, ?NUMBER_STATE_DISCOVERY, JObj}}.
 
 %% @private
--spec tollfree_search_response_to_KNM(xml_el(), ne_binary()) -> tuple().
+-spec tollfree_search_response_to_KNM(xml_el(), ne_binary()) -> knm_search:find_result().
 tollfree_search_response_to_KNM(Xml, QID) ->
     Num = from_bandwidth2(kz_xml:get_value("//TelephoneNumber/text()", Xml)),
     {QID, {Num, ?MODULE, ?NUMBER_STATE_DISCOVERY, kz_json:new()}}.

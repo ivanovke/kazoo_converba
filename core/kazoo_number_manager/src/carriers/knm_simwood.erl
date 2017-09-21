@@ -37,7 +37,6 @@
 -define(SW_AUTH_USERNAME, kapps_config:get_binary(?KNM_SW_CONFIG_CAT, <<"auth_username">>, <<>>)).
 -define(SW_AUTH_PASSWORD, kapps_config:get_binary(?KNM_SW_CONFIG_CAT, <<"auth_password">>, <<>>)).
 
-
 %%--------------------------------------------------------------------
 %% @public
 %% @doc
@@ -45,8 +44,7 @@
 %%--------------------------------------------------------------------
 -spec info() -> map().
 info() ->
-    #{?CARRIER_INFO_MAX_PREFIX => 3
-     }.
+    #{?CARRIER_INFO_MAX_PREFIX => 3}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -55,7 +53,7 @@ info() ->
 %% Note: a non-local (foreign) carrier module makes HTTP requests.
 %% @end
 %%--------------------------------------------------------------------
--spec is_local() -> boolean().
+-spec is_local() -> 'false'.
 is_local() -> 'false'.
 
 %%--------------------------------------------------------------------
@@ -64,9 +62,8 @@ is_local() -> 'false'.
 %% Check with carrier if these numbers are registered with it.
 %% @end
 %%--------------------------------------------------------------------
--spec check_numbers(ne_binaries()) -> {ok, kz_json:object()} |
-                                      {error, any()}.
-check_numbers(_Numbers) -> {error, not_implemented}.
+-spec check_numbers(ne_binaries()) -> {'error', 'not_implemented'}.
+check_numbers(_Numbers) -> {'error', 'not_implemented'}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -75,7 +72,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_carriers:options()) ->
-                          {'ok', knm_number:knm_numbers()}.
+                          {'ok', knm_search:find_results()}.
 find_numbers(Prefix, Quantity, Options) ->
     URL = list_to_binary([?SW_NUMBER_URL, "/", ?SW_ACCOUNT_ID, <<"/available/standard/">>, sw_quantity(Quantity), "?pattern=", Prefix, "*"]),
     {'ok', Body} = query_simwood(URL, 'get'),
@@ -120,7 +117,7 @@ disconnect_number(Number) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'true'.
 is_number_billable(_Number) -> 'true'.
 
 %%--------------------------------------------------------------------
@@ -128,7 +125,7 @@ is_number_billable(_Number) -> 'true'.
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec should_lookup_cnam() -> boolean().
+-spec should_lookup_cnam() -> 'true'.
 should_lookup_cnam() -> 'true'.
 
 %%%===================================================================
@@ -188,13 +185,13 @@ sw_quantity(_Quantity) -> <<"100">>.
 %% @end
 %%--------------------------------------------------------------------
 -spec process_response(kz_json:objects(), knm_carriers:options()) ->
-                              {'ok', knm_number:knm_numbers()}.
+                              {'ok', knm_search:find_results()}.
 process_response(JObjs, Options) ->
     AccountId = knm_carriers:account_id(Options),
-    {'ok', [N || JObj <- JObjs,
-                 {'ok', N} <- [response_jobj_to_number(JObj, AccountId)]
-           ]}.
+    {'ok', [response_jobj_to_number(JObj, AccountId) || JObj <- JObjs]}.
 
+-spec response_jobj_to_number(kz_json:object(), ne_binary()) ->
+                                     knm_search:find_result().
 response_jobj_to_number(JObj, QID) ->
     Num = kz_json:get_value(<<"number">>, JObj),
     {QID, {Num, ?MODULE, ?NUMBER_STATE_DISCOVERY, JObj}}.

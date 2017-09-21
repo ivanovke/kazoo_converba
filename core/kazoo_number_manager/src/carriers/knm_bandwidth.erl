@@ -109,7 +109,7 @@ check_numbers(_Numbers) -> {error, not_implemented}.
 %% @end
 %%--------------------------------------------------------------------
 -spec find_numbers(ne_binary(), pos_integer(), knm_carriers:options()) ->
-                          {'ok', knm_number:knm_numbers()} |
+                          {'ok', knm_search:find_results()} |
                           {'error', any()}.
 find_numbers(<<"+", Rest/binary>>, Quanity, Options) ->
     find_numbers(Rest, Quanity, Options);
@@ -134,7 +134,7 @@ find_numbers(Search, Quanity, Options) ->
     end.
 
 -spec process_numbers_search_resp(xml_el(), knm_search:options()) ->
-                                         {'ok', list()}.
+                                         {'ok', knm_search:find_results()}.
 process_numbers_search_resp(Xml, Options) ->
     TelephoneNumbers = "/numberSearchResponse/telephoneNumbers/telephoneNumber",
     QID = knm_search:query_id(Options),
@@ -144,7 +144,8 @@ process_numbers_search_resp(Xml, Options) ->
            ]
     }.
 
--spec found_number_to_KNM(xml_el() | xml_els(), ne_binary()) -> tuple().
+-spec found_number_to_KNM(xml_el() | xml_els(), ne_binary()) ->
+                                 knm_search:find_result().
 found_number_to_KNM(Found, QID) ->
     JObj = number_search_response_to_json(Found),
     Num = kz_json:get_value(<<"e164">>, JObj),
@@ -219,7 +220,7 @@ disconnect_number(Number) -> Number.
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec is_number_billable(knm_phone_number:knm_phone_number()) -> boolean().
+-spec is_number_billable(knm_phone_number:knm_phone_number()) -> 'true'.
 is_number_billable(_Number) -> 'true'.
 
 %%--------------------------------------------------------------------

@@ -10,7 +10,7 @@
 %%%-------------------------------------------------------------------
 -module(knm_numbers).
 
--export([todo/1
+-export([todo/1, set_todo/2
         ,options/1, options/2
         ,plan/1, plan/2
         ,services/1, services/2
@@ -18,7 +18,7 @@
         ,charges/1, charges/2, charge/2, charge/3
         ]).
 -export([ok/2, ko/3]).
--export([add_oks/2]).
+-export([add_oks/2, set_oks/2]).
 -export([assigned_to/1
         ,prev_assigned_to/1
         ,to_json/1
@@ -51,9 +51,9 @@
 
 -type num() :: ne_binary().  %%TODO: support ranges?
 -type nums() :: [num()].
--type ok() :: knm_number:knm_number().
+-type ok() :: knm_number:knm_number() | knm_phone_number:knm_phone_number().
 -type oks() :: [ok()].
--type ko() :: knm_errors:error() | atom().
+-type ko() :: knm_errors:error() | atom() | todo().
 -type kos() :: #{num() => ko()}.
 -type ret() :: #{ok => oks()
                 ,ko => kos()
@@ -68,9 +68,10 @@
              ,num/0, nums/0
              ]).
 
--type t() :: t(oks()).
--type t(OKs) :: t(OKs, OKs).
--type t(OKs, TODOs) :: #{todo => nums() | TODOs
+-type todo() :: oks() | nums().
+
+-type t() :: t(oks(), todo()).
+-type t(OKs, TODOs) :: #{todo => TODOs
                         ,ok => OKs
                         ,ko => kos()
 
@@ -81,9 +82,9 @@
                         ,charges => charges()
                         }.
 
--type t_pn() :: t(knm_phone_number:knm_phone_number()).
+-type t_pn() :: t(knm_phone_number:knm_phone_number(), todo()).
 
--opaque collection() :: t().
+-opaque collection() :: t(oks(), todo()).
 -opaque pn_collection() :: t_pn().
 -export_type([collection/0, pn_collection/0]).
 
@@ -119,6 +120,10 @@ num(N) ->
 %%--------------------------------------------------------------------
 -spec todo(t()) -> nums() | oks().
 todo(#{todo := ToDo}) -> ToDo.
+
+-spec set_todo(t(), todo()) -> t().
+set_todo(#{}=T, ToDo) ->
+    T#{todo => ToDo}.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -209,6 +214,10 @@ ok(Number, T) when not is_list(Number) ->
 %%FIXME: unify with ok/2.
 add_oks(Numbers, T=#{ok := OKs}) when is_list(Numbers) ->
     T#{ok => Numbers ++ OKs}.
+
+-spec set_oks(oks(), t()) -> t().
+set_oks(Numbers, #{}=T) ->
+    T#{ok => Numbers}.
 
 %% @public
 -spec ko(num() | knm_number:knm_number() | nums() | [knm_number:knm_number()], ko(), t()) -> t().
@@ -529,9 +538,9 @@ account_listing(AccountDb=?MATCH_ACCOUNT_ENCODED(_,_,_)) ->
 
 %% @private
 -type reason_t() :: atom() | fun((num())-> knm_errors:error()).
--spec new(knm_number_options:options(), nums()) -> t().
--spec new(knm_number_options:options(), nums(), nums()) -> t().
--spec new(knm_number_options:options(), nums(), nums(), reason_t()) -> t().
+-spec new(knm_number_options:options(), todo()) -> t().
+-spec new(knm_number_options:options(), todo(), nums()) -> t().
+-spec new(knm_number_options:options(), todo(), nums(), reason_t()) -> t().
 new(Options, ToDos) -> new(Options, ToDos, []).
 new(Options, ToDos, KOs) -> new(Options, ToDos, KOs, not_reconcilable).
 new(Options, ToDos, KOs, Reason) ->

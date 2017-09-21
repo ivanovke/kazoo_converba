@@ -47,7 +47,18 @@
                   {'query_id', ne_binary()} |
                   {'reseller_id', ne_binary()}.
 -type options() :: [option()].
--export_type([option/0, options/0]).
+-export_type([option/0, options/0
+             ,find_result/0, find_results/0
+             ]).
+
+-type find_result() :: {QID :: ne_binary()
+                       ,{Num :: ne_binary()
+                        ,ModuleName :: module() | ne_binary()
+                        ,State :: ne_binary()
+                        ,CarrierData :: kz_json:object()
+                        }
+                       }.
+-type find_results() :: [find_result()].
 
 -define(MAX_SEARCH, kapps_config:get_pos_integer(?KNM_CONFIG_CAT, <<"maximum_search_quantity">>, 500)).
 -define(NUMBER_SEARCH_TIMEOUT
@@ -82,7 +93,8 @@ start_link() ->
     gen_listener:start_link({'local', ?MODULE}
                            ,?MODULE
                            ,[]
-                           ,[]).
+                           ,[]
+                           ).
 -else.
 start_link() ->
     gen_listener:start_link({'local', ?MODULE}
@@ -93,7 +105,8 @@ start_link() ->
                             ,{'queue_options', ?QUEUE_OPTIONS}
                             ,{'consume_options', ?CONSUME_OPTIONS}
                             ]
-                           ,[]).
+                           ,[]
+                           ).
 -endif.
 %%%===================================================================
 %%% gen_server callbacks
@@ -506,7 +519,7 @@ handle_search(JObj, 'true') ->
     Publisher = fun(P) -> kapi_discovery:publish_resp(kz_api:server_id(JObj), P) end,
     kz_amqp_worker:cast(Payload, Publisher).
 
-
+-spec handle_number(kz_json:object()) -> 'ok'.
 handle_number(JObj) ->
     'true' = kapi_discovery:number_req_v(JObj),
     Number = kapi_discovery:number(JObj),
