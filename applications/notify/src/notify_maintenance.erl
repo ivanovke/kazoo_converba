@@ -146,7 +146,7 @@ configure_smtp_port(Value) ->
 -spec refresh() -> 'ok'.
 refresh() ->
     kz_datamgr:db_create(?KZ_ACCOUNTS_DB),
-    Views = [kapps_util:get_view_json('notify', <<"views/notify.json">>)],
+    Views = [kz_datamgr:get_view_json('notify', <<"views/notify.json">>)],
     kz_datamgr:db_view_update(?KZ_ACCOUNTS_DB, Views),
     'ok'.
 

@@ -351,7 +351,7 @@ rotate_doc(RotatedName, Doc) ->
 -spec init_db(ne_binary()) -> 'ok'.
 init_db(Database) ->
     lager:debug("refreshing ~s", [Database]),
-    Views = kapps_util:get_views_json('webseq', "views"),
+    Views = kz_datamgr:get_views_json('webseq', "views"),
     _ = kz_datamgr:db_view_update(Database, Views, 'true'),
     lager:debug("refreshed ~s", [Database]).
 

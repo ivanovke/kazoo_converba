@@ -24,8 +24,6 @@
         ,account_descendants/1
         ]).
 -export([get_call_termination_reason/1]).
--export([get_view_json/1, get_view_json/2]).
--export([get_views_json/2]).
 
 -export([add_aggregate_device/2]).
 -export([rm_aggregate_device/2]).
@@ -331,32 +329,6 @@ get_call_termination_reason(JObj) ->
             end,
     Code = kz_json:get_value(<<"Hangup-Code">>, JObj, <<"sip:600">>),
     {Cause, Code}.
-
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
-%%
-%% @end
-%%--------------------------------------------------------------------
--spec get_views_json(atom(), string()) -> kz_datamgr:views_listing().
-get_views_json(App, Folder) ->
-    Pattern = filename:join([code:priv_dir(App), "couchdb", Folder, "*.json"]),
-    [ViewListing
-     || File <- filelib:wildcard(Pattern),
-        {?NE_BINARY,_}=ViewListing <- [catch get_view_json(File)]
-    ].
-
--spec get_view_json(atom(), text()) -> kz_datamgr:view_listing().
-get_view_json(App, File) ->
-    Path = filename:join([code:priv_dir(App), "couchdb", File]),
-    get_view_json(Path).
-
--spec get_view_json(text()) -> kz_datamgr:view_listing().
-get_view_json(Path) ->
-    lager:debug("fetching view from ~s", [Path]),
-    {'ok', Bin} = file:read_file(Path),
-    JObj = kz_json:decode(Bin),
-    {kz_doc:id(JObj), JObj}.
 
 %%--------------------------------------------------------------------
 %% @private

@@ -18,6 +18,8 @@
         ,doc_type_from_view/2
         ]).
 
+-export([get_view_json/1, get_view_json/2, get_views_json/2]).
+
 -include("kz_data.hrl").
 
 %%% View-related functions -----------------------------------------------------
@@ -61,3 +63,29 @@ doc_type_from_view(<<"cdrs">>, _ViewName) -> <<"cdr">>;
 doc_type_from_view(<<"recordings">>, _ViewName) -> <<"call_recording">>;
 doc_type_from_view(<<"sms">>, _ViewName) -> <<"sms">>;
 doc_type_from_view(_ViewType, _ViewName) -> <<"any">>.
+
+%%--------------------------------------------------------------------
+%% @public
+%% @doc
+%%
+%% @end
+%%--------------------------------------------------------------------
+-spec get_views_json(atom(), string()) -> kz_datamgr:views_listing().
+get_views_json(App, Folder) ->
+    Pattern = filename:join([code:priv_dir(App), "couchdb", Folder, "*.json"]),
+    [ViewListing
+     || File <- filelib:wildcard(Pattern),
+        {?NE_BINARY,_}=ViewListing <- [catch get_view_json(File)]
+    ].
+
+-spec get_view_json(atom(), text()) -> kz_datamgr:view_listing().
+get_view_json(App, File) ->
+    Path = filename:join([code:priv_dir(App), "couchdb", File]),
+    get_view_json(Path).
+
+-spec get_view_json(text()) -> kz_datamgr:view_listing().
+get_view_json(Path) ->
+    lager:debug("fetching view from ~s", [Path]),
+    {'ok', Bin} = file:read_file(Path),
+    JObj = kz_json:decode(Bin),
+    {kz_doc:id(JObj), JObj}.

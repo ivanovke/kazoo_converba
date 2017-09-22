@@ -67,7 +67,7 @@ handle_req(MaintJObj, _Props) ->
     handle_refresh(MaintJObj, kapi_maintenance:req_action(MaintJObj)).
 
 handle_refresh(MaintJObj, <<"refresh_views">>) ->
-    Views = kapps_util:get_views_json('stepswitch', "views"),
+    Views = kz_datamgr:get_views_json('stepswitch', "views"),
     kz_datamgr:db_view_update(?RESOURCES_DB, Views, 'true'),
     send_resp(MaintJObj, 'true').
 

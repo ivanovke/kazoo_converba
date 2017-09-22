@@ -79,7 +79,7 @@ handle_refresh(MaintJObj, <<"refresh_database">>, ?KZ_SIP_DB) ->
     lager:debug("created ~s: ~p", [?KZ_SIP_DB, Created]),
     send_resp(MaintJObj, Created);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_SIP_DB) ->
-    View = kapps_util:get_view_json('registrar', <<"credentials.json">>),
+    View = kz_datamgr:get_view_json('registrar', <<"credentials.json">>),
     Update = kz_datamgr:db_view_update(?KZ_SIP_DB, [View], 'true'),
     lager:debug("refreshed views in ~s", [?KZ_SIP_DB]),
     send_resp(MaintJObj, Update).

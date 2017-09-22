@@ -293,6 +293,8 @@ kapps_util() {
     replace kapps_util get_master_account_id kz_config_accounts master_account_id
     replace kapps_util get_master_account_db kz_config_accounts master_account_db
     replace kapps_util is_master_account kz_config_accounts is_master_account
+    replace kapps_util get_views_json kz_datamgr get_views_json
+    replace kapps_util get_view_json kz_datamgr get_view_json
 
     replace kz_account default_timezone kz_config_accounts default_timezone
 

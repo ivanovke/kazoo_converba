@@ -490,7 +490,7 @@ get_modb_views() ->
 
 -spec fetch_modb_views() -> [{ne_binary(), kz_json:object()}].
 fetch_modb_views() ->
-    kapps_util:get_views_json(?MODULE, "views").
+    kz_datamgr:get_views_json(?MODULE, "views").
 
 %%--------------------------------------------------------------------
 %% @private

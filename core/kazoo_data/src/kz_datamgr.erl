@@ -78,6 +78,7 @@
         ,get_result_doc/3, get_result_docs/3
         ,design_info/2
         ,design_compact/2
+        ,get_view_json/1, get_view_json/2, get_views_json/2
         ]).
 
 -export([get_uuid/0, get_uuid/1
@@ -397,6 +398,18 @@ db_view_update(DbName, Views, Remove) ->
         {'ok', Db} -> db_view_update(Db, Views, Remove);
         {'error', _}=E -> E
     end.
+
+-spec get_view_json(file:filename_all()) -> kz_datamgr:view_listing().
+-spec get_view_json(atom(), text()) -> view_listing().
+get_view_json(Path) ->
+    kzs_view:get_view_json(Path).
+
+get_view_json(App, File) ->
+    kzs_view:get_view_json(App, File).
+
+-spec get_views_json(atom(), string()) -> views_listing().
+get_views_json(App, Folder) ->
+    kzs_view:get_views_json(App, Folder).
 
 %%--------------------------------------------------------------------
 %% @public

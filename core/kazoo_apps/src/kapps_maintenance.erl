@@ -1103,9 +1103,9 @@ get_all_account_views() ->
 
 -spec fetch_all_account_views() -> kz_datamgr:views_listing().
 fetch_all_account_views() ->
-    [kapps_util:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)
-    ,kapps_util:get_view_json('conference', <<"views/conference.json">>)
-    ,kapps_util:get_view_json('webhooks', <<"webhooks.json">>)
-     |kapps_util:get_views_json('crossbar', "account")
-     ++ kapps_util:get_views_json('callflow', "views")
+    [kz_datamgr:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)
+    ,kz_datamgr:get_view_json('conference', <<"views/conference.json">>)
+    ,kz_datamgr:get_view_json('webhooks', <<"webhooks.json">>)
+     |kz_datamgr:get_views_json('crossbar', "account")
+     ++ kz_datamgr:get_views_json('callflow', "views")
     ].

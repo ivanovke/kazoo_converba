@@ -92,13 +92,13 @@ handle_refresh(MaintJObj, <<"refresh_views">>, Database, <<"account">>) ->
 handle_refresh(MaintJObj, <<"refresh_database">>, Database, _Class) ->
     refresh_database(MaintJObj, Database);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_SIP_DB, _Class) ->
-    Views = [kapps_util:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)],
+    Views = [kz_datamgr:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)],
     Updated = kz_datamgr:db_view_update(?KZ_SIP_DB, Views, 'true'),
     send_resp(MaintJObj, Updated);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_ACCOUNTS_DB, _Class) ->
-    Views = [kapps_util:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)
-            ,kapps_util:get_view_json('kazoo_apps', ?ACCOUNTS_AGG_VIEW_FILE)
-            ,kapps_util:get_view_json('kazoo_apps', ?SEARCH_VIEW_FILE)
+    Views = [kz_datamgr:get_view_json('kazoo_apps', ?MAINTENANCE_VIEW_FILE)
+            ,kz_datamgr:get_view_json('kazoo_apps', ?ACCOUNTS_AGG_VIEW_FILE)
+            ,kz_datamgr:get_view_json('kazoo_apps', ?SEARCH_VIEW_FILE)
             ],
     Updated = kz_datamgr:db_view_update(?KZ_ACCOUNTS_DB, Views, 'true'),
     send_resp(MaintJObj, Updated);

@@ -100,7 +100,7 @@ handle_refresh(MaintJObj, <<"refresh_views">>, Database, <<"ratedeck">>) ->
     Revised = kz_datamgr:revise_doc_from_file(Database, 'crossbar', <<"views/rates.json">>),
     send_resp(MaintJObj, Revised);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_SIP_DB, _Class) ->
-    View = kapps_util:get_view_json('crossbar', <<"views/resources.json">>),
+    View = kz_datamgr:get_view_json('crossbar', <<"views/resources.json">>),
     case kz_datamgr:db_view_update(?KZ_SIP_DB, [View], 'true') of
         'true' -> send_resp(MaintJObj, {'ok', MaintJObj});
         'false' -> send_resp(MaintJObj, {'error', 'not_found'})
@@ -127,7 +127,7 @@ handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_WEBHOOKS_DB, _Class) ->
     Revised = kz_datamgr:revise_doc_from_file(?KZ_WEBHOOKS_DB, 'crossbar', <<"views/webhooks.json">>),
     send_resp(MaintJObj, Revised);
 handle_refresh(MaintJObj, <<"refresh_views">>, ?KZ_OFFNET_DB, _Class) ->
-    View = kapps_util:get_view_json('crossbar', <<"views/resources.json">>),
+    View = kz_datamgr:get_view_json('crossbar', <<"views/resources.json">>),
     kz_datamgr:db_view_update(?KZ_OFFNET_DB, [View], 'true'),
     send_resp(MaintJObj, 'true').
 
