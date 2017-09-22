@@ -119,26 +119,25 @@ do_archive_modbs(MODbs, AccountId) ->
 -spec current_rollups() -> 'ok'.
 current_rollups() ->
     Accounts = kzd_account:get_all_accounts(),
-    current_rollups(Accounts).
+    0 = lists:foldl(fun account_rollup/2, length(Accounts), Accounts),
+    'ok'.
 
--spec current_rollups(ne_binaries()) -> 'ok'.
-current_rollups([]) -> 'ok';
-current_rollups([Account|Accounts]) ->
+-spec account_rollup(ne_binary(), non_neg_integer()) -> non_neg_integer().
+account_rollup(Account, Remaining) ->
     {Year, Month, _} = erlang:date(),
     AccountId = kz_term:format_account_id(Account, 'raw'),
-    Remaining = length(Accounts),
-    _ = case kazoo_modb:open_doc(AccountId, <<"monthly_rollup">>, Year, Month) of
-            {'ok', JObj} ->
-                {{_Y, _M, _D}, {_H, _Min, _S}} = calendar:gregorian_seconds_to_datetime(kz_doc:created(JObj)),
-                io:format("[~p] account ~s has rollup (created ~p/~p/~p ~p:~p:~p) for ~p-~p with balance ~p~n"
-                         ,[Remaining, AccountId, _Y, _M, _D, _H, _Min, _S, Year, Month, rollup_balance(JObj)]
-                         );
-            {'error', 'not_found'} ->
-                io:format("[~p] account ~s has no rollup for ~p-~p~n", [Remaining, AccountId, Year, Month]);
-            Else ->
-                io:format("[~p] account ~s error getting monthly rollup ~p~n", [Remaining, AccountId, Else])
-        end,
-    current_rollups(Accounts).
+    case kazoo_modb:open_doc(AccountId, <<"monthly_rollup">>, Year, Month) of
+        {'ok', JObj} ->
+            {{_Y, _M, _D}, {_H, _Min, _S}} = calendar:gregorian_seconds_to_datetime(kz_doc:created(JObj)),
+            io:format("[~p] account ~s has rollup (created ~p/~p/~p ~p:~p:~p) for ~p-~p with balance ~p~n"
+                     ,[Remaining, AccountId, _Y, _M, _D, _H, _Min, _S, Year, Month, rollup_balance(JObj)]
+                     );
+        {'error', 'not_found'} ->
+            io:format("[~p] account ~s has no rollup for ~p-~p~n", [Remaining, AccountId, Year, Month]);
+        Else ->
+            io:format("[~p] account ~s error getting monthly rollup ~p~n", [Remaining, AccountId, Else])
+    end,
+    Remaining-1.
 
 -spec verify_rollups() -> 'ok'.
 verify_rollups() ->
@@ -158,7 +157,8 @@ verify_all_rollups() ->
                               {pos_integer(), pos_integer(), kz_proplist()}.
 verify_db_rollup(AccountDb, {Current, Total, Options}) ->
     io:format("verify rollup accounts (~p/~p) '~s'~n"
-             ,[Current, Total, AccountDb]),
+             ,[Current, Total, AccountDb]
+             ),
     verify_rollups(AccountDb, Options),
     {Current+1, Total, Options}.
 
