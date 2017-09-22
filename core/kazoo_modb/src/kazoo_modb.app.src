@@ -1,6 +1,6 @@
 {application,kazoo_modb,
-             [{applications,[kazoo,kazoo_apps,kazoo_config,kazoo_csv,
-                             kazoo_data,kazoo_documents,kazoo_stdlib,
+             [{applications,[kazoo,kazoo_config,kazoo_csv,kazoo_data,
+                             kazoo_documents,kazoo_maintenance,kazoo_stdlib,
                              kazoo_transactions,lager,stdlib]},
               {description,"MODb - Utilities for an account's month-only database"},
               {vsn,"4.0.0"},

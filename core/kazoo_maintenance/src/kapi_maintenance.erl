@@ -245,7 +245,6 @@ routing_key(Req, Get, ?REFRESH_VIEWS) ->
                    ,Get(?KEY_DATABASE, Req)
                    ).
 
-
 -spec refresh_database(ne_binary()) ->
                               kz_amqp_worker:request_return().
 -spec refresh_database(ne_binary(), pid() | kz_datamgr:db_classification()) ->
