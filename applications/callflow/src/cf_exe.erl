@@ -495,7 +495,7 @@ handle_cast({'callid_update', NewCallId}, #state{call=Call}=State) ->
     gen_listener:add_binding(self(), 'call', [{'callid', NewCallId}]),
     {'noreply', State#state{call=kapps_call:set_call_id(NewCallId, Call)}};
 handle_cast({'add_event_listener', {Mod, Args}}, #state{call=Call}=State) ->
-    cf_util:start_event_listener(Call, Mod, Args),
+    _ = cf_util:start_event_listener(Call, Mod, Args),
     {'noreply', State};
 handle_cast('initialize', #state{call=Call}=State) ->
     log_call_information(Call),

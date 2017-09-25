@@ -650,8 +650,9 @@ start_event_listener(Call, Mod, Args) ->
     Name = event_listener_name(Call, Mod),
     try cf_event_handler_sup:new(Name, Mod, [kapps_call:clear_helpers(Call) | Args]) of
         {'ok', P} -> {'ok', P};
-        _E -> lager:debug("error starting event listener ~p: ~p", [Mod, _E]),
-              {'error', _E}
+        _E ->
+            lager:info("error starting event listener ~p: ~p", [Mod, _E]),
+            {'error', _E}
     catch
         _:_R ->
             lager:info("failed to spawn ~p: ~p", [Mod, _R]),
