@@ -399,7 +399,7 @@ db_view_update(DbName, Views, Remove) ->
         {'error', _}=E -> E
     end.
 
--spec get_view_json(file:filename_all()) -> kz_datamgr:view_listing().
+-spec get_view_json(file:filename_all()) -> view_listing().
 -spec get_view_json(atom(), text()) -> view_listing().
 get_view_json(Path) ->
     kzs_view:get_view_json(Path).
