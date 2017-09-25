@@ -5,7 +5,7 @@
                              kazoo_maintenance,kazoo_network,
                              kazoo_number_manager,kazoo_services,kazoo_sip,
                              kazoo_stdlib,kazoo_templates,kazoo_web,lager,
-                             poolboy,ssl]},
+                             poolboy,ssl,stdlib]},
               {description,"Routes calls coming or going offnet, like a line finder"},
               {vsn,"4.0.0"},
               {modules,[]},
