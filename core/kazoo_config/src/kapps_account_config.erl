@@ -475,7 +475,7 @@ update_config_for_saving(AccountId, JObj) ->
 -spec flush(ne_binary(), ne_binary()) -> ok.
 flush(Account, Category) ->
     AccountDb = kz_term:format_account_db(Account),
-    kz_datamgr:flush_cache_doc(AccountDb, kapps_config_util:account_doc_id(Category)),
+    'ok' = kz_datamgr:flush_cache_doc(AccountDb, kapps_config_util:account_doc_id(Category)),
     flush_all_strategies(Account, Category).
 
 -spec flush_all_strategies(ne_binary(), ne_binary()) -> ok.
