@@ -88,7 +88,7 @@ find_numbers_in_account(Prefix, Quantity, AccountId, Options) ->
         Result -> Result
     end.
 
--spec do_find_numbers_in_account(ne_binary(), pos_integer(), api_binary(), knm_search:options()) ->
+-spec do_find_numbers_in_account(ne_binary(), pos_integer(), api_ne_binary(), knm_search:options()) ->
                                         {'ok', knm_search:find_results()} |
                                         {'error', any()}.
 do_find_numbers_in_account(Prefix, Quantity, AccountId, Options) ->

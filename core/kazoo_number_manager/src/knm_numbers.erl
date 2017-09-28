@@ -541,17 +541,17 @@ account_listing(AccountDb=?MATCH_ACCOUNT_ENCODED(_,_,_)) ->
 -spec new(knm_number_options:options(), todo(), nums()) -> t().
 -spec new(knm_number_options:options(), todo(), nums(), reason_t()) -> t().
 new(Options, ToDos) -> new(Options, ToDos, []).
-new(Options, ToDos, KOs) -> new(Options, ToDos, KOs, not_reconcilable).
+new(Options, ToDos, KOs) -> new(Options, ToDos, KOs, 'not_reconcilable').
 new(Options, ToDos, KOs, Reason) ->
     #{todo => ToDos
      ,ok => []
      ,ko => case is_function(Reason, 1) of %%FIXME: find something better than Reason/1.
-                false -> maps:from_list([{KO, Reason} || KO <- KOs]);
-                true -> maps:from_list([{KO, Reason(KO)} || KO <- KOs])
+                'false' -> maps:from_list([{KO, Reason} || KO <- KOs]);
+                'true' -> maps:from_list([{KO, Reason(KO)} || KO <- KOs])
             end
      ,options => Options
-     ,plan => undefined
-     ,services => undefined
+     ,plan => 'undefined'
+     ,services => 'undefined'
      ,transactions => []
      ,charges => []
      }.
