@@ -385,8 +385,8 @@ list(#{auth_account_id := AuthBy}, Todo) ->
 
 -spec list_numbers(ne_binary(), ne_binaries()) -> [kz_csv:row()].
 list_numbers(AuthBy, E164s) ->
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
               ],
     #{ok := Ns, ko := KOs} = knm_numbers:get(E164s, Options),
     maps:fold(fun list_bad_rows/3, [], KOs)
@@ -552,7 +552,7 @@ import(#{account_id := Account
       ) ->
     AccountId = select_account_id(AccountId0, Account),
     Options = [{auth_by, AuthAccountId}
-              ,{batch_run, true}
+              ,{'batch_run', 'true'}
               ,{assign_to, AccountId}
               ,{module_name, import_module_name(AuthAccountId, Carrier)}
               ,{ported_in, PortedIn =:= <<"true">>}
@@ -667,9 +667,9 @@ additional_fields(Args) ->
     ].
 
 %% @private
+-spec select_account_id(ne_binary(), ne_binary()) -> ne_binary().
 select_account_id(?MATCH_ACCOUNT_RAW(_)=AccountId, _) -> AccountId;
 select_account_id(_, AccountId) -> AccountId.
-
 
 -spec assign_to(kz_tasks:extra_args(), kz_tasks:iterator(), kz_tasks:args()) -> kz_tasks:return().
 assign_to(#{auth_account_id := AuthBy, account_id := Account}
@@ -677,8 +677,8 @@ assign_to(#{auth_account_id := AuthBy, account_id := Account}
          ,Args=#{<<"e164">> := Num, <<"account_id">> := AccountId0}
          ) ->
     AccountId = select_account_id(AccountId0, Account),
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
               ],
     handle_result(Args, knm_number:move(Num, AccountId, Options)).
 
@@ -687,8 +687,8 @@ update_merge(#{auth_account_id := AuthBy}
             ,_IterValue
             ,Args=#{<<"e164">> := Num}
             ) ->
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
               ],
     Updates = [{fun knm_phone_number:update_doc/2, public_fields(Args)}],
     handle_result(Args, knm_number:update(Num, Updates, Options)).
@@ -698,8 +698,8 @@ update_overwrite(#{auth_account_id := AuthBy}
                 ,_IterValue
                 ,Args=#{<<"e164">> := Num}
                 ) ->
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
               ],
     Updates = [{fun knm_phone_number:reset_doc/2, public_fields(Args)}],
     handle_result(Args, knm_number:update(Num, Updates, Options)).
@@ -709,8 +709,8 @@ release(#{auth_account_id := AuthBy}
        ,_IterValue
        ,Args=#{<<"e164">> := Num}
        ) ->
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
               ],
     handle_result(Args, knm_number:release(Num, Options)).
 
@@ -719,9 +719,9 @@ reserve(#{auth_account_id := AuthBy, account_id := Account}
        ,_IterValue
        ,Args=#{<<"e164">> := Num, <<"account_id">> := AccountId0}
        ) ->
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
-              ,{assign_to, select_account_id(AccountId0, Account)}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
+              ,{'assign_to', select_account_id(AccountId0, Account)}
               ],
     handle_result(Args, knm_number:reserve(Num, Options)).
 
@@ -730,8 +730,8 @@ delete(#{auth_account_id := AuthBy}
       ,_IterValue
       ,Args=#{<<"e164">> := Num}
       ) ->
-    Options = [{auth_by, AuthBy}
-              ,{batch_run, true}
+    Options = [{'auth_by', AuthBy}
+              ,{'batch_run', 'true'}
               ],
     handle_result(Args, knm_number:delete(Num, Options)).
 
