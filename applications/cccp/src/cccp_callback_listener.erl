@@ -221,12 +221,12 @@ handle_resource_response(JObj, Props) ->
     case kz_util:get_event_type(JObj) of
         {<<"dialplan">>,<<"route_win">>} ->
             gen_listener:cast(Srv, {'call_update', kapps_call:from_route_win(JObj,call(Props))}),
-            gen_listener:add_binding(Srv, {'call',[{'callid', CallId}]});
+            gen_listener:add_binding(Srv, 'call', [{'callid', CallId}]);
         {<<"call_event">>,<<"CHANNEL_REPLACED">>} ->
-            gen_listener:rm_binding(Srv, {'call',[]}),
+            gen_listener:rm_binding(Srv, 'call', []),
             NewCallId = kz_json:get_value(<<"Replaced-By">>, JObj),
             gen_listener:cast(Srv, {'call_id_update', NewCallId}),
-            gen_listener:add_binding(Srv, {'call',[{'callid', NewCallId}]});
+            gen_listener:add_binding(Srv, 'call', [{'callid', NewCallId}]);
         {<<"call_event">>,<<"CHANNEL_ANSWER">>} ->
             CallUpdate = kapps_call:kvs_store_proplist([{'consumer_pid', self()},{'auth_doc_id', props:get_value('auth_doc_id',Props)}]
                                                       ,kapps_call:from_route_req(JObj,call(Props))
