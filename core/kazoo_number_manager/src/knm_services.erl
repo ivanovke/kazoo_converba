@@ -29,7 +29,7 @@
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--type set_feature() :: {ne_binary(), kz_json:object()}.
+-type set_feature() :: {ne_binary(), kz_json:json_term()}.
 -spec activate_feature(knm_number:knm_number(), set_feature() | ne_binary()) ->
                               knm_number:knm_number().
 -spec do_activate_feature(knm_number:knm_number(), set_feature()) ->

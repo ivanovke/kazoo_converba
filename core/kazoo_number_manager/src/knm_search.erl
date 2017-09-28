@@ -356,7 +356,8 @@ next(Options) ->
 %% @end
 %%--------------------------------------------------------------------
 -ifndef(TEST).
--spec create_discovery(ne_binary(), module(), kz_json:object(), knm_carriers:options()) -> knm_number:knm_number().
+-spec create_discovery(ne_binary(), module(), kz_json:object(), knm_number_options:options()) ->
+                              knm_number:knm_number().
 create_discovery(DID=?NE_BINARY, Carrier, Data, Options0) ->
     Options = [{'state', ?NUMBER_STATE_DISCOVERY}
               ,{'module_name', kz_term:to_binary(Carrier)}
@@ -368,7 +369,7 @@ create_discovery(DID=?NE_BINARY, Carrier, Data, Options0) ->
                                  ]),
     knm_number:set_phone_number(knm_number:new(), PhoneNumber).
 
--spec create_discovery(kz_json:object(), knm_carriers:options()) -> knm_number:knm_number().
+-spec create_discovery(kz_json:object(), knm_number_options:options()) -> knm_number:knm_number().
 create_discovery(JObj, Options) ->
     PhoneNumber = knm_phone_number:from_json_with_options(JObj, Options),
     knm_number:set_phone_number(knm_number:new(), PhoneNumber).
@@ -430,7 +431,7 @@ offset(Options) ->
 account_id(Options) ->
     props:get_value('account_id', Options).
 
--spec reseller_id(options()) -> ne_binary().
+-spec reseller_id(options()) -> api_ne_binary().
 reseller_id(Options) ->
     props:get_value('reseller_id', Options).
 
@@ -442,14 +443,14 @@ is_local(QID) ->
 discovery(Num) ->
     discovery(Num, []).
 
--spec discovery(ne_binary(), knm_carriers:options()) -> knm_number:knm_number_return().
+-spec discovery(ne_binary(), knm_number_options:options()) -> knm_number:knm_number_return().
 discovery(Num, Options) ->
     case local_discovery(Num, Options) of
         {'ok', _}=OK -> OK;
         {'error', 'not_found'} -> remote_discovery(Num, Options)
     end.
 
--spec local_discovery(ne_binary(), knm_carriers:options()) -> knm_number:knm_number_return().
+-spec local_discovery(ne_binary(), knm_number_options:options()) -> knm_number:knm_number_return().
 -ifdef(TEST).
 local_discovery(_Num, _Options) -> {'error', 'not_found'}.
 -else.
@@ -461,7 +462,7 @@ local_discovery(Num, Options) ->
     end.
 -endif.
 
--spec remote_discovery(ne_binary(), knm_carriers:options()) -> knm_number:knm_number_return().
+-spec remote_discovery(ne_binary(), knm_number_options:options()) -> knm_number:knm_number_return().
 -ifdef(TEST).
 remote_discovery(_Num, _Options) -> {'error', 'not_found'}.
 -else.
@@ -475,7 +476,8 @@ remote_discovery(Number, Options) ->
                             ,fun kapi_discovery:resp_v/1
                             )
     of
-        {'ok', JObj} -> {'ok', create_discovery(kapi_discovery:results(JObj), Options)};
+        {'ok', JObj} ->
+            {'ok', create_discovery(kapi_discovery:results(JObj), Options)};
         {'error', _Error} ->
             lager:debug("error requesting number from amqp: ~p", [_Error]),
             {'error', 'not_found'}

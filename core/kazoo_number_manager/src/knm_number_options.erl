@@ -75,27 +75,28 @@ default() ->
     [{'auth_by', ?KNM_DEFAULT_AUTH_BY}
     ,{'dry_run', 'false'}
     ,{'batch_run', 'false'}
-    ,{mdn_run, false}
+    ,{'mdn_run', 'false'}
     ].
 
 -spec mdn_options() -> options().
 mdn_options() ->
-    [{mdn_run, true}
-     |default()
+    [{'mdn_run', 'true'}
+     | default()
     ].
 
 -spec to_phone_number_setters(options()) -> knm_phone_number:set_functions().
 to_phone_number_setters(Options) ->
-    [case Option of
-         'public_fields' ->
-             {fun knm_phone_number:reset_doc/2, Value};
-         _ ->
-             FName = list_to_existing_atom("set_" ++ atom_to_list(Option)),
-             {fun knm_phone_number:FName/2, Value}
-     end
+    [option_to_fun(Option, Value)
      || {Option, Value} <- kz_util:uniq(Options),
         is_atom(Option)
     ].
+
+-spec option_to_fun(atom(), any()) -> knm_phone_number:set_function().
+option_to_fun('public_fields', Value) ->
+    {fun knm_phone_number:reset_doc/2, Value};
+option_to_fun(Option, Value) ->
+    FName = list_to_existing_atom("set_" ++ atom_to_list(Option)),
+    {fun knm_phone_number:FName/2, Value}.
 
 -spec dry_run(options()) -> boolean().
 -spec dry_run(options(), Default) -> boolean() | Default.
@@ -219,7 +220,7 @@ to_phone_number_setters_test_() ->
                    ]
                   ,to_phone_number_setters([{'auth_by', ?KNM_DEFAULT_AUTH_BY}
                                            ,{'ported_in', 'false'}
-                                           ,{<<"batch_run">>, 'false'}
+                                           ,{'batch_run', 'false'}
                                            ,{'dry_run', [[[]]]}
                                            ])
                   )

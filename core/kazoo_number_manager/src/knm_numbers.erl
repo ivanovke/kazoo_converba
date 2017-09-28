@@ -341,7 +341,7 @@ move(Nums, MoveTo) ->
     move(Nums, MoveTo, knm_number_options:default()).
 
 move(Nums, ?MATCH_ACCOUNT_RAW(MoveTo), Options0) ->
-    Options = [{assign_to, MoveTo} | Options0],
+    Options = [{'assign_to', MoveTo} | Options0],
     {TFound, NotFounds} = take_not_founds(do_get(Nums, Options)),
     Updates = knm_number_options:to_phone_number_setters(Options0),
     TUpdated = do_in_wrap(fun (T) -> knm_phone_number:setters(T, Updates) end, TFound),
@@ -536,7 +536,7 @@ account_listing(AccountDb=?MATCH_ACCOUNT_ENCODED(_,_,_)) ->
 %%%===================================================================
 
 %% @private
--type reason_t() :: atom() | fun((num())-> knm_errors:error()).
+-type reason_t() :: atom() | fun((num())-> knm_errors:error()) | knm_errors:error().
 -spec new(knm_number_options:options(), todo()) -> t().
 -spec new(knm_number_options:options(), todo(), nums()) -> t().
 -spec new(knm_number_options:options(), todo(), nums(), reason_t()) -> t().
@@ -549,7 +549,6 @@ new(Options, ToDos, KOs, Reason) ->
                 false -> maps:from_list([{KO, Reason} || KO <- KOs]);
                 true -> maps:from_list([{KO, Reason(KO)} || KO <- KOs])
             end
-
      ,options => Options
      ,plan => undefined
      ,services => undefined

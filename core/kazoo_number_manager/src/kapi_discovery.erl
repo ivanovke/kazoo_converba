@@ -42,7 +42,6 @@
 -define(DISCOVERY_EXCHANGE, <<"discovery">>).
 -define(DISCOVERY_EXCHANGE_TYPE, <<"topic">>).
 
-
 -define(DISCOVERY_EVENT_CATEGORY, <<"discovery">>).
 -define(DISCOVERY_RK, <<"discovery.*">>).
 
@@ -57,22 +56,23 @@
 -define(DISCOVERY_FLUSH_TYPES, [{?KEY_QUERY_ID, fun is_binary/1}
                                ]).
 
-
 %% Discovery Request
 -define(DISCOVERY_REQ_RK, <<"discovery.request">>).
 -define(DISCOVERY_REQ_EVENT_NAME, <<"request">>).
--define(DISCOVERY_REQ_HEADERS, [?KEY_QUERY_ID, ?KEY_PREFIX
-                               ,?KEY_OFFSET, ?KEY_QUANTITY
+-define(DISCOVERY_REQ_HEADERS, [?KEY_QUERY_ID
+                               ,?KEY_PREFIX
+                               ,?KEY_OFFSET
+                               ,?KEY_QUANTITY
                                ]).
 -define(DISCOVERY_REQ_OPTIONAL_HEADERS, []).
 -define(DISCOVERY_REQ_VALUES, [{<<"Event-Category">>, ?DISCOVERY_EVENT_CATEGORY}
                               ,{<<"Event-Name">>, ?DISCOVERY_REQ_EVENT_NAME}
                               ]).
 -define(DISCOVERY_REQ_TYPES, [{?KEY_QUERY_ID, fun is_binary/1}
+                             ,{?KEY_PREFIX, fun is_binary/1}
                              ,{?KEY_OFFSET, fun is_integer/1}
                              ,{?KEY_QUANTITY, fun is_integer/1}
                              ]).
-
 
 %% Number Request
 -define(NUMBER_REQ_RK, <<"discovery.number">>).
@@ -93,6 +93,7 @@
                                ,{<<"Event-Name">>, ?DISCOVERY_RESP_EVENT_NAME}
                                ]).
 -define(DISCOVERY_RESP_TYPES, [{?KEY_QUERY_ID, fun is_binary/1}
+                              ,{?KEY_RESULTS, fun kz_json:is_json_object/1}
                               ]).
 
 
@@ -245,14 +246,14 @@ quantity(JObj) ->
 offset(JObj) ->
     kz_json:get_integer_value(?KEY_OFFSET, JObj).
 
--spec results(kz_json:object()) -> list().
+-spec results(kz_json:object()) -> kz_json:object().
 results(JObj) ->
-    kz_json:get_value(?KEY_RESULTS, JObj).
+    kz_json:get_json_value(?KEY_RESULTS, JObj).
 
 -spec prefix(kz_json:object()) -> ne_binary().
 prefix(JObj) ->
-    kz_json:get_value(?KEY_PREFIX, JObj).
+    kz_json:get_ne_binary_value(?KEY_PREFIX, JObj).
 
 -spec number(kz_json:object()) -> ne_binary().
 number(JObj) ->
-    kz_json:get_value(?KEY_NUMBER, JObj).
+    kz_json:get_ne_binary_value(?KEY_NUMBER, JObj).

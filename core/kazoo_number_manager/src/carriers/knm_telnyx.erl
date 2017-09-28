@@ -166,7 +166,7 @@ numbers(SearchKind, Quantity, Prefix, NXX) ->
         _ -> kz_json:get_value(<<"result">>, Rep)
     end.
 
--spec numbers(kz_json:object(), knm_search:options()) ->
+-spec numbers(kz_json:objects(), knm_search:options()) ->
                      knm_search:find_results().
 numbers(JObjs, Options) ->
     QID = knm_search:query_id(Options),
@@ -175,7 +175,7 @@ numbers(JObjs, Options) ->
         Num <- [kz_json:get_ne_binary_value(<<"number_e164">>, Data)]
     ].
 
--spec international_numbers(kz_json:object(), knm_search:options()) ->
+-spec international_numbers(kz_json:objects(), knm_search:options()) ->
                                    knm_search:find_results().
 international_numbers(JObjs, Options) ->
     Dialcode = knm_search:dialcode(Options),

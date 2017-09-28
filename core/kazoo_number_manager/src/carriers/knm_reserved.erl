@@ -106,7 +106,7 @@ find_more(Prefix, Quantity, Offset, AccountId, NotEnough, QID, Numbers)
 find_more(_, _, _, _, _Enough, _, Numbers) ->
     {'ok', Numbers}.
 
--spec format_numbers(ne_binary(), kz_json:object()) ->
+-spec format_numbers(ne_binary(), kz_json:objects()) ->
                             knm_search:find_results().
 format_numbers(QID, JObjs) ->
     Nums = [kz_doc:id(JObj) || JObj <- JObjs],

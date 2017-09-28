@@ -666,11 +666,11 @@ maybe_migrate_features(PN, FeaturesJObj) ->
 %% Note: the above setters may not have set any features yet,
 %% since more than one of them may set features.
 -spec ensure_features_defined(knm_phone_number()) -> knm_phone_number().
-ensure_features_defined(PN=#knm_phone_number{features = undefined}) ->
+ensure_features_defined(PN=#knm_phone_number{features = 'undefined'}) ->
     PN#knm_phone_number{features = ?DEFAULT_FEATURES};
 ensure_features_defined(PN) -> PN.
 
-ensure_pvt_state_legacy_undefined(PN, undefined) -> PN;
+ensure_pvt_state_legacy_undefined(PN, 'undefined') -> PN;
 ensure_pvt_state_legacy_undefined(PN, _State) ->
     ?LOG_DEBUG("~s was set to ~p, moving to ~s", [?PVT_STATE_LEGACY, _State, ?PVT_STATE]),
     ?DIRTY(PN).
@@ -762,10 +762,7 @@ from_json_with_options(JObj, Options)
               ,{fun set_batch_run/2, knm_number_options:batch_run(Options, 'false')}
               ,{fun set_mdn_run/2, knm_number_options:mdn_run(Options)}
               ,{fun set_auth_by/2, knm_number_options:auth_by(Options, ?KNM_DEFAULT_AUTH_BY)}
-               |case props:is_defined(module_name, Options) of
-                    true -> [{fun set_module_name/2, knm_number_options:module_name(Options)}];
-                    false -> []
-                end
+              ,{fun set_module_name/2, knm_number_options:module_name(Options)}
               ],
     {'ok', PN} = setters(from_json(JObj), Updates),
     PN;
@@ -801,7 +798,7 @@ setters(T0=#{todo := PNs}, Routines) ->
                 end
         end,
     lists:foldl(F, T0, PNs);
-setters(PN, Routines) ->
+setters(#knm_phone_number{}=PN, Routines) ->
     try lists:foldl(fun setters_fold/2, PN, Routines) of
         {'ok', _N}=Ok -> Ok;
         {'error', _R}=Error -> Error;
@@ -838,6 +835,7 @@ setters_fold(_, {'error', _R}=Error) ->
     throw({'stop', Error});
 setters_fold({Fun, Key, Value}, PN) when is_function(Fun, 3) ->
     setters_fold_apply(Fun, [PN, Key, Value]);
+setters_fold({_Fun, 'undefined'}, PN) when is_function(_Fun, 2) -> PN;
 setters_fold({Fun, Value}, PN) when is_function(Fun, 2) ->
     setters_fold_apply(Fun, [PN, Value]);
 setters_fold(Fun, PN) when is_function(Fun, 1) ->
@@ -1016,13 +1014,16 @@ feature(PN, Feature) ->
 
 -spec set_feature(knm_phone_number(), ne_binary(), kz_json:json_term()) ->
                          knm_phone_number().
-set_feature(PN0, Feature=?NE_BINARY, Data) ->
-    Features = case PN0#knm_phone_number.features of
-                   undefined -> ?DEFAULT_FEATURES;
-                   F -> F
-               end,
-    PN = set_features(PN0, kz_json:set_value(Feature, Data, Features)),
-    PN#knm_phone_number.is_dirty
+-spec set_feature(knm_phone_number(), ne_binary(), kz_json:json_term(), kz_json:object()) ->
+                         knm_phone_number().
+set_feature(#knm_phone_number{features='undefined'}=PN0, Feature=?NE_BINARY, Data) ->
+    set_feature(PN0, Feature, Data, ?DEFAULT_FEATURES);
+set_feature(#knm_phone_number{features=Features}=PN0, Feature=?NE_BINARY, Data) ->
+    set_feature(PN0, Feature, Data, Features).
+
+set_feature(PN0, Feature, Data, Features) ->
+    #knm_phone_number{is_dirty=PNIsDirty}=PN = set_features(PN0, kz_json:set_value(Feature, Data, Features)),
+    PNIsDirty
         andalso lager:debug("setting ~s feature ~s: ~s", [number(PN), Feature, kz_json:encode(Data)]),
     PN.
 
@@ -1036,16 +1037,15 @@ reset_features(PN=#knm_phone_number{module_name = ?CARRIER_MDN}) ->
 reset_features(PN) ->
     set_features(PN, ?DEFAULT_FEATURES).
 
-
 -spec set_features_allowed(knm_phone_number(), ne_binaries()) -> knm_phone_number().
 set_features_allowed(PN=#knm_phone_number{features_allowed = undefined}, Features) ->
-    true = lists:all(fun kz_term:is_ne_binary/1, Features),
+    'true' = lists:all(fun kz_term:is_ne_binary/1, Features),
     PN#knm_phone_number{features_allowed = Features};
 set_features_allowed(PN, Features) ->
-    true = lists:all(fun kz_term:is_ne_binary/1, Features),
+    'true' = lists:all(fun kz_term:is_ne_binary/1, Features),
     case lists:usort(PN#knm_phone_number.features_allowed) =:= lists:usort(Features) of
-        true -> PN;
-        false -> ?DIRTY(PN#knm_phone_number{features_allowed = Features})
+        'true' -> PN;
+        'false' -> ?DIRTY(PN#knm_phone_number{features_allowed = Features})
     end.
 
 -spec set_features_denied(knm_phone_number(), ne_binaries()) -> knm_phone_number().
