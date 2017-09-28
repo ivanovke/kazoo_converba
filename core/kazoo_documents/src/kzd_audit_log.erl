@@ -126,7 +126,7 @@ set_audit_account(JObj, AccountId, AuditJObj) ->
 save(Services, AuditLog) ->
     case kz_services:have_quantities_changed(Services) of
         'true' ->
-            {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+            {'ok', MasterAccountId} = kz_config_accounts:master_account_id(),
             lager:debug("maybe save the base audit log ~s", [kz_json:encode(AuditLog)]),
             save(Services, AuditLog, MasterAccountId);
         'false' ->
