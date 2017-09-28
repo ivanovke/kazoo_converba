@@ -33,6 +33,7 @@
 %% define what databases or classifications we're interested in
 -define(RESTRICTIONS, [kapi_maintenance:restrict_to_db(?KZ_PORT_REQUESTS_DB)
                       ,kapi_maintenance:restrict_to_views_classification('numbers')
+                      ,kapi_maintenance:restrict_to_views_classification('account')
                       ]).
 -define(BINDINGS, [{'maintenance', [{'restrict_to', ?RESTRICTIONS}]}]).
 -define(RESPONDERS, [{{?MODULE, 'handle_req'}
@@ -78,6 +79,9 @@ handle_refresh(MaintJObj, <<"refresh_database">>, ?KZ_PORT_REQUESTS_DB, _Class) 
     send_resp(MaintJObj, Created);
 handle_refresh(MaintJObj, <<"refresh_views">>, Database, <<"numbers">>) ->
     kazoo_number_manager_maintenance:refresh_numbers_db(Database),
+    send_resp(MaintJObj, 'true');
+handle_refresh(MaintJObj, <<"refresh_views">>, Database, <<"account">>) ->
+    _ = kazoo_number_manager_maintenance:update_number_services_view(Database),
     send_resp(MaintJObj, 'true').
 
 -spec send_resp(kapi_mainteannce:req(), boolean()) -> 'ok'.

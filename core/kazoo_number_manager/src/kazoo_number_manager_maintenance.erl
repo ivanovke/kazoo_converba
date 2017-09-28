@@ -197,7 +197,7 @@ refresh_numbers_db(_Thing) ->
     ?LOG("skipping badly formed ~s", [_Thing]).
 
 %% @public
--spec update_number_services_view(ne_binary()) -> no_return.
+-spec update_number_services_view(ne_binary()) -> 'no_return'.
 update_number_services_view(?MATCH_ACCOUNT_RAW(AccountId)) ->
     update_number_services_view(kz_term:format_account_db(AccountId));
 update_number_services_view(?MATCH_ACCOUNT_ENCODED(_)=AccountDb) ->
