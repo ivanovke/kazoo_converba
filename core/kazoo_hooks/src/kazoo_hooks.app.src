@@ -4,5 +4,6 @@
   {id,""},
   {vsn,"4.0.0"},
   {modules,[]},
-  {registered,[]}
+  {registered,[]},
+  {mod, {kazoo_hooks_app, []}}
  ]}.
