@@ -1,0 +1,8 @@
+{application,kazoo_hooks,
+ [{applications,[]},
+  {description,"Kazoo Hooks - Node Listener for events to be shared with locally-running apps"},
+  {id,""},
+  {vsn,"4.0.0"},
+  {modules,[]},
+  {registered,[]}
+ ]}.

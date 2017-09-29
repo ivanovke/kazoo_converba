@@ -400,8 +400,8 @@ get_destination(JObj, []) ->
 
 maybe_split(Key, JObj) ->
     case kz_json:get_ne_binary_value(Key, JObj) of
-        undefined -> undefined;
-        <<"nouser@",_/binary>> -> undefined;
+        'undefined' -> 'undefined';
+        <<"nouser@",_/binary>> -> 'undefined';
         Bin -> binary:split(Bin, <<"@">>)
     end.
 
