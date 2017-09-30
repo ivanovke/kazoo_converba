@@ -2,7 +2,7 @@
              [{applications,[gproc,kazoo,kazoo_amqp,kazoo_call,kazoo_config,
                              kazoo_data,kazoo_documents,kazoo_endpoint,
                              kazoo_hooks,kazoo_media,kazoo_stdlib,lager,
-                             webseq]},
+                             stdlib,webseq]},
               {description,"Konami - Map in-call DTMF sequences to call features"},
               {vsn,"4.0.0"},
               {modules,[]},

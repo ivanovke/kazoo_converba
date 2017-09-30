@@ -3,7 +3,7 @@
                              kazoo_config,kazoo_data,kazoo_documents,
                              kazoo_endpoint,kazoo_hooks,kazoo_ledgers,
                              kazoo_number_manager,kazoo_services,kazoo_stdlib,
-                             kazoo_transactions,lager]},
+                             kazoo_transactions,lager,stdlib]},
               {description,"Jonny 5 - Short circuit accounts exceeding call volume"},
               {vsn,"4.0.0"},
               {modules,[]},
