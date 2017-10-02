@@ -6,7 +6,6 @@
 %%% @contributors
 %%%-----------------------------------------------------------------------------
 -module(kazoo_dataconnection_error).
--behaviour(kz_data).
 
 -include("kz_data.hrl").
 
