@@ -67,7 +67,7 @@ handle_req(MaintJObj, _Props) ->
     handle_refresh(MaintJObj, kapi_maintenance:req_action(MaintJObj)).
 
 handle_refresh(MaintJObj, <<"refresh_views">>) ->
-    case kapps_util:get_master_account_db() of
+    case kz_config_accounts:master_account_db() of
         {'ok', MasterAccountDb} ->
             Ids = get_webhooks(MasterAccountDb),
             _ = kz_datamgr:del_docs(MasterAccountDb, Ids),
