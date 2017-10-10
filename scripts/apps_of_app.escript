@@ -40,6 +40,7 @@ list_remote_apps(App) ->
     io:format("~n~p~n", [lists:keysort(2, Apps)]).
 
 print_circles(Circles) ->
+    io:format("~n"),
     _ = lists:foldl(fun print_circle_fold/2, 1, Circles),
     'ok'.
 

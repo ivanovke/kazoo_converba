@@ -16,8 +16,8 @@
 
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 
-%% -define(DEBUG(_Fmt, _Args), 'ok').
--define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
+-define(DEBUG(_Fmt, _Args), 'ok').
+%% -define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
 
 -spec dot_file() -> 'ok' |
                     {'error', file:posix() | 'badarg' | 'terminated' | 'system_limit'}.
@@ -142,7 +142,7 @@ circles(App) ->
     CircularDeps = circular_deps(App, RemoteApps),
     [] =/= CircularDeps
         andalso ?DEBUG("app ~p has circular deps ~p~n", [App, CircularDeps]),
-    {App, CircularDeps}.
+    {App, lists:usort(CircularDeps)}.
 
 -spec remote_app_list(atom()) -> [atom()].
 remote_app_list(App) ->
