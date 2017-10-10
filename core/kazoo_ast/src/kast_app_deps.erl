@@ -16,8 +16,8 @@
 
 -include_lib("kazoo_ast/include/kz_ast.hrl").
 
--define(DEBUG(_Fmt, _Args), 'ok').
-%%-define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
+%% -define(DEBUG(_Fmt, _Args), 'ok').
+-define(DEBUG(Fmt, Args), io:format([$~, $p, $  | Fmt], [?LINE | Args])).
 
 -spec dot_file() -> 'ok' |
                     {'error', file:posix() | 'badarg' | 'terminated' | 'system_limit'}.
@@ -110,6 +110,7 @@ fix_app_deps(App, Missing, Unneeded) ->
 
 read_app_src(App) ->
     File = app_src_filename(App),
+    ?DEBUG("reading app file ~s~n", [File]),
     {'ok', [Config]} = file:consult(kz_term:to_list(File)),
     Config.
 

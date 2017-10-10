@@ -1,6 +1,5 @@
 {application,webseq,
-             [{applications,[gproc,kazoo,kazoo_data,kazoo_documents,
-                             kazoo_stdlib,lager,stdlib]},
+             [{applications,[gproc,kazoo,kazoo_data,kazoo_stdlib,lager]},
               {description,"Web Sequence Diagram Builder"},
               {vsn,"4.0.0"},
               {modules,[]},

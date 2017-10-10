@@ -1,5 +1,6 @@
 {application,amqp_leader,
-             [{applications,[kazoo,kazoo_amqp,kazoo_stdlib,lager,stdlib]},
+             [{applications,[kazoo,kazoo_amqp,kazoo_globals,kazoo_stdlib,
+                             lager]},
               {description,"a leader for AMQP"},
               {vsn,"1.0.0"},
               {modules,[]},

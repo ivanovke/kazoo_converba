@@ -1,7 +1,6 @@
 {application,kazoo_perf,
              [{applications,[eflame,kazoo,kazoo_amqp,kazoo_caches,kazoo_data,
-                             kazoo_documents,kazoo_stdlib,plists,
-                             runtime_tools,stdlib]},
+                             kazoo_stdlib,plists,runtime_tools]},
               {description,"Kazoo Peformance testing"},
               {vsn,"4.0.0"},
               {modules,[]},
