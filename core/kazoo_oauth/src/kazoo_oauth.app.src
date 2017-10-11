@@ -1,6 +1,6 @@
 {application,kazoo_oauth,
              [{applications,[kazoo,kazoo_data,kazoo_stdlib,kazoo_web,lager,
-                             public_key]},
+                             public_key,stdlib]},
               {description,"OAuth Utilities"},
               {vsn,"4.0.0"},
               {modules,[]},

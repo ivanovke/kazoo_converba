@@ -1,6 +1,6 @@
 {application,kazoo_attachments,
              [{applications,[crypto,erlazure,erlcloud,inets,kazoo,kazoo_auth,
-                             kazoo_data,kazoo_stdlib,kazoo_web,lager]},
+                             kazoo_data,kazoo_stdlib,kazoo_web,lager,stdlib]},
               {description,"Kazoo Attachments Access abstraction layer"},
               {id,"f226e705-6f9a-66e3-c5c8-6834d1f89571"},
               {vsn,"4.0.0"},

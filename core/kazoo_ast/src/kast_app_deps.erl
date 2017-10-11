@@ -76,10 +76,9 @@ fix_app_deps(App) ->
 -spec configured_dep_apps(atom()) -> [atom()].
 configured_dep_apps(App) ->
     {'application', App, Properties} = read_app_src(App),
-    lists:usort(props:get_value('applications', Properties) -- ['kernel','stdlib']).
+    lists:usort(props:get_value('applications', Properties)).
 
 fix_app_deps(App, Missing, Unneeded) ->
-
     ConfiguredApps = configured_dep_apps(App),
 
     ?DEBUG("app ~p~n conf: ~p~n missing ~p~n unneeded ~p~n"
@@ -96,16 +95,16 @@ fix_app_deps(App, Missing, Unneeded) ->
             ?DEBUG("no change needed~n", []),
             io:format(".");
         UpdatedApps ->
-            ?DEBUG("updated apps to ~p~n", [UpdatedApps]),
+            ?DEBUG("updated ~s apps to ~p~n", [App, UpdatedApps]),
             {'application', App, Properties} = read_app_src(App),
 
-            io:format("x"),
             write_app_src(App
                          ,{'application'
                           ,App
                           ,props:set_value('applications', UpdatedApps, Properties)
                           }
-                         )
+                         ),
+            io:format("x")
     end.
 
 read_app_src(App) ->

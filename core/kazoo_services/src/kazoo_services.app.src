@@ -4,7 +4,7 @@
                              kazoo_documents,kazoo_ips,kazoo_ledgers,
                              kazoo_maintenance,kazoo_modb,
                              kazoo_number_manager,kazoo_stdlib,
-                             kazoo_transactions,kazoo_web,lager,stdlib]},
+                             kazoo_transactions,kazoo_web,lager,tasks]},
               {description,"Kazoo Services provides billing and service limit support"},
               {vsn,"4.0.0"},
               {modules,[]},

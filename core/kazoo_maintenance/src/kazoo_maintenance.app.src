@@ -1,6 +1,6 @@
 {application,kazoo_maintenance,
              [{applications,[kazoo,kazoo_amqp,kazoo_call,kazoo_data,
-                             kazoo_oauth,kazoo_stdlib,lager]},
+                             kazoo_oauth,kazoo_stdlib,lager,stdlib]},
               {description,"Kazoo Maintenance Workers"},
               {vsn,"4.0.0"},
               {modules,[]},

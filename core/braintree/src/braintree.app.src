@@ -1,7 +1,7 @@
 {application,braintree,
              [{applications,[kazoo,kazoo_config,kazoo_data,kazoo_stdlib,
                              kazoo_transactions,kazoo_web,kazoo_xml,lager,
-                             xmerl]},
+                             stdlib,xmerl]},
               {description,"Braintree API interactions"},
               {vsn,"4.0.0"},
               {modules,[]},
