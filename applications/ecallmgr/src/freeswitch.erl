@@ -7,6 +7,7 @@
 
 -export([version/1
         ,version/2
+        ,release/1
         ]).
 -export([noevents/1]).
 -export([close/1]).
@@ -47,7 +48,8 @@
 
 -define(TIMEOUT, 5 * ?MILLISECONDS_IN_SECOND).
 
--define(FS_MODULE, mod_kazoo).
+-define(FS_MODULE, (mod(Node))).
+
 
 -type fs_api_ok() :: mod_kazoo:fs_api_ok().
 -type fs_api_error():: mod_kazoo:fs_api_error().
@@ -57,10 +59,19 @@
              ,fs_api_return/0
              ]).
 
+-spec mod(atom()) -> atom().
+mod(_) -> 'mod_kazoo'.
+
 -spec version(atom()) -> fs_api_return().
-version(Node) -> ?FS_MODULE:version(Node).
+version(Node)
+  when not is_atom(Node) ->
+    version(kz_term:to_atom(Node, 'true'));
+version(Node)-> ?FS_MODULE:version(Node).
 
 -spec version(atom(), pos_integer()) -> fs_api_return().
+version(Node, Timeout)
+  when not is_atom(Node) ->
+    version(kz_term:to_atom(Node, 'true'), Timeout);
 version(Node, Timeout) -> ?FS_MODULE:version(Node, Timeout).
 
 -spec noevents(atom()) -> fs_api_return().
@@ -159,3 +170,18 @@ config(Node, Section) ->
                     {'ok', binary()} |
                     {'error', 'timeout' | 'exception' | binary()}.
 bgapi4(Node, Cmd, Args, Fun, CallBackParams) -> ?FS_MODULE:bgapi4(Node, Cmd, Args, Fun, CallBackParams).
+
+-spec release(atom() | ne_binary()) -> {ne_binary(), ne_binary(), ne_binary()} | fs_api_return().
+release(Node)
+  when is_atom(Node) ->
+    case version(Node) of
+        {ok, Version} -> release(Version);
+        Else -> Else
+    end;
+release(Version)
+  when is_binary(Version) ->
+    case binary:split(Version, <<" ">>, ['global']) of
+        [Module, Bundle, Release] -> {Module, Bundle, Release};
+        [Module, Release] -> {Module, <<"community">>, Release};
+        [Version] -> release(kz_term:to_atom(Version, 'true'))
+    end.
