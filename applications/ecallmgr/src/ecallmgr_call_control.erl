@@ -367,6 +367,8 @@ handle_info(?LOOPBACK_BOWOUT_MSG(Node, Props), #state{call_id=ResigningUUID
             lager:debug("ignoring bowout for ~s", [_UUID]),
             {'noreply', State}
     end;
+handle_info({switch_reply, _}, State) ->
+    {'noreply', State};
 handle_info(_Msg, State) ->
     lager:debug("unhandled message: ~p", [_Msg]),
     {'noreply', State}.
@@ -435,6 +437,18 @@ call_control_ready(#state{call_id=CallId
                          ,fetch_id=FetchId
                          ,node=Node
                          }) ->
+    App = <<"kz_multiset">>,
+    Arg = list_to_binary(["^^;Call-Control-Queue="
+                         ,Q
+                         ,";Call-Control-PID="
+                         ,kz_term:to_binary(self())
+                         ]),    
+    Command = [{<<"call-command">>, <<"execute">>}
+              ,{<<"execute-app-name">>, App}
+              ,{<<"execute-app-arg">>, Arg}
+              ],
+    freeswitch:cast_cmd(Node, CallId, Command),
+    
     Win = [{<<"Msg-ID">>, CallId}
           ,{<<"Reply-To-PID">>, ControllerP}
           ,{<<"Call-ID">>, CallId}
@@ -801,6 +815,16 @@ handle_dialplan(JObj, #state{call_id=CallId
                                    ,keep_alive_ref=get_keep_alive_ref(State)
                                    ,msg_id=MsgId
                                    };
+                 {'error', Error} ->
+                        lager:debug("command '~s' returned an error ~p", [AppName, Error]),
+                        maybe_send_error_resp(AppName, CallId, Cmd, Error),
+                        self() ! {'force_queue_advance', CallId},
+                        State#state{command_q=NewCmdQ1
+                                   ,current_app=AppName
+                                   ,current_cmd=Cmd
+                                   ,keep_alive_ref=get_keep_alive_ref(State)
+                                   ,msg_id=MsgId
+                                   };
                 'ok' ->
                         self() ! {'force_queue_advance', CallId},
                         State#state{command_q=NewCmdQ1
@@ -1100,13 +1124,18 @@ which_call_leg(CmdLeg, OtherLegs, CallId) ->
 
 -spec maybe_send_error_resp(kz_term:ne_binary(), kz_json:object()) -> 'ok'.
 maybe_send_error_resp(CallId, Cmd) ->
-    maybe_send_error_resp(CallId, Cmd, kapi_dialplan:application_name(Cmd)).
+    AppName = kapi_dialplan:application_name(Cmd),
+    Msg = <<"Could not execute dialplan action: ", AppName/binary>>,
+    maybe_send_error_resp(CallId, Cmd, Msg).
 
 -spec maybe_send_error_resp(kz_term:ne_binary(), kz_json:object(), kz_term:ne_binary()) -> 'ok'.
-maybe_send_error_resp(_CallId, _Cmd, <<"hangup">>) -> 'ok';
-maybe_send_error_resp(CallId, Cmd, AppName) ->
-    Msg = <<"Could not execute dialplan action: ", AppName/binary>>,
-    send_error_resp(CallId, Cmd, Msg).
+maybe_send_error_resp(CallId, Cmd, Msg) ->
+    AppName = kapi_dialplan:application_name(Cmd),
+    maybe_send_error_resp(AppName, CallId, Cmd, Msg).
+
+-spec maybe_send_error_resp(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object(), kz_term:ne_binary()) -> 'ok'.
+maybe_send_error_resp(<<"hangup">>, _CallId, _Cmd, _Msg) -> 'ok';
+maybe_send_error_resp(_, CallId, Cmd, Msg) -> send_error_resp(CallId, Cmd, Msg).
 
 -spec send_error_resp(kz_term:ne_binary(), kz_json:object()) -> 'ok'.
 send_error_resp(CallId, Cmd) ->
@@ -1123,23 +1152,23 @@ send_error_resp(CallId, Cmd, Msg) ->
     end.
 
 -spec send_error_resp(kz_term:ne_binary(), kz_json:object(), kz_term:ne_binary(), kz_term:api_object()) -> 'ok'.
-send_error_resp(CallId, Cmd, Msg, Channel) ->
-    CCVs = error_ccvs(Channel),
+send_error_resp(CallId, Cmd, Msg, _Channel) ->
+%%    CCVs = error_ccvs(Channel),
 
     Resp = [{<<"Msg-ID">>, kz_api:msg_id(Cmd)}
            ,{<<"Error-Message">>, Msg}
            ,{<<"Request">>, Cmd}
            ,{<<"Call-ID">>, CallId}
-           ,{<<"Custom-Channel-Vars">>, CCVs}
+%%           ,{<<"Custom-Channel-Vars">>, CCVs}
             | kz_api:default_headers(<<>>, <<"error">>, <<"dialplan">>, ?APP_NAME, ?APP_VERSION)
            ],
     lager:debug("sending execution error: ~p", [Resp]),
     kapi_dialplan:publish_error(CallId, Resp).
 
--spec error_ccvs(kz_term:api_object()) -> kz_term:api_object().
-error_ccvs('undefined') -> 'undefined';
-error_ccvs(Channel) ->
-    kz_json:from_list(ecallmgr_fs_channel:channel_ccvs(Channel)).
+%% -spec error_ccvs(api_object()) -> api_object().
+%% error_ccvs('undefined') -> 'undefined';
+%% error_ccvs(Channel) ->
+%%     kz_json:from_list(ecallmgr_fs_channel:channel_ccvs(Channel)).
 
 %%------------------------------------------------------------------------------
 %% @doc
