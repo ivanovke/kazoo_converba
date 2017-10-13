@@ -445,7 +445,10 @@ db_create(DbName) ->
 
 -spec db_create(kz_term:text(), kzs_db:db_create_options()) -> boolean().
 db_create(DbName, Options) when ?VALID_DBNAME(DbName) ->
-    kzs_db:db_create(kzs_plan:plan(DbName), DbName, Options);
+    case kzs_db:db_create(kzs_plan:plan(DbName), DbName, Options) of
+        'false' -> 'false';
+        _ -> 'true'
+    end;
 db_create(DbName, Options) ->
     case maybe_convert_dbname(DbName) of
         {'ok', Db} -> db_create(Db, Options);
