@@ -12,7 +12,7 @@
                              kazoo_speech,kazoo_stdlib,kazoo_tasks,
                              kazoo_templates,kazoo_token_buckets,
                              kazoo_transactions,kazoo_voicemail,kazoo_web,
-                             lager,ssl,stdlib,tasks,tools]},
+                             lager,ssl,stdlib,tools]},
               {description,"Crossbar - REST Interface to the stars"},
               {vsn,"4.0.0"},
               {modules,[]},
