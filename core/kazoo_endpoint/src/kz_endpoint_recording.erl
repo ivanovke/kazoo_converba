@@ -209,9 +209,7 @@ get_timelimit(TL) when is_integer(TL) ->
         'true' -> TL;
         'false' when Max > 0 -> Max;
         'false' -> Max
-    end;
-get_timelimit(Data) ->
-    get_timelimit(kz_json:get_integer_value(<<"time_limit">>, Data)).
+    end.
 
 -spec get_format(kz_term:api_ne_binary()) -> kz_term:ne_binary().
 get_format('undefined') -> kz_media_config:call_recording_extension();
