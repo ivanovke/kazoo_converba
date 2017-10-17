@@ -105,11 +105,15 @@ app_version(JObj) ->
 node(JObj) ->
     kz_json:get_atom_value(?KEY_NODE, JObj).
 
--spec msg_id(kz_term:api_terms()) -> kz_term:api_binary().
-msg_id(Props) when is_list(Props) ->
-    props:get_value(?KEY_MSG_ID, Props);
-msg_id(JObj) ->
-    kz_json:get_value(?KEY_MSG_ID, JObj).
+-spec msg_id(kz_term:api_terms()) -> kz_term:api_ne_binary().
+-spec msg_id(kz_term:api_terms(), Default) -> kz_term:ne_binary() | Default.
+msg_id(API) ->
+    msg_id(API, 'undefined').
+
+msg_id(Props, Default) when is_list(Props) ->
+    props:get_value(?KEY_MSG_ID, Props, Default);
+msg_id(JObj, Default) ->
+    kz_json:get_value(?KEY_MSG_ID, JObj, Default).
 
 -spec msg_reply_id(kz_term:api_terms()) -> kz_term:api_binary().
 msg_reply_id(Props) when is_list(Props) ->
