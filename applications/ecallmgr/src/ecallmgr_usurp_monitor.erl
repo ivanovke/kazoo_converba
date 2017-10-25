@@ -199,6 +199,6 @@ handle_unregister(Pid, #{pids := Pids} = State) ->
 
 -spec unregister(cache(), state()) -> state().
 unregister(#cache{}=Cache, #{calls := Calls, pids := Pids} = State) ->
-    _ = ets:delete(Calls, Cache),
-    _ = ets:delete(Pids, Cache),
+    _ = ets:delete_object(Calls, Cache),
+    _ = ets:delete_object(Pids, Cache),
     State.
