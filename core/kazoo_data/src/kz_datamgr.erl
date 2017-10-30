@@ -184,6 +184,7 @@ revise_docs_from_folder(DbName, App, Folder, Sleep) ->
 
         ValidDir ->
             Files = filelib:wildcard([ValidDir, "/couchdb/", kz_term:to_list(Folder), "/*.json"]),
+            lager:debug("refreshing ~B documents in db ~s for ~s", [length(Files), DbName, App]),
             do_revise_docs_from_folder(DbName, Sleep, Files)
     end.
 
