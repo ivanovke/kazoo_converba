@@ -1320,7 +1320,7 @@ transfer(Node, UUID, <<"blind">>, TransferTo, JObj) ->
             ,{<<"SIP-Referred-By">>, transfer_referred(UUID, TransferLeg)}
             ]),
     Args = kz_binary:join(ecallmgr_util:process_fs_kv(Node, TargetUUID, KVs, 'set'), <<";">>),
-    [{<<"kz_uuid_setvar_multi">>, list_to_binary([TargetUUID, " ", Args])}
+    [{<<"kz_uuid_multiset">>, list_to_binary([TargetUUID, " ^^;", Args])}
     ,{<<"blind_xfer">>, list_to_binary([TransferLeg, " ", TransferTo, <<" XML ">>, transfer_context(JObj)])}
     ].
 
