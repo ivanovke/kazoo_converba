@@ -43,6 +43,8 @@
         ,bgapi4/5
         ]).
 
+-export([sync_channel/2]).
+
 -include("ecallmgr.hrl").
 
 -define(TIMEOUT, 5 * ?MILLISECONDS_IN_SECOND).
@@ -428,3 +430,10 @@ cast_cmd(Node, UUID, Command) ->
 -spec cast_cmds(atom(), ne_binary(), list()) -> fs_api_return().
 cast_cmds(Node, UUID, Commands) ->
     gen_server:cast({'mod_kazoo', Node}, {'commands', UUID, Commands}).
+
+-spec sync_channel(atom(), ne_binary()) -> 'ok'.
+sync_channel(Node, UUID) ->
+    Headers = [{<<"Call-ID">>, UUID}
+              ,{<<"Event-PID">>, kz_term:to_binary(self())}
+              ],
+    gen_server:cast({'mod_kazoo', Node}, {'sendevent', 'CUSTOM',  <<"CHANNEL_SYNC">>, Headers}).

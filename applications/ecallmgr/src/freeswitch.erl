@@ -45,6 +45,7 @@
 -export([config/1, config/2
         ,bgapi4/5
         ]).
+-export([sync_channel/2]).
 
 -include("ecallmgr.hrl").
 
@@ -187,3 +188,7 @@ release(Version)
         [Module, Release] -> {Module, <<"community">>, Release};
         [Version] -> release(kz_term:to_atom(Version, 'true'))
     end.
+
+-spec sync_channel(atom(), ne_binary()) -> 'ok'.
+sync_channel(Node, UUID) -> ?FS_MODULE:sync_channel(Node, UUID).
+
