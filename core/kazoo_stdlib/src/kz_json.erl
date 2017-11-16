@@ -112,6 +112,7 @@
 
 -export_type([json_proplist/0
              ,object/0, objects/0
+             ,api_object/0, api_objects/0
              ,flat_object/0, flat_objects/0
              ,path/0, paths/0
              ,key/0, keys/0
@@ -857,38 +858,12 @@ get_first_defined([H|T], JObj, Default) ->
 get_value(Key, JObj) ->
     get_value(Key, JObj, 'undefined').
 
-get_value([Key|Ks], L, Default) when is_list(L) ->
-    try
-        get_value1(Ks, lists:nth(kz_term:to_integer(Key), L), Default)
-    catch
-        'error':'badarg' -> Default;
-        'error':'badarith' -> Default;
-        'error':'function_clause' -> Default
-    end;
-get_value(K, Doc, Default) ->
-    get_value1(K, Doc, Default).
-
--spec get_value1(path(), api_object() | objects(), Default) ->
-                        json_term() | Default.
-get_value1([], 'undefined', Default) -> Default;
-get_value1([], JObj, _Default) -> JObj;
-get_value1(Key, JObj, Default) when not is_list(Key)->
-    get_value1([Key], JObj, Default);
-get_value1([K|Ks], JObjs, Default) when is_list(JObjs) ->
-    try lists:nth(kz_term:to_integer(K), JObjs) of
-        'undefined' -> Default;
-        JObj1 -> get_value1(Ks, JObj1, Default)
-    catch
-        _:_ -> Default
-    end;
-get_value1([K|Ks], ?JSON_WRAPPER(Props), Default) ->
-    get_value1(Ks, props:get_value(K, Props), Default);
-get_value1(_, undefined, Default) ->
-    Default;
-get_value1(_, ?JSON_WRAPPER(_), Default) ->
-    Default;
-get_value1(_K, _V, _D) ->
-    erlang:error(badarg).
+get_value(Key, #{}=JObj, Default) ->
+    kz_json_map:get_value(Key, JObj, Default);
+get_value(Key, [#{}|_]=JObjs, Default) ->
+    kz_json_map:get_value(Key, JObjs, Default);
+get_value(Key, JObj, Default) ->
+    kz_json_tuple:get_value(Key, JObj, Default).
 
 -spec values(object()) -> json_terms().
 -spec values(path(), object()) -> json_terms().
@@ -948,67 +923,12 @@ insert_value_fold({Key, Value}, JObj) ->
     insert_value(Key, Value, JObj).
 
 -spec set_value(path(), json_term() | 'null', object() | objects()) -> object() | objects().
-set_value(Keys, Value, JObj) when is_list(Keys) -> set_value1(Keys, Value, JObj);
-set_value(Key, Value, JObj) -> set_value1([Key], Value, JObj).
-
--spec set_value1(keys(), json_term() | 'null', object() | objects()) -> object() | objects().
-set_value1([Key|_]=Keys, Value, []) when not is_integer(Key) ->
-    set_value1(Keys, Value, new());
-set_value1([Key|T], Value, JObjs) when is_list(JObjs) ->
-    Key1 = kz_term:to_integer(Key),
-    case Key1 > length(JObjs) of
-        %% The object index does not exist so try to add a new one to the list
-        'true' ->
-            try
-                %% Create a new object with the next key as a property
-                JObjs ++ [set_value1(T, Value, set_value1([hd(T)], [], new()))]
-            catch
-                %% There are no more keys in the list, add it unless not an object
-                _:_ ->
-                    try
-                        JObjs ++ [Value]
-                    catch _:_ -> erlang:error('badarg')
-                    end
-            end;
-        %% The object index exists so iterate into the object and update it
-        'false' ->
-            element(1, lists:mapfoldl(fun(E, {Pos, Pos}) ->
-                                              {set_value1(T, Value, E), {Pos + 1, Pos}};
-                                         (E, {Pos, Idx}) ->
-                                              {E, {Pos + 1, Idx}}
-                                      end, {1, Key1}, JObjs))
-    end;
-
-%% Figure out how to set the current key in an existing object
-set_value1([_|_]=Keys, 'null', JObj) -> delete_key(Keys, JObj);
-set_value1([_|_]=Keys, 'undefined', JObj) -> delete_key(Keys, JObj);
-set_value1([Key1|T], Value, ?JSON_WRAPPER(Props)) ->
-    case lists:keyfind(Key1, 1, Props) of
-        {Key1, ?JSON_WRAPPER(_)=V1} ->
-            %% Replace or add a property in an object in the object at this key
-            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, set_value1(T, Value, V1)}));
-        {Key1, V1} when is_list(V1) ->
-            %% Replace or add a member in an array in the object at this key
-            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, set_value1(T, Value, V1)}));
-        {Key1, _} when T == [] ->
-            %% This is the final key and the objects property should just be replaced
-            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, Value}));
-        {Key1, _} ->
-            %% This is not the final key and the objects property should just be
-            %% replaced so continue looping the keys creating the necessary json as we go
-            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, set_value1(T, Value, new())}));
-        'false' when T == [] ->
-            %% This is the final key and doesnt already exist, just add it to this
-            %% objects existing properties
-            ?JSON_WRAPPER(Props ++ [{Key1, Value}]);
-        'false' ->
-            %% This is not the final key and this object does not have this key
-            %% so continue looping the keys creating the necessary json as we go
-            ?JSON_WRAPPER(Props ++ [{Key1, set_value1(T, Value, new())}])
-    end;
-
-%% There are no more keys to iterate through! Override the value here...
-set_value1([], Value, _JObj) -> Value.
+set_value(Key, Value, #{}=JObj) ->
+    kz_json_map:set_value(Key, Value, JObj);
+set_value(Key, Value, [#{}|_]=JObjs) ->
+    kz_json_map:set_value(Key, Value, JObjs);
+set_value(Key, Value, JObj) ->
+    kz_json_tuple:set_value(Key, Value, JObj).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -1032,14 +952,14 @@ delete_key(Key, JObj) ->
 %%    'prune' -> {[]}
 %% @end
 %%--------------------------------------------------------------------
-delete_key(Key, JObj, 'prune') when not is_list(Key) ->
-    prune([Key], JObj);
-delete_key(Key, JObj, 'no_prune') when not is_list(Key) ->
-    no_prune([Key], JObj);
-delete_key(Keys, JObj, 'prune') ->
-    prune(Keys, JObj);
-delete_key(Keys, JObj, 'no_prune') ->
-    no_prune(Keys, JObj).
+delete_key(Key, JObj, PruneOrNot) when not is_list(Key) ->
+    delete_key([Key], JObj, PruneOrNot);
+delete_key(Key, #{}=JObj, PruneOrNot) ->
+    kz_json_map:delete_key(Key, JObj, PruneOrNot);
+delete_key(Key, [#{}|_]=JObj, PruneOrNot) ->
+        kz_json_map:delete_key(Key, JObj, PruneOrNot);
+delete_key(Key, JObj, PruneOrNot) ->
+    kz_json_tuple:delete_key(Key, JObj, PruneOrNot).
 
 %%--------------------------------------------------------------------
 %% @public
@@ -1062,83 +982,6 @@ prune_keys(Keys, JObj) when is_list(Keys) ->
                ,JObj
                ,Keys
                ).
-
--spec prune(keys(), object() | objects()) -> object() | objects().
-prune([], JObj) -> JObj;
-prune([K], JObj) when not is_list(JObj) ->
-    case lists:keydelete(K, 1, to_proplist(JObj)) of
-        [] -> new();
-        L -> from_list(L)
-    end;
-prune([K|T], JObj) when not is_list(JObj) ->
-    case get_value(K, JObj) of
-        'undefined' -> JObj;
-        ?JSON_WRAPPER(_)=V -> prune_tail(K, T, JObj, V);
-        V when is_list(V) -> prune_tail(K, T, JObj, V);
-        _ -> erlang:error('badarg')
-    end;
-prune(_, []) -> [];
-prune([K|T], [_|_]=JObjs) ->
-    V = lists:nth(kz_term:to_integer(K), JObjs),
-    case prune(T, V) of
-        ?EMPTY_JSON_OBJECT -> replace_in_list(K, 'undefined', JObjs, []);
-        V -> replace_in_list(K, 'undefined', JObjs, []);
-        V1 -> replace_in_list(K, V1, JObjs, [])
-    end.
-
--spec prune_tail(key(), keys(), object() | objects(), object() | objects()) ->
-                        object() | objects().
-prune_tail(K, T, JObj, V) ->
-    case prune(T, V) of
-        ?EMPTY_JSON_OBJECT -> from_list(lists:keydelete(K, 1, to_proplist(JObj)));
-        [] -> from_list(lists:keydelete(K, 1, to_proplist(JObj)));
-        V1 -> from_list([{K, V1} | lists:keydelete(K, 1, to_proplist(JObj))])
-    end.
-
--spec no_prune(keys(), object() | objects()) -> object() | objects().
-no_prune([], ?JSON_WRAPPER(_)=JObj) -> JObj;
-no_prune([K], ?JSON_WRAPPER(Props)) ->
-    case lists:keydelete(K, 1, Props) of
-        [] -> new();
-        L -> from_list(L)
-    end;
-no_prune([K|T], Array) when is_list(Array), is_integer(K) ->
-    {Less, [V|More]} = lists:split(K-1, Array),
-    case {is_json_object(V), T, V} of
-        {'true', [_|_]=Keys, JObj} ->
-            Less ++ [no_prune(Keys, JObj)] ++ More;
-        {'false', [_|_]=Keys, Arr} when is_list(Arr) ->
-            Less ++ 'no_prune'(Keys, Arr) ++ More;
-        {_,_,_} -> Less ++ More
-    end;
-no_prune([K|T], ?JSON_WRAPPER(_)=JObj) ->
-    case get_value(K, JObj) of
-        'undefined' -> JObj;
-        ?JSON_WRAPPER(_)=V ->
-            from_list([{K, no_prune(T, V)} | lists:keydelete(K, 1, to_proplist(JObj))]);
-        V when is_list(V) ->
-            from_list([{K, no_prune(T, V)} | lists:keydelete(K, 1, to_proplist(JObj))]);
-        _ -> erlang:error('badarg')
-    end;
-no_prune(_, []) -> [];
-no_prune([K|T], [_|_]=JObjs) when is_integer(K) ->
-    V = lists:nth(kz_term:to_integer(K), JObjs),
-    V1 = no_prune(T, V),
-    case V1 =:= V of
-        'true' ->
-            replace_in_list(K, 'undefined', JObjs, []);
-        'false' ->
-            replace_in_list(K, V1, JObjs, [])
-    end.
-
-replace_in_list(N, _, _, _) when N < 1 ->
-    erlang:error('badarg');
-replace_in_list(1, 'undefined', [_OldV | Vs], Acc) ->
-    lists:reverse(Acc) ++ Vs;
-replace_in_list(1, V1, [_OldV | Vs], Acc) ->
-    lists:reverse([V1 | Acc]) ++ Vs;
-replace_in_list(N, V1, [V | Vs], Acc) ->
-    replace_in_list(N-1, V1, Vs, [V | Acc]).
 
 %%--------------------------------------------------------------------
 %% @doc

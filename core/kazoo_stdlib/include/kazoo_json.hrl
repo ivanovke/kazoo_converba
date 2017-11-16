@@ -2,17 +2,6 @@
 
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
 
-%% How do we wrap proplists to denote they're json objects?
-%% -define(JSON_WRAPPER(Proplist), {struct, Proplist}).
-%% -define(IS_JSON_GUARD(Obj), is_tuple(Obj)
-%%         andalso element(1, Obj) =:= 'struct'
-%%         andalso is_list(element(2, Obj))
-%%        ).
-
--define(JSON_WRAPPER(Proplist), {Proplist}).
-
--define(EMPTY_JSON_OBJECT, ?JSON_WRAPPER([])).
-
 -type non_null_json_term() :: boolean()
                             | json_string() | <<>>
                             | json_number()
@@ -32,8 +21,11 @@
 -type json_string() :: ne_binary() | atom().
 -type json_number() :: integer() | float().
 
--type object() :: ?JSON_WRAPPER(json_proplist()) | ?EMPTY_JSON_OBJECT.
+-type object() ::  kz_json_tuple:object() | kz_json_map:object().
 -type objects() :: [object()].
+
+-type api_object() :: object() | 'undefined'.
+-type api_objects() :: objects() | 'undefined'.
 
 -type flat_proplist() :: [{keys(), flat_json_term()}].
 -type flat_object() :: ?JSON_WRAPPER(flat_proplist()).
