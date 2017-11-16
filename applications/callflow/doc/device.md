@@ -16,7 +16,7 @@ Key | Description | Type | Default | Required
 `dial_strategy` | Dial strategy for the device | `string('simultaneous' | 'single')` | `simultaneous` | `false`
 `id` | Device ID | `string()` |   | `false`
 `static_invite` | Override the SIP Username | `string()` |   | `false`
-`strategy` |   | `string()` | `simultaneous` | `false`
+`strategy` | Ringing strategy for the endpoint | `string('simultaneous' | 'single')` | `simultaneous` | `false`
 `suppress_clid` | Suppress sending caller ID | `boolean()` |   | `false`
 `timeout` | Time, in seconds, to wait for device to bridge | `integer()` | `0` | `false`
 
