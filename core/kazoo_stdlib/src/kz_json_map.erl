@@ -8,7 +8,7 @@
 
 -export_type([object/0, objects/0]).
 
--type object() :: #{json_string() => json_value()}.
+-type object() :: #{kz_json:json_string() => kz_json:json_value()}.
 -type objects() :: [object()].
 
 -type api_object() :: object() | 'undefined'.
@@ -46,7 +46,7 @@ get_value1([K|Ks], JObjs, Default) when is_list(JObjs) ->
         _:_ -> Default
     end;
 get_value1([K|Ks], #{}=JObj, Default) ->
-    get_value1(Ks, maps:get(K, Props, 'undefined'), Default);
+    get_value1(Ks, maps:get(K, JObj, 'undefined'), Default);
 get_value1(_, 'undefined', Default) ->
     Default;
 get_value1(_, #{}, Default) ->
@@ -94,30 +94,28 @@ set_value1([Key1|T], Value, #{}=JObj) ->
     case maps:get(Key1, JObj, 'undefined') of
         {Key1, #{}=V1} ->
             %% Replace or add a property in an object in the object at this key
-            maps:put(
-              ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, set_value1(T, Value, V1)}));
-                  {Key1, V1} when is_list(V1) ->
-                            %% Replace or add a member in an array in the object at this key
-                            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, set_value1(T, Value, V1)}));
-                  {Key1, _} when T == [] ->
-                            %% This is the final key and the objects property should just be replaced
-                            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, Value}));
-                  {Key1, _} ->
-                            %% This is not the final key and the objects property should just be
-                            %% replaced so continue looping the keys creating the necessary json as we go
-                            ?JSON_WRAPPER(lists:keyreplace(Key1, 1, Props, {Key1, set_value1(T, Value, new())}));
-                  'false' when T == [] ->
-                            %% This is the final key and doesnt already exist, just add it to this
-                            %% objects existing properties
-                            ?JSON_WRAPPER(Props ++ [{Key1, Value}]);
-                  'false' ->
-                            %% This is not the final key and this object does not have this key
-                            %% so continue looping the keys creating the necessary json as we go
-                            ?JSON_WRAPPER(Props ++ [{Key1, set_value1(T, Value, new())}])
-                    end;
-
-                  %% There are no more keys to iterate through! Override the value here...
-                  set_value1([], Value, _JObj) -> Value.
+            maps:put(Key1, set_value1(T, Value, V1), JObj);
+        {Key1, V1} when is_list(V1) ->
+            %% Replace or add a member in an array in the object at this key
+            maps:put(Key1, set_value1(T, Value, V1), JObj);
+        {Key1, _} when T == [] ->
+            %% This is the final key and the objects property should just be replaced
+            maps:put(Key1, Value, JObj);
+        {Key1, _} ->
+            %% This is not the final key and the objects property should just be
+            %% replaced so continue looping the keys creating the necessary json as we go
+            maps:put(Key1, set_value1(T, Value, new()), JObj);
+        'false' when T == [] ->
+            %% This is the final key and doesnt already exist, just add it to this
+            %% objects existing properties
+            maps:put(Key1, Value, JObj);
+        'false' ->
+            %% This is not the final key and this object does not have this key
+            %% so continue looping the keys creating the necessary json as we go
+            maps:put(Key1, set_value1(T, Value, new()), JObj)
+    end;
+%% There are no more keys to iterate through! Override the value here...
+set_value1([], Value, _JObj) -> Value.
 
 -spec delete_key(kz_json:path(), object() | objects()) -> object() | objects().
 -spec delete_key(kz_json:path(), object() | objects(), 'prune' | 'no_prune') -> object() | objects().
@@ -132,15 +130,12 @@ delete_key(Keys, JObj, 'no_prune') ->
 
 -spec prune(kz_json:keys(), object() | objects()) -> object() | objects().
 prune([], JObj) -> JObj;
-prune([K], ?JSON_WRAPPER(JProps)) ->
-    case lists:keydelete(K, 1, JProps) of
-        [] -> new();
-        L -> ?JSON_WRAPPER(L)
-    end;
-prune([K|T], ?JSON_WRAPPER(_)=JObj) ->
+prune([K], #{}=JObj) ->
+    maps:remove(K, JObj);
+prune([K|T], #{}=JObj) ->
     case get_value(K, JObj) of
         'undefined' -> JObj;
-        ?JSON_WRAPPER(_)=V -> prune_tail(K, T, JObj, V);
+        #{}=V -> prune_tail(K, T, JObj, V);
         V when is_list(V) -> prune_tail(K, T, JObj, V);
         _ -> erlang:error('badarg')
     end;
@@ -148,43 +143,40 @@ prune(_, []) -> [];
 prune([K|T], [_|_]=JObjs) ->
     V = lists:nth(kz_term:to_integer(K), JObjs),
     case prune(T, V) of
-        ?EMPTY_JSON_OBJECT -> replace_in_list(K, 'undefined', JObjs, []);
+        #{}=M when 0 =:= map_size(M) -> replace_in_list(K, 'undefined', JObjs, []);
         V -> replace_in_list(K, 'undefined', JObjs, []);
         V1 -> replace_in_list(K, V1, JObjs, [])
     end.
 
 -spec prune_tail(kz_json:key(), kz_json:keys(), object() | objects(), object() | objects()) ->
                         object() | objects().
-prune_tail(K, T, ?JSON_WRAPPER(Props), V) ->
+prune_tail(K, T, #{}=JObj, V) ->
     case prune(T, V) of
-        ?EMPTY_JSON_OBJECT -> ?JSON_WRAPPER(lists:keydelete(K, 1, Props));
-        [] -> ?JSON_WRAPPER(lists:keydelete(K, 1, Props));
-        V1 -> ?JSON_WRAPPER([{K, V1} | lists:keydelete(K, 1, Props)])
+        #{}=E when 0 =:= map_size(E) -> maps:remove(K, JObj);
+        [] -> maps:remove(K, JObj);
+        V1 -> maps:put(K, V1, JObj)
     end.
 
 -spec no_prune(kz_json:keys(), object() | objects()) -> object() | objects().
-no_prune([], ?JSON_WRAPPER(_)=JObj) -> JObj;
-no_prune([K], ?JSON_WRAPPER(Props)) ->
-    case lists:keydelete(K, 1, Props) of
-        [] -> new();
-        L -> ?JSON_WRAPPER(L)
-    end;
+no_prune([], #{}=JObj) -> JObj;
+no_prune([K], #{}=JObj) ->
+    maps:remove(K, JObj);
 no_prune([K|T], Array) when is_list(Array), is_integer(K) ->
     {Less, [V|More]} = lists:split(K-1, Array),
     case {T, V} of
-        {[_|_]=Keys, ?JSON_WRAPPER(_)=JObj} ->
+        {[_|_]=Keys, #{}=JObj} ->
             Less ++ [no_prune(Keys, JObj)] ++ More;
         {[_|_]=Keys, Arr} when is_list(Arr) ->
             Less ++ 'no_prune'(Keys, Arr) ++ More;
         {_,_} -> Less ++ More
     end;
-no_prune([K|T], ?JSON_WRAPPER(Props)=JObj) ->
+no_prune([K|T], #{}=JObj) ->
     case get_value(K, JObj) of
         'undefined' -> JObj;
-        ?JSON_WRAPPER(_)=V ->
-            ?JSON_WRAPPER([{K, no_prune(T, V)} | lists:keydelete(K, 1, Props)]);
+        #{}=V ->
+            maps:put(K, no_prune(T, V), JObj);
         V when is_list(V) ->
-            ?JSON_WRAPPER([{K, no_prune(T, V)} | lists:keydelete(K, 1, Props)]);
+            maps:put(K, no_prune(T, V), JObj);
         _ -> erlang:error('badarg')
     end;
 no_prune(_, []) -> [];
