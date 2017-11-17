@@ -393,7 +393,7 @@
                  ,channels = 0 :: non_neg_integer() | '_'
                  ,registrations = 0 :: non_neg_integer() | '_'
                  ,globals = [] :: kz_proplist() | '$1' | '_'
-                 ,node_info :: api_object() | '_'
+                 ,node_info :: kz_json:api_object() | '_'
                  ,roles = [] :: kz_proplist() | '$1' | '_'
                  }).
 
