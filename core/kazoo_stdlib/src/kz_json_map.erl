@@ -4,6 +4,13 @@
         ,set_value/3
         ,delete_key/3
         ,new/0
+        ,from_list/1
+        ,to_proplist/1
+
+        ,is_empty/1
+        ,is_json_object/1
+
+        ,merge/3
         ]).
 
 -export_type([object/0, objects/0]).
@@ -52,7 +59,7 @@ get_value1(_, 'undefined', Default) ->
 get_value1(_, #{}, Default) ->
     Default;
 get_value1(_K, _V, _D) ->
-    erlang:error(badarg).
+    erlang:error('badarg').
 
 -spec set_value(kz_json:path(), kz_json:json_term() | 'null', object() | objects()) ->
                        object() | objects().
@@ -92,26 +99,26 @@ set_value1([_|_]=Keys, 'null', JObj) -> delete_key(Keys, JObj);
 set_value1([_|_]=Keys, 'undefined', JObj) -> delete_key(Keys, JObj);
 set_value1([Key1|T], Value, #{}=JObj) ->
     case maps:get(Key1, JObj, 'undefined') of
-        {Key1, #{}=V1} ->
+        #{}=V1 ->
             %% Replace or add a property in an object in the object at this key
             maps:put(Key1, set_value1(T, Value, V1), JObj);
-        {Key1, V1} when is_list(V1) ->
+        V1 when is_list(V1) ->
             %% Replace or add a member in an array in the object at this key
             maps:put(Key1, set_value1(T, Value, V1), JObj);
-        {Key1, _} when T == [] ->
-            %% This is the final key and the objects property should just be replaced
-            maps:put(Key1, Value, JObj);
-        {Key1, _} ->
-            %% This is not the final key and the objects property should just be
-            %% replaced so continue looping the keys creating the necessary json as we go
-            maps:put(Key1, set_value1(T, Value, new()), JObj);
-        'false' when T == [] ->
+        'undefined' when T == [] ->
             %% This is the final key and doesnt already exist, just add it to this
             %% objects existing properties
             maps:put(Key1, Value, JObj);
-        'false' ->
+        'undefined' ->
             %% This is not the final key and this object does not have this key
             %% so continue looping the keys creating the necessary json as we go
+            maps:put(Key1, set_value1(T, Value, new()), JObj);
+        _ when T == [] ->
+            %% This is the final key and the objects property should just be replaced
+            maps:put(Key1, Value, JObj);
+        _ ->
+            %% This is not the final key and the objects property should just be
+            %% replaced so continue looping the keys creating the necessary json as we go
             maps:put(Key1, set_value1(T, Value, new()), JObj)
     end;
 %% There are no more keys to iterate through! Override the value here...
@@ -198,3 +205,41 @@ replace_in_list(1, V1, [_OldV | Vs], Acc) ->
     lists:reverse([V1 | Acc]) ++ Vs;
 replace_in_list(N, V1, [V | Vs], Acc) ->
     replace_in_list(N-1, V1, Vs, [V | Acc]).
+
+-spec is_empty(any()) -> boolean().
+is_empty(#{}=JObj) when 0 =:= map_size(JObj) -> 'true';
+is_empty(_) -> 'false'.
+
+-spec is_json_object(any()) -> boolean().
+is_json_object(X) -> is_map(X).
+
+-spec from_list(kz_json:json_proplist()) -> object().
+from_list(L) ->
+    maps:from_list(props:filter_undefined(L)).
+
+-spec to_proplist(object()) -> kz_json:json_proplist().
+to_proplist(#{}=JObj) ->
+    maps:to_list(JObj).
+
+-spec merge(kz_json:merge_fun(), object(), object()) -> object().
+merge(MergeFun, #{}=Left, #{}=Right) ->
+    LeftL = lists:sort(maps:to_list(Left)),
+    RightL = lists:sort(maps:to_list(Right)),
+    merge(MergeFun, LeftL, RightL, []).
+
+merge(_MergeFun, [], [], Acc) ->
+    from_list(Acc);
+merge(MergeFun, [{KX, VX}|Xs], [], Acc) ->
+    merge(MergeFun, Xs, [], f(KX, MergeFun(KX, {'left', VX}), Acc));
+merge(MergeFun, [], [{KY, VY}|Ys], Acc) ->
+    merge(MergeFun, Ys, [], f(KY, MergeFun(KY, {'right', VY}), Acc));
+merge(MergeFun, [{KX, VX}|Xs]=Left, [{KY, VY}|Ys]=Right, Acc) ->
+    if
+        KX < KY -> merge(MergeFun, Xs, Right, f(KX, MergeFun(KX, {'left', VX}), Acc));
+        KX > KY -> merge(MergeFun, Left, Ys, f(KY, MergeFun(KY, {'right', VY}), Acc));
+        KX =:= KY -> merge(MergeFun, Xs, Ys, f(KX, MergeFun(KX, {'both', VX, VY}), Acc))
+    end.
+
+-spec f(kz_json:key(), kz_json:merge_fun_result(), list()) -> list().
+f(_K, 'undefined', Acc) -> Acc;
+f(K, {'ok', R}, Acc) -> [{K, R} | Acc].

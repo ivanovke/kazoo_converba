@@ -4,9 +4,18 @@
         ,set_value/3
         ,delete_key/3
         ,new/0
+        ,from_list/1
+        ,to_proplist/1
+
+        ,is_empty/1
+        ,is_json_object/1
+
+        ,merge/3
         ]).
 
--export_type([object/0, objects/0]).
+-export_type([object/0, objects/0
+             ,wrapper/1
+             ]).
 
 %% How do we wrap proplists to denote they're json objects?
 %% -define(JSON_WRAPPER(Proplist), {struct, Proplist}).
@@ -20,6 +29,7 @@
 
 -type object() :: ?JSON_WRAPPER(kz_json:json_proplist()) | ?EMPTY_JSON_OBJECT.
 -type objects() :: [object()].
+-type wrapper(List) :: ?JSON_WRAPPER(List).
 
 -type api_object() :: object() | 'undefined'.
 -type api_objects() :: objects() | 'undefined'.
@@ -231,3 +241,41 @@ replace_in_list(1, V1, [_OldV | Vs], Acc) ->
     lists:reverse([V1 | Acc]) ++ Vs;
 replace_in_list(N, V1, [V | Vs], Acc) ->
     replace_in_list(N-1, V1, Vs, [V | Acc]).
+
+-spec is_empty(any()) -> boolean().
+is_empty(?EMPTY_JSON_OBJECT) -> 'true';
+is_empty(_) -> 'false'.
+
+-spec is_json_object(any()) -> boolean().
+is_json_object(?JSON_WRAPPER(P)) when is_list(P) -> 'true';
+is_json_object(_) -> 'false'.
+
+-spec from_list(kz_json:json_proplist()) -> object().
+from_list(L) when is_list(L) ->
+    ?JSON_WRAPPER(props:filter_undefined(L)).
+
+-spec to_proplist(object()) -> kz_json:json_proplist().
+to_proplist(?JSON_WRAPPER(Props)) when is_list(Props) -> Props.
+
+-spec merge(kz_json:merge_fun(), object(), object()) -> object().
+merge(MergeFun, ?JSON_WRAPPER(PropsA), ?JSON_WRAPPER(PropsB)) ->
+    ListA = lists:sort(PropsA),
+    ListB = lists:sort(PropsB),
+    merge(MergeFun, ListA, ListB, []).
+
+merge(_MergeFun, [], [], Acc) ->
+    from_list(Acc);
+merge(MergeFun, [{KX, VX}|Xs], [], Acc) ->
+    merge(MergeFun, Xs, [], f(KX, MergeFun(KX, {'left', VX}), Acc));
+merge(MergeFun, [], [{KY, VY}|Ys], Acc) ->
+    merge(MergeFun, Ys, [], f(KY, MergeFun(KY, {'right', VY}), Acc));
+merge(MergeFun, [{KX, VX}|Xs]=Left, [{KY, VY}|Ys]=Right, Acc) ->
+    if
+        KX < KY -> merge(MergeFun, Xs, Right, f(KX, MergeFun(KX, {'left', VX}), Acc));
+        KX > KY -> merge(MergeFun, Left, Ys, f(KY, MergeFun(KY, {'right', VY}), Acc));
+        KX =:= KY -> merge(MergeFun, Xs, Ys, f(KX, MergeFun(KX, {'both', VX, VY}), Acc))
+    end.
+
+-spec f(kz_json:key(), kz_json:merge_fun_result(), list()) -> list().
+f(_K, 'undefined', Acc) -> Acc;
+f(K, {'ok', R}, Acc) -> [{K, R} | Acc].

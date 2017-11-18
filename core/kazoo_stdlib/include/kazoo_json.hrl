@@ -28,7 +28,7 @@
 -type api_objects() :: objects() | 'undefined'.
 
 -type flat_proplist() :: [{keys(), flat_json_term()}].
--type flat_object() :: ?JSON_WRAPPER(flat_proplist()).
+-type flat_object() :: kz_json_tuple:wrapper(flat_proplist()).
 -type flat_objects() :: [flat_object()].
 
 -type key() :: json_string().
