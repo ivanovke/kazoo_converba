@@ -560,10 +560,12 @@ to_proplist(Key, JObj) -> to_proplist(get_json_value(Key, JObj, new())).
 -spec recursive_to_proplist(object() | objects()) -> kz_proplist().
 recursive_to_proplist(Props) when is_list(Props) ->
     [recursive_to_proplist(V) || V <- Props];
-recursive_to_proplist(#{}=JObj) ->
-    [{K, recursive_to_proplist(V)} || {K, V} <- kz_json_map:to_proplist(JObj)];
 recursive_to_proplist(JObj) ->
-    [{K, recursive_to_proplist(V)} || {K, V} <- kz_json_tuple:to_proplist(JObj)].
+    case is_json_object(JObj) of
+        'true' ->
+            [{K, recursive_to_proplist(V)} || {K, V} <- kz_json:to_proplist(JObj)];
+        'false' -> JObj
+    end.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -586,12 +588,15 @@ to_map_fold(JObj, #{}=Map) ->
     maps:merge(Map, recursive_to_map(JObj)).
 
 -spec recursive_to_map(object() | objects() | kz_proplist()) -> map().
-recursive_to_map(#{}=JObj) ->
-    maps:from_list([{K, recursive_to_map(V)} || {K, V} <- kz_json_map:to_proplist(JObj)]);
 recursive_to_map(List) when is_list(List) ->
     [recursive_to_map(Item) || Item <- List];
 recursive_to_map(JObj) ->
-    maps:from_list([{K, recursive_to_map(V)} || {K, V} <- kz_json_tuple:to_proplist(JObj)]).
+    case is_json_object(JObj) of
+        'true' ->
+            maps:from_list([{K, recursive_to_map(V)} || {K, V} <- kz_json:to_proplist(JObj)]);
+        'false' ->
+            JObj
+    end.
 
 %%--------------------------------------------------------------------
 %% @public
