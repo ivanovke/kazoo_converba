@@ -191,28 +191,39 @@ prop_to_map() ->
 test_object() ->
     ?LET(JObj, object(), remove_duplicate_keys(JObj)).
 
-remove_duplicate_keys(kz_json:new()) -> kz_json:new();
-remove_duplicate_keys(kz_json:from_list(_)=JObj) ->
-    kz_json:foldl(fun no_dups/3, kz_json:new(), JObj);
-remove_duplicate_keys(V) -> V.
+remove_duplicate_keys(JObj) ->
+    case kz_json:is_json_object(JObj) of
+        'false' -> JObj;
+        'true' ->
+            case kz_json:is_empty(JObj) of
+                'true' -> JObj;
+                'false' -> kz_json:foldl(fun no_dups/3, kz_json:new(), JObj)
+            end
+    end.
 
-no_dups(Key, kz_json:from_list(_)=JObj, Acc) ->
-    DeDuped = remove_duplicate_keys(JObj),
-    kz_json:set_value(Key, DeDuped, Acc);
-no_dups(Key, Value, Acc) ->
-    kz_json:set_value(Key, Value, Acc).
+no_dups(Key, JObj, Acc) ->
+    case kz_json:is_json_object(JObj) of
+        'false' -> kz_json:set_value(Key, JObj, Acc);
+        'true' ->
+            DeDuped = remove_duplicate_keys(JObj),
+            kz_json:set_value(Key, DeDuped, Acc)
+    end.
 
 are_all_properties_found(Merged, Favored) ->
     kz_json:all(fun({K,V}) -> is_property_found(K, V, Merged) end, Favored).
 
-is_property_found(Key, kz_json:from_list(_)=Value, Merged) ->
-    case kz_json:get_value(Key, Merged) of
-        kz_json:from_list(_)=MergedV -> are_all_properties_found(Value, MergedV);
-        Missing ->
-            log_failure(Key, Value, Missing),
+is_property_found(Key, JObj, Merged) ->
+    is_property_found(Key, JObj, Merged, kz_json:is_json_object(JObj)).
+
+is_property_found(Key, Value, Merged, 'true') ->
+    MergedV = kz_json:get_value(Key, Merged),
+    case kz_json:is_json_object(MergedV) of
+        'true' -> are_all_properties_found(Value, MergedV);
+        'false' ->
+            log_failure(Key, Value, MergedV),
             'false'
     end;
-is_property_found(Key, Value, Merged) ->
+is_property_found(Key, Value, Merged, 'false') ->
     case kz_json:get_value(Key, Merged) of
         Value -> 'true';
         Missing ->
