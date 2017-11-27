@@ -1107,7 +1107,7 @@ maybe_fix_js_integer(Key, Value, JObj) ->
     end.
 
 -spec maybe_fix_js_number(kz_json:path(), kz_json:json_term(), kz_json:object()) ->
-                                  kz_json:object().
+                                 kz_json:object().
 maybe_fix_js_number(Key, Value, JObj) ->
     try kz_term:to_number(Value) of
         V -> kz_json:set_value(maybe_fix_index(Key), V, JObj)
