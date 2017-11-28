@@ -88,12 +88,17 @@
         ]).
 
 <<<<<<< Upstream, based on 2600hz/master
+<<<<<<< Upstream, based on 2600hz/master
 -export([register_view/2, register_view/3
         ,register_views/2,register_views/3
 =======
 -export([register_view/2
         ,register_views/2
 >>>>>>> 7650c96 register/refresh classification views
+=======
+-export([register_view/2, register_view/3
+        ,register_views/2,register_views/3
+>>>>>>> dd391f5 support register_view calling_app for libraries
         ,refresh_views/1
         ,register_views_from_folder/1
         ,register_views_from_folder/2
