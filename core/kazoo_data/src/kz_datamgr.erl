@@ -87,18 +87,8 @@
         ,change_notice/0
         ]).
 
-<<<<<<< Upstream, based on 2600hz/master
-<<<<<<< Upstream, based on 2600hz/master
 -export([register_view/2, register_view/3
         ,register_views/2,register_views/3
-=======
--export([register_view/2
-        ,register_views/2
->>>>>>> 7650c96 register/refresh classification views
-=======
--export([register_view/2, register_view/3
-        ,register_views/2,register_views/3
->>>>>>> dd391f5 support register_view calling_app for libraries
         ,refresh_views/1
         ,register_views_from_folder/1
         ,register_views_from_folder/2
@@ -225,11 +215,7 @@ maybe_update_doc(DbName, JObj) ->
 
 should_update(DbName, JObj) ->
     case open_doc(DbName, kz_doc:id(JObj)) of
-<<<<<<< Upstream, based on 2600hz/master
         {'ok', Doc} -> kz_doc:document_hash(JObj) =/= kz_doc:document_hash(Doc);
-=======
-        {'ok', Doc} -> not kz_json:are_equal(JObj, kz_doc:delete_revision(Doc));
->>>>>>> 0c470cb only update if changed in revise_docs
         _ -> true
     end.
 
