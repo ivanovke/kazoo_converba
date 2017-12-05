@@ -44,6 +44,7 @@
         ]).
 
 -export([sync_channel/2]).
+-export([no_legacy/1]).
 
 -include("ecallmgr.hrl").
 
@@ -437,3 +438,16 @@ sync_channel(Node, UUID) ->
               ,{<<"Event-PID">>, kz_term:to_binary(self())}
               ],
     gen_server:cast({'mod_kazoo', Node}, {'sendevent', 'CUSTOM',  <<"CHANNEL_SYNC">>, Headers}).
+
+-spec no_legacy(atom()) -> 'ok' | {'error', 'timeout' | 'exception'}.
+no_legacy(Node) ->
+    try gen_server:call({'mod_kazoo', Node}, 'no_legacy') of
+        'timeout' -> {'error', 'timeout'};
+        Result -> Result
+    catch
+        exit:{{nodedown, _Node}, _} -> {error, nodedown};
+        _E:_R ->
+            lager:info("failed to get mod_kazoo version from ~s: ~p ~p"
+                      ,[Node, _E, _R]),
+            {'error', 'exception'}
+    end.

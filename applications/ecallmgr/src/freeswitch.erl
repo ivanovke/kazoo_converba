@@ -46,6 +46,7 @@
         ,bgapi4/5
         ]).
 -export([sync_channel/2]).
+-export([no_legacy/1]).
 
 -include("ecallmgr.hrl").
 
@@ -192,3 +193,5 @@ release(Version)
 -spec sync_channel(atom(), ne_binary()) -> 'ok'.
 sync_channel(Node, UUID) -> ?FS_MODULE:sync_channel(Node, UUID).
 
+-spec no_legacy(atom()) -> 'ok' | {'error', 'timeout' | 'exception'}.
+no_legacy(Node) -> ?FS_MODULE:no_legacy(Node).
