@@ -185,8 +185,8 @@ release(Node)
 release(Version)
   when is_binary(Version) ->
     case binary:split(Version, <<" ">>, ['global']) of
-        [Module, Bundle, Release] -> {Module, Bundle, Release};
-        [Module, Release] -> {Module, <<"community">>, Release};
+        [Module, Release, Bundle] -> {Module, Release, Bundle};
+        [Module, Release] -> {Module, Release, <<"community">>};
         [Version] -> release(kz_term:to_atom(Version, 'true'))
     end.
 
