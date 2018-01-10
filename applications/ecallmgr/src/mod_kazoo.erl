@@ -416,23 +416,23 @@ internal_fs_error(Reason) ->
     Error = kz_binary:strip(binary:replace(Reason, <<"\n">>, <<>>)),
     {'error', Error}.
 
--spec cmd(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cmd(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cmd(Node, UUID, Command) ->
     gen_server:call({'mod_kazoo', Node}, {'command', UUID, Command}).
 
--spec cmds(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cmds(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cmds(Node, UUID, Commands) ->
     gen_server:call({'mod_kazoo', Node}, {'commands', UUID, Commands}).
 
--spec cast_cmd(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cast_cmd(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cast_cmd(Node, UUID, Command) ->
     gen_server:cast({'mod_kazoo', Node}, {'command', UUID, Command}).
 
--spec cast_cmds(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cast_cmds(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cast_cmds(Node, UUID, Commands) ->
     gen_server:cast({'mod_kazoo', Node}, {'commands', UUID, Commands}).
 
--spec sync_channel(atom(), ne_binary()) -> 'ok'.
+-spec sync_channel(atom(), kz_term:ne_binary()) -> 'ok'.
 sync_channel(Node, UUID) ->
     Headers = [{<<"Call-ID">>, UUID}
               ,{<<"Event-PID">>, kz_term:to_binary(self())}

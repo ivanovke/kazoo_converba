@@ -151,16 +151,16 @@ sendevent_custom(Node, SubClassName, Headers) -> ?FS_MODULE:sendevent_custom(Nod
 -spec sendmsg(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 sendmsg(Node, UUID, Headers) -> ?FS_MODULE:sendmsg(Node, UUID, Headers).
 
--spec cmd(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cmd(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cmd(Node, UUID, Headers) -> ?FS_MODULE:cmd(Node, UUID, Headers).
 
--spec cmds(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cmds(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cmds(Node, UUID, Headers) -> ?FS_MODULE:cmds(Node, UUID, Headers).
 
--spec cast_cmd(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cast_cmd(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cast_cmd(Node, UUID, Headers) -> ?FS_MODULE:cast_cmd(Node, UUID, Headers).
 
--spec cast_cmds(atom(), ne_binary(), list()) -> fs_api_return().
+-spec cast_cmds(atom(), kz_term:ne_binary(), list()) -> fs_api_return().
 cast_cmds(Node, UUID, Headers) -> ?FS_MODULE:cast_cmds(Node, UUID, Headers).
 
 -spec config(atom()) -> 'ok'.
@@ -175,7 +175,7 @@ config(Node, Section) ->
                     {'error', 'timeout' | 'exception' | binary()}.
 bgapi4(Node, Cmd, Args, Fun, CallBackParams) -> ?FS_MODULE:bgapi4(Node, Cmd, Args, Fun, CallBackParams).
 
--spec release(atom() | ne_binary()) -> {ne_binary(), ne_binary(), ne_binary()} | fs_api_return().
+-spec release(atom() | kz_term:ne_binary()) -> {kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()} | fs_api_return().
 release(Node)
   when is_atom(Node) ->
     case version(Node) of
@@ -190,7 +190,7 @@ release(Version)
         [Version] -> release(kz_term:to_atom(Version, 'true'))
     end.
 
--spec sync_channel(atom(), ne_binary()) -> 'ok'.
+-spec sync_channel(atom(), kz_term:ne_binary()) -> 'ok'.
 sync_channel(Node, UUID) -> ?FS_MODULE:sync_channel(Node, UUID).
 
 -spec no_legacy(atom()) -> 'ok' | {'error', 'timeout' | 'exception'}.
