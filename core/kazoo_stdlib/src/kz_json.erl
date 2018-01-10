@@ -1341,7 +1341,7 @@ exec_fold({F, V}, C) when is_function(F, 2) -> F(V, C);
 exec_fold(F, C) when is_function(F, 1) -> F(C).
 
 -spec to_log(object()) -> 'ok'.
--spec to_log(object(), ne_binary()) -> 'ok'.
+-spec to_log(object(), kz_term:ne_binary()) -> 'ok'.
 to_log(JObj) ->
     to_log(JObj, <<"JObj">>).
 

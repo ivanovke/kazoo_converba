@@ -87,7 +87,7 @@
 -define(KEYS_ATTACHMENTS, [?KEY_ATTACHMENTS, ?KEY_EXTERNAL_ATTACHMENTS]).
 -define(KEYS_ATTACHMENTS(A), [ [Key, A] || Key <- ?KEYS_ATTACHMENTS]).
 
--type private_field() :: ne_binary().
+-type private_field() :: kz_term:ne_binary().
 -type private_fields() :: [private_field()].
 
 %%------------------------------------------------------------------------------
