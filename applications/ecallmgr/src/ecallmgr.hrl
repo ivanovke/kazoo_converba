@@ -98,7 +98,7 @@
                  ,interaction_id :: kz_term:api_binary() | '$5' | '_'
                  ,callee_number :: kz_term:api_binary() | '$5' | '_'
                  ,callee_name :: kz_term:api_binary() | '$5' | '_'
-                 ,is_loopback :: boolean() | '_'
+                 ,is_loopback = 'false' :: boolean() | '_'
                  ,loopback_leg_name :: kz_term:api_binary() | '_'
                  ,loopback_other_leg :: kz_term:api_binary() | '_'
                  ,callflow_id :: kz_term:api_binary() | '_'
