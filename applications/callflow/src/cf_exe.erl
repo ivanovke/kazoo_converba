@@ -440,7 +440,7 @@ handle_cast({'stop', _}, #state{stop_on_destroy='true'
                                }=State) ->
     {'stop', 'normal', State};
 handle_cast({'stop', 'undefined'}, #state{flows=[]}=State) ->
-    {'stop', 'normal', State#state{destroyed='true'}};
+    {'stop', 'normal', State};
 handle_cast({'stop', Cause}, #state{flows=[]
                                    ,call=Call
                                    }=State) ->
