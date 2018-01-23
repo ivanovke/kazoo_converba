@@ -106,10 +106,10 @@ node(JObj) ->
     kz_json:get_atom_value(?KEY_NODE, JObj).
 
 -spec msg_id(kz_term:api_terms()) -> kz_term:api_ne_binary().
--spec msg_id(kz_term:api_terms(), Default) -> kz_term:ne_binary() | Default.
 msg_id(API) ->
     msg_id(API, 'undefined').
 
+-spec msg_id(kz_term:api_terms(), Default) -> kz_term:ne_binary() | Default.
 msg_id(Props, Default) when is_list(Props) ->
     props:get_value(?KEY_MSG_ID, Props, Default);
 msg_id(JObj, Default) ->
