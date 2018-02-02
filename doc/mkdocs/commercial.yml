@@ -76,11 +76,14 @@ pages:
     - 'applications/crossbar/doc/contact_list.md'
     - 'Call Recording':
       - 'applications/crossbar/doc/recordings.md'
+      - 'Record Call': 'applications/callflow/doc/record_call.md'
+      - 'Record Caller': 'applications/callflow/doc/record_caller.md' ##
 
 #  - 'SMS':
 #    - 'applications/crossbar/doc/sms.md'
 
   - 'Time of Day Routing':
+    - 'Temporal Routes (Time of Day)': 'applications/callflow/doc/temporal_route.md' ##
     - 'applications/crossbar/doc/temporal_rules.md'
     - 'applications/crossbar/doc/temporal_rules_sets.md'
 
@@ -105,6 +108,12 @@ pages:
 
   - 'Call Actions':
     - 'applications/crossbar/doc/clicktocall.md'
+    - 'Groups':
+      - 'Ring Group': 'applications/callflow/doc/ring_group.md'
+#     - 'Ring Group Toggle': 'applications/callflow/doc/ring_group_toggle.md'
+      - 'Page Group': 'applications/callflow/doc/page_group.md'
+      - 'Action': 'applications/callflow/doc/group_pickup.md'
+      - 'Feature Code': 'applications/callflow/doc/group_pickup_feature.md'
 
   - 'HTTP Event Notifications':
     - 'Administration': 'applications/webhooks/doc/maintenance.md'
@@ -117,24 +126,12 @@ pages:
   - 'Notifications':
     - 'applications/crossbar/doc/notifications.md'
 
-
-
 #### STARTS "STILL NEEDS SORTING" SECTION - please pair with configuration APIs as applicable, in the right section
 
 - 'Call Processing':
   - 'Callflows':
     - 'applications/callflow/doc/README.md' ###
     - 'Endpoints':
-        - 'Device': 'applications/callflow/doc/device.md' ##
-        - 'User': 'applications/callflow/doc/user.md' ##
-        - 'Group': 'applications/callflow/doc/group.md'
-        - 'Ring Group': 'applications/callflow/doc/ring_group.md'
-#        - 'Ring Group Toggle': 'applications/callflow/doc/ring_group_toggle.md'
-        - 'Page Group': 'applications/callflow/doc/page_group.md'
-    - 'Call Parking': 'applications/callflow/doc/park.md'
-    - 'Call Recording':
-        - 'Record Call': 'applications/callflow/doc/record_call.md'
-        - 'Record Caller': 'applications/callflow/doc/record_caller.md' ##
 #    - 'Call Priorities': 'applications/callflow/doc/call_priorities.md'
 #    - 'Custom SIP Headers': 'applications/callflow/doc/custom_sip_headers.md'
 #    - 'Incoming Fax Detection': 'applications/callflow/doc/fax_detect.md'
@@ -147,11 +144,9 @@ pages:
 #      - 'Match CID': 'applications/callflow/doc/cidlistmatch.md'
       - 'Set CID': 'applications/callflow/doc/set_cid.md'
 #      - 'Check CID': 'applications/callflow/doc/check_cid.md'
-    - 'Temporal Routes (Time of Day)': 'applications/callflow/doc/temporal_route.md' ##
     - 'Webhooks': 'applications/callflow/doc/webhooks.md'
 #    - 'Branch on object setting': 'applications/callflow/doc/cf_branch_variable.md'
 #    - 'Preflows': 'applications/callflow/doc/preflow.md'
-    - 'Resources': 'applications/callflow/doc/resources.md'
     - 'Manual Presence': 'applications/callflow/doc/manual_presence.md'
     - 'Directory Search': 'applications/callflow/doc/directory.md'
 #    - 'Eavesdrop':
@@ -163,9 +158,6 @@ pages:
     - 'Voicemail': 'applications/callflow/doc/voicemail.md'
     - 'Hotdesk': 'applications/callflow/doc/hotdesk.md'
 #    - 'Pivot': 'applications/callflow/doc/pivot.md'
-    - 'Group Pickup':
-        - 'Action': 'applications/callflow/doc/group_pickup.md'
-        - 'Feature Code': 'applications/callflow/doc/group_pickup_feature.md'
     - 'Faxbox': 'applications/callflow/doc/faxbox.md'
     - 'Callflow Branching': 'applications/callflow/doc/callflow.md'
 #    - 'DTMF':
@@ -239,6 +231,8 @@ pages:
     - 'applications/crossbar/doc/blacklists.md'
   - 'Advanced Callflows':
     - 'applications/crossbar/doc/callflows.md'
+  - 'Resources':
+    - 'applications/callflow/doc/resources.md'
 
 - 'Automated Customer Onboarding':
   - 'Account Management':
@@ -265,6 +259,8 @@ pages:
 #- 'Advanced Integrations':
 #  - 'Call Actions':
 #    - 'applications/crossbar/doc/metaflows.md'
+#    - 'Call Parking': 'applications/callflow/doc/park.md'
+#
 #  - 'Pivot':
 #    - 'Intro': 'applications/pivot/doc/README.md'
 #    - 'API': 'applications/crossbar/doc/pivot.md'
