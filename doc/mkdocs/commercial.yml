@@ -77,6 +77,12 @@ pages:
       - 'applications/crossbar/doc/faxes.md'
       - 'Fax Routing': 'applications/callflow/doc/faxbox.md' ##
       - 'Receive Fax': 'applications/callflow/doc/faxbox.md' ##'
+    - 'Groups':
+      - 'Ring Group': 'applications/callflow/doc/ring_group.md'
+#     - 'Ring Group Toggle': 'applications/callflow/doc/ring_group_toggle.md'
+      - 'Page Group': 'applications/callflow/doc/page_group.md' ##
+      - 'Action': 'applications/callflow/doc/group_pickup.md' ##
+      - 'Feature Code': 'applications/callflow/doc/group_pickup_feature.md' ##
     - 'Hotdesking':
       - 'applications/crossbar/doc/hotdesks.md'
       - 'Hotdesk Routing': 'applications/callflow/doc/hotdesk.md' ##
@@ -101,7 +107,6 @@ pages:
     - 'Text-to-speech (TTS)': 'applications/callflow/doc/tts.md' ##
     - 'Sleep': 'applications/callflow/doc/sleep.md' ##
 
-
 #  - 'SMS':
 #    - 'applications/crossbar/doc/sms.md'
 
@@ -121,7 +126,6 @@ pages:
     - 'applications/crossbar/doc/agents.md'
     - 'applications/crossbar/doc/queues.md'
 
-
 - 'Integrations':
   - 'System Status':
     - 'applications/crossbar/doc/acls.md' ##
@@ -132,18 +136,13 @@ pages:
 
   - 'Call Actions':
     - 'applications/crossbar/doc/clicktocall.md' ##
-    - 'Groups':
-      - 'Ring Group': 'applications/callflow/doc/ring_group.md'
-#     - 'Ring Group Toggle': 'applications/callflow/doc/ring_group_toggle.md'
-      - 'Page Group': 'applications/callflow/doc/page_group.md' ##
-      - 'Action': 'applications/callflow/doc/group_pickup.md' ##
-      - 'Feature Code': 'applications/callflow/doc/group_pickup_feature.md' ##
 
   - 'HTTP Event Notifications':
     - 'Administration': 'applications/webhooks/doc/maintenance.md'
     - 'API': 'applications/crossbar/doc/webhooks.md'
   
   - 'Webhooks': 'applications/callflow/doc/webhooks.md'
+  - 'Custom Webhook': 'applications/callflow/doc/webhook.md' ##
 
 - 'Billing, Reporting and Notifications':
   - 'Billing':
@@ -156,40 +155,10 @@ pages:
 
 - 'Call Processing':
   - 'Callflows':
-    - 'Endpoints':
-#    - 'Call Priorities': 'applications/callflow/doc/call_priorities.md'
-#    - 'Custom SIP Headers': 'applications/callflow/doc/custom_sip_headers.md'
-#    - 'Incoming Fax Detection': 'applications/callflow/doc/fax_detect.md'
-#    - 'Change Language': 'applications/callflow/doc/language.md'
-#    - 'Branch on object setting': 'applications/callflow/doc/cf_branch_variable.md'
-#    - 'Preflows': 'applications/callflow/doc/preflow.md'
-#    - 'Eavesdrop':
-#        - 'Action': 'applications/callflow/doc/eavesdrop.md'
-#        - 'Feature Code': 'applications/callflow/doc/eavesdrop_feature.md'
-#    - 'Do Not Disturb (DND)': 'applications/callflow/doc/do_not_disturb.md'
-#    - 'Missed Call Alert': 'applications/callflow/doc/missed_call_alert.md'
-#    - 'Setup Call Waiting': 'applications/callflow/doc/call_waiting.md'
-#    - 'Pivot': 'applications/callflow/doc/pivot.md'
-#    - 'DTMF':
-#        - 'Collect DTMF': 'applications/callflow/doc/collect_dtmf.md'
-#        - 'Send DTMF': 'applications/callflow/doc/send_dtmf.md'
-#        - 'Flush DTMF': 'applications/callflow/doc/flush_dtmf.md'
-#    - 'Intercept':
-#        - 'Action': 'applications/callflow/doc/intercept.md'
-#        - 'Feature Code': 'applications/callflow/doc/intercept_feature.md'
-#    - 'Variable Branch': 'applications/callflow/doc/branch_variable.md'
     - 'Hangup': 'applications/callflow/doc/hangup.md' ###
-#    - 'Nomorobo': 'applications/callflow/doc/nomorobo.md'
     - 'Call Forwarding': 'applications/callflow/doc/call_forward.md'
-#    - 'Dead Air': 'applications/callflow/doc/dead_air.md'
-    - 'Custom Webhook': 'applications/callflow/doc/webhook.md' ##
-#    - 'Channel Move': 'applications/callflow/doc/move.md'
-#    - 'After Bridge': 'applications/callflow/doc/after_bridge.md'
-#    - 'Set': 'applications/callflow/doc/set.md'
-#    - 'Branch BNumber': 'applications/callflow/doc/branch_bnumber.md'
 
 #### ENDS "STILL NEEDS SORTING" SECTION
-
 
 - 'Advanced API Usage':
   - 'Global API Features':
