@@ -447,7 +447,7 @@ no_legacy(Node) ->
     catch
         exit:{{nodedown, _Node}, _} -> {error, nodedown};
         _E:_R ->
-            lager:info("failed to get mod_kazoo version from ~s: ~p ~p"
+            lager:info("failed to set mod_kazoo no_legacy on ~s: ~p ~p"
                       ,[Node, _E, _R]),
             {'error', 'exception'}
     end.
