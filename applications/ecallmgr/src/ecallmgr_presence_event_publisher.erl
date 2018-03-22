@@ -3,7 +3,7 @@
 %%% @doc Receives PRESENCE_IN event
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(ecallmgr_fs_presence).
+-module(ecallmgr_presence_event_publisher).
 
 -export([init/0]).
 -export([publish_presence/1]).

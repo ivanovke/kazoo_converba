@@ -77,7 +77,7 @@ handle_call(_Request, _From, State) ->
 %%------------------------------------------------------------------------------
 -spec handle_cast(any(), state()) -> kz_types:handle_cast_ret_state(state()).
 handle_cast('connect', #state{ip=IP, port=Port, idle_alert=Timeout}=State) ->
-    PacketType = ecallmgr_config:get_integer(<<"tcp_packet_type">>, 2),
+    PacketType = ecallmgr_config:get_integer(<<"tcp_packet_type">>, 4),
     case gen_tcp:connect(IP, Port, [{'mode', 'binary'}
                                    ,{'packet', PacketType}
                                    ])
@@ -310,7 +310,7 @@ run_process(Ctx) ->
     kazoo_bindings:map(Routing, Ctx).
 
 run_notify(Ctx) ->
-    Routing = create_routing(<<"notify">>, Ctx),
+    Routing = create_routing(<<"registered">>, Ctx),
     kazoo_bindings:map(Routing, Ctx).
 
 run_publish(Ctx) ->
