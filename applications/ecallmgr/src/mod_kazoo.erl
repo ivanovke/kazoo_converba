@@ -147,8 +147,19 @@ api_result(Result, Bin) ->
         <<"true">> -> {Result, true};
         <<"false">> -> {Result, false};
         <<>> -> ok;
-        Msg -> {Result, Msg}
+        Msg -> {Result, maybe_number(Msg, byte_size(Msg))}
     end.
+
+maybe_number(Msg, Size)
+  when Size < 10 ->
+    Float = (catch erlang:binary_to_float(Msg)),
+    Int = (catch erlang:binary_to_integer(Msg)),
+    case {is_number(Float), is_number(Int)} of
+        {'true', _} -> Float;
+        {_, 'true'} -> Int;
+        _ -> Msg
+    end;
+maybe_number(Msg, _Size) -> Msg.
 
 -spec api(atom(), kz_term:text()) -> fs_api_return().
 api(Node, Cmd) ->
@@ -165,6 +176,8 @@ api(Node, Cmd, Args, Timeout) when is_atom(Node) ->
         {'ok', <<"-ERR", Reason/binary>>} -> api_result('error', Reason);
         {'ok', <<"+OK", Result/binary>>} -> api_result('ok', Result);
         {'ok', Result} -> api_result('ok', Result);
+        'error' -> {'error', 'failed'};
+        {'error', _} = Err -> Err;
         Result -> api_result('ok', Result)
     catch
         _E:_R ->

@@ -46,7 +46,10 @@
         ,bgapi4/5
         ]).
 -export([sync_channel/2]).
--export([no_legacy/1]).
+-export([no_legacy/1
+        ,event_stream_framing/1, event_stream_framing/2
+        ]).
+-export([get_option/2, set_option/3]).
 
 -include("ecallmgr.hrl").
 
@@ -194,4 +197,32 @@ release(Version)
 sync_channel(Node, UUID) -> ?FS_MODULE:sync_channel(Node, UUID).
 
 -spec no_legacy(atom()) -> 'ok' | {'error', 'timeout' | 'exception'}.
-no_legacy(Node) -> ?FS_MODULE:no_legacy(Node).
+no_legacy(Node) ->
+    set_option(Node, <<"enable-legacy">>, 'false').
+
+-spec event_stream_framing(atom(), 1 | 2 | 4) -> fs_api_return().
+event_stream_framing(Node, PacketFraming) ->
+    set_option(Node, <<"event-stream-framing">>, PacketFraming).
+
+-spec event_stream_framing(atom()) -> fs_api_return().
+event_stream_framing(Node) ->
+    get_option(Node, <<"event-stream-framing">>).
+
+-spec set_option(atom(), binary(), term()) -> fs_api_return().
+set_option(Node, Option, Value) ->
+    Args = [<<"node">>
+           ,kz_term:to_binary(node())
+           ,<<"option">>
+           ,kz_term:to_binary(Option)
+           ,kz_term:to_binary(Value)
+           ],
+    api(Node, 'erlang', kz_binary:join(Args, <<" ">>)).
+
+-spec get_option(atom(), binary()) -> fs_api_return().
+get_option(Node, Option) ->
+    Args = [<<"node">>
+           ,kz_term:to_binary(node())
+           ,"option"
+           ,Option
+           ],
+    api(Node, 'erlang', kz_binary:join(Args, <<" ">>)).
