@@ -241,6 +241,7 @@
 
 -define(DEFAULT_MESSAGE_TIMEOUT, kapps_config:get_integer(?CONFIG_CAT, <<"message_timeout">>, 5 * ?MILLISECONDS_IN_SECOND)).
 -define(DEFAULT_APPLICATION_TIMEOUT, kapps_config:get_integer(?CONFIG_CAT, <<"application_timeout">>, 500 * ?MILLISECONDS_IN_SECOND)).
+-define(WAIT_FOR_NOOP_TIMEOUT_MS, kapps_config:get_integer(?CONFIG_CAT, <<"noop_timeout_ms">>, ?MILLISECONDS_IN_DAY)).
 
 -define(STORAGE_TIMEOUT(App), kapps_config:get_integer(?CONFIG_CAT, [<<"store_file">>, kz_term:to_binary(App), <<"save_timeout_ms">>], 5 * ?MILLISECONDS_IN_MINUTE, <<"default">>)).
 -define(STORAGE_RETRIES(App), kapps_config:get_integer(?CONFIG_CAT, [<<"store_file">>, kz_term:to_binary(App), <<"retries">>], 5, <<"default">>)).
@@ -1337,8 +1338,6 @@ b_hold(MOH, Call) -> b_hold('infinity', MOH, Call).
 b_hold(Timeout, MOH, Call) ->
     hold(MOH, Call),
     wait_for_message(Call, <<"hold">>, <<"CHANNEL_EXECUTE_COMPLETE">>, <<"call_event">>, Timeout).
-
-
 
 -spec hold_control(kapps_call:call()) -> 'ok'.
 hold_control(Call) -> hold_control(<<"toggle">>, Call).
@@ -2757,7 +2756,7 @@ wait_for_bridge(Timeout, Fun, Call, Start, {'ok', JObj}) ->
 %%------------------------------------------------------------------------------
 -spec wait_for_noop(kapps_call:call(), kz_term:api_binary()) -> kapps_api_std_return().
 wait_for_noop(Call, NoopId) ->
-    case wait_for_message(Call, <<"noop">>, <<"CHANNEL_EXECUTE_COMPLETE">>, <<"call_event">>, 'infinity') of
+    case wait_for_message(Call, <<"noop">>, <<"CHANNEL_EXECUTE_COMPLETE">>, <<"call_event">>, ?WAIT_FOR_NOOP_TIMEOUT_MS) of
         {'ok', JObj}=OK ->
             case kz_json:get_value(<<"Application-Response">>, JObj) of
                 NoopId when is_binary(NoopId), NoopId =/= <<>> -> OK;
