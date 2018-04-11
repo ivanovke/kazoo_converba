@@ -7,7 +7,8 @@
             "description": "A friendly name for the temporal rule set",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "temporal_rules": {
             "description": "Temporal Rules",
@@ -15,7 +16,8 @@
                 "type": "string"
             },
             "minItems": 1,
-            "type": "array"
+            "type": "array",
+            "support_level": "supported"
         }
     },
     "required": [
