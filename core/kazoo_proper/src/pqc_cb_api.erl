@@ -1,3 +1,9 @@
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2010-2018, 2600Hz
+%%% @doc
+%%% @author James Aimonetti
+%%% @end
+%%%-----------------------------------------------------------------------------
 -module(pqc_cb_api).
 
 -export([authenticate/0
@@ -192,7 +198,6 @@ handle_response(_ExpectedCode, {'ok', _ActualCode, _RespHeaders, RespBody}) ->
 handle_response(_ExpectedCode, {'error', _}=E) ->
     ?ERROR("broked req: ~p", [E]),
     E.
-
 
 -spec start_trace(kz_term:ne_binary()) -> {'ok', kz_data_tracing:trace_ref()}.
 start_trace(RequestId) ->

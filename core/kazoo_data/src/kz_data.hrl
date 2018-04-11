@@ -40,6 +40,7 @@
                   }).
 -type copy_doc() :: #copy_doc{}.
 
+-type error_verbosity() :: 'default' | 'verbose'.
 -type data_errors() :: 'conflict' |
                        'db_not_found' |
                        'db_not_reachable' |
@@ -56,6 +57,7 @@
                        'unknown_req_id' |
                        'worker_is_dead' |
                        'resource_not_available' |
+                       kz_term:ne_binary() |
                        integer() |
                        {'EXIT', _} |
                        {'conn_failed', _} |

@@ -1,12 +1,10 @@
-%%%-------------------------------------------------------------------
-%%% @copyright (C) 2011-2018, 2600Hz, INC
-%%% @doc
-%%% Make a request for authorization, and answer queries about the CallID
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2011-2018, 2600Hz
+%%% @doc Make a request for authorization, and answer queries about the CallID
+%%% @author James Aimonetti
+%%% @author Karl Anderson
 %%% @end
-%%% @contributors
-%%%   James Aimonetti
-%%%   Karl Anderson
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(ecallmgr_fs_authz).
 
 -export([authorize/3]).
@@ -324,7 +322,7 @@ authz_default(Props, CallId, Node) ->
 
 -spec maybe_set_rating_ccvs(kzd_freeswitch:data(), kz_json:object(), atom()) -> 'ok'.
 maybe_set_rating_ccvs(Props, JObj, Node) ->
-    case kz_json:get_integer_value(<<"Rate">>, JObj) of
+    case kz_json:get_value(<<"Rate">>, JObj) of
         'undefined' -> maybe_kill_unrated_channel(Props, Node);
         _Rate -> set_rating_ccvs(JObj, Node)
     end.

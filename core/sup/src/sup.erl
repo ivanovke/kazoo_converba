@@ -1,13 +1,12 @@
-%%%-------------------------------------------------------------------
-%%% @copyright (C) 2012-2018, 2600Hz INC
-%%% @doc
-%%% A really simple escript to accept RPC request and push them
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2012-2018, 2600Hz
+%%% @doc A really simple escript to accept RPC request and push them
 %%% into a running kazoo virtual machine.
+%%%
+%%% @author Karl Anderson
+%%% @author Pierre Fenoll
 %%% @end
-%%% @contributors
-%%%   Karl Anderson
-%%%   Pierre Fenoll
-%%%------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(sup).
 
 -export([main/1]).
@@ -28,15 +27,19 @@ main(CommandLineArgs) ->
 main(CommandLineArgs, Loops) ->
     _ = os:cmd("epmd -daemon"),
     _ = net_kernel:stop(),
-    SUPName = my_name(),
-    case net_kernel:start([SUPName, long_or_short_name()]) of
-        {'error', _} when Loops < 3 ->
-            stderr("Unable to start command bridge network kernel, try again", []),
+
+    {'ok', Options, Args} = parse_args(CommandLineArgs),
+
+    SUPName = my_name(use_short(Options)),
+
+    case net_kernel:start([SUPName, long_or_short_name(use_short(Options))]) of
+        {'error', _E} when Loops < 3 ->
+            stderr("Unable to start command bridge network kernel (~p), try again", [_E]),
             halt(1);
-        {'error', _} ->
+        {'error', _E} ->
+            io:format("failed to start command bridge network kernel (~p), trying again (~p)~n", [_E, Loops]),
             main(CommandLineArgs, Loops + 1);
         {'ok', _} ->
-            {'ok', Options, Args} = parse_args(CommandLineArgs),
             lists:member('help', Options)
                 andalso print_help(),
             IsVerbose = props:get_value('verbose', Options) =/= 'undefined',
@@ -112,10 +115,8 @@ print_result(Result, 'false') ->
 
 -spec get_target(kz_term:proplist(), boolean()) -> atom().
 get_target(Options, Verbose) ->
-    Node = props:get_value('node', Options),
-    Host = get_host(),
-    Cookie = get_cookie(Options, list_to_atom(Node)),
-    Target = list_to_atom(Node ++ "@" ++ Host),
+    Cookie = get_cookie(Options, list_to_atom(props:get_value('node', Options))),
+    Target = get_target(Options),
     case net_adm:ping(Target) of
         'pong' ->
             Verbose
@@ -126,11 +127,26 @@ get_target(Options, Verbose) ->
             print_ping_failed(Target, Cookie)
     end.
 
+-spec get_target(kz_term:proplist()) -> atom().
+get_target(Options) ->
+    build_target(Options, use_short(Options)).
+
+-spec build_target(kz_term:proplist(), kz_term:api_boolean()) -> atom().
+build_target(Options, 'true') ->
+    Node = props:get_value('node', Options),
+    [First | _] = string:tokens(get_host(), "."),
+
+    kz_term:to_atom(Node ++ [$@ | First], 'true');
+build_target(Options, _) ->
+    Node = props:get_value('node', Options),
+    Host = get_host(),
+    list_to_atom(Node ++ "@" ++ Host).
+
 -spec get_cookie(kz_term:proplist(), atom()) -> atom().
 get_cookie(Options, Node) ->
     CookieStr =
-        case { props:get_value('cookie', Options, "")
-             , kazoo_config_init:read_cookie(Node)
+        case {props:get_value('cookie', Options, "")
+             ,kazoo_config_init:read_cookie(Node)
              }
         of
             {C, []} when C =/= "" -> C;
@@ -154,17 +170,21 @@ get_host() ->
             print_unresolvable_host(Host)
     end.
 
--spec my_name() -> node().
-my_name() ->
+-spec my_name(kz_term:api_boolean()) -> node().
+my_name('true') ->
+    kz_term:to_atom(iolist_to_binary(["sup_", kz_binary:rand_hex(2)]), 'true');
+my_name(_) ->
     Name = iolist_to_binary(["sup_", kz_binary:rand_hex(2), $@, localhost()]),
-    kz_term:to_atom(Name, true).
+    kz_term:to_atom(Name, 'true').
 
 -spec localhost() -> nonempty_string().
 localhost() ->
     net_adm:localhost().
 
--spec long_or_short_name() -> 'longnames' | 'shortnames'.
-long_or_short_name() ->
+-spec long_or_short_name(kz_term:api_boolean()) -> 'longnames' | 'shortnames'.
+long_or_short_name('true') ->
+    'shortnames';
+long_or_short_name(_) ->
     IsDot = fun ($.) -> 'true'; (_) -> 'false' end,
     case lists:any(IsDot, localhost()) of
         'true' -> 'longnames';
@@ -227,12 +247,24 @@ stderr(Format, Things) ->
 -spec option_spec_list() -> list().
 option_spec_list() ->
     [{'help', $?, "help", 'undefined', "Show the program options"}
-    ,{'node', $n, "node", {'string', "kazoo_apps"}, "Node name"}
-    ,{'cookie', $c, "cookie", {'string', "change_me"}, "Erlang cookie"}
+    ,{'node', $n, "node", {'string', from_env("KAZOO_NODE", "kazoo_apps")}, "Node name"}
+    ,{'cookie', $c, "cookie", {'string', from_env("KAZOO_COOKIE", "change_me")}, "Erlang cookie"}
     ,{'timeout', $t, "timeout", {'integer', 0}, "Command timeout"}
     ,{'verbose', $v, "verbose", 'undefined', "Be verbose"}
     ,{'module', 'undefined', 'undefined', 'string', "The name of the remote module"}
     ,{'function', 'undefined', 'undefined', 'string', "The name of the remote module's function"}
+    ,{'use_short', $s, "use_short", {'boolean', 'undefined'}, "Force using shortnames"}
     ].
+
+-spec from_env(list(), list()) -> list().
+from_env(Name, Default) ->
+    case os:getenv(Name) of
+        false -> Default;
+        Value -> Value
+    end.
+
+-spec use_short(kz_term:proplist()) -> kz_term:api_boolean().
+use_short(Options) ->
+    props:get_value('use_short', Options).
 
 %%% End of Module

@@ -1,5 +1,9 @@
-%% @author root
-%% @doc @todo Add description to kz_att_util.
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2016-2018, 2600Hz
+%%% @doc Some utilities to work with attachment.
+%%% @author Luis Azedo
+%%% @end
+%%%-----------------------------------------------------------------------------
 -module(kz_att_util).
 
 -export([sha256/1, sha256_mac/2, sha_mac/2
@@ -107,8 +111,13 @@ format_url_field(JObj, _Args, {'field', Field}, Fields) ->
         'undefined' -> Fields;
         V -> [kz_util:uri_encode(V) | Fields]
     end;
-format_url_field(_JObj, _Args, Field, Fields) ->
-    [Field | Fields].
+format_url_field(JObj, Args, #{<<"const">> := Field}, Fields) ->
+    format_url_field(JObj, Args, {'const', Field}, Fields);
+format_url_field(_JObj, _Args, {'const', Const}, Fields) ->
+    [Const | Fields];
+format_url_field(_JObj, _Args, Bin, Fields)
+  when is_binary(Bin) ->
+    [Bin | Fields].
 
 -spec default_format_url_fields() -> kz_term:proplist().
 default_format_url_fields() ->

@@ -1,12 +1,10 @@
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2010-2018, 2600Hz
 %%% @doc
-%%%
+%%% @author James Aimonetti
+%%% @author Karl Anderson
 %%% @end
-%%% @contributors
-%%%   James Aimonetti
-%%%   Karl Anderson
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(kapps_controller).
 
 %% API
@@ -23,13 +21,14 @@
 
 -include("kazoo_apps.hrl").
 
-%%%===================================================================
+%%%=============================================================================
 %%% API
-%%%===================================================================
+%%%=============================================================================
 
-%%--------------------------------------------------------------------
-%% @doc Starts the server
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
+%% @doc Starts the server.
+%% @end
+%%------------------------------------------------------------------------------
 -spec start_link() -> kz_types:startlink_ret().
 start_link() ->
     _ = kz_util:spawn(fun initialize_kapps/0),
@@ -37,9 +36,14 @@ start_link() ->
 
 -spec ready() -> boolean().
 ready() ->
-    Configured = start_which_kapps(),
-    Running = [kz_term:to_binary(App) || App <- running_apps()],
-    lists:subtract(Configured, Running) =:= [].
+    Configured = [kz_term:to_binary(App) || App <- start_which_kapps()],
+    Running = [kz_term:to_binary(App) || App <- running_apps(), is_atom(App)],
+
+    0 =:= sets:size(
+            sets:subtract(sets:from_list(Configured)
+                         ,sets:from_list(Running)
+                         )
+           ).
 
 -spec start_default_apps() -> [{atom(), 'ok' | {'error', any()}}].
 start_default_apps() ->
@@ -152,7 +156,8 @@ maybe_start_from_env() ->
         "noenv" -> 'false';
         KazooApps ->
             lager:info("starting applications specified in environment variable KAZOO_APPS: ~s"
-                      ,[KazooApps]),
+                      ,[KazooApps]
+                      ),
             string:tokens(KazooApps, ", ")
     end.
 
@@ -195,10 +200,14 @@ sysconf_first(_, _) -> 'true'.
 list_apps() ->
     [App || {App, _, _} <- get_running_apps()].
 
-%%%===================================================================
+%%%=============================================================================
 %%% Internal functions
-%%%===================================================================
+%%%=============================================================================
 
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
 -spec is_kapp(atom()) -> boolean().
 is_kapp(App) ->
     case application:get_env(App, 'is_kazoo_app') of

@@ -34,6 +34,15 @@
             ],
             "type": "object"
         },
+        "account_config.callflow": {
+            "description": "Schema for callflow account_config",
+            "properties": {
+                "dialog_subscribed_mwi_prefix": {
+                    "description": "callflow dialog_subscribed_mwi_prefix"
+                }
+            },
+            "type": "object"
+        },
         "account_config.cdr": {
             "description": "Schema for cdr account_config",
             "properties": {
@@ -48,6 +57,16 @@
         "account_config.conferences": {
             "description": "Schema for conferences account_config",
             "properties": {
+                "controls": {
+                    "properties": {
+                        "default": {
+                            "description": "conferences controls default"
+                        },
+                        "page": {
+                            "description": "conferences controls page"
+                        }
+                    }
+                },
                 "entry_tone": {
                     "default": "tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)",
                     "description": "conferences entry tone",
@@ -401,6 +420,22 @@
                 "caller_id": {
                     "$ref": "#/definitions/caller_id",
                     "description": "The account default caller ID parameters"
+                },
+                "caller_id_options": {
+                    "description": "custom properties for configuring caller_id",
+                    "properties": {
+                        "outbound_privacy": {
+                            "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
+                            "enum": [
+                                "full",
+                                "name",
+                                "number",
+                                "none"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
                 },
                 "dial_plan": {
                     "$ref": "#/definitions/dialplans",
@@ -2083,6 +2118,11 @@
             },
             "type": "object"
         },
+        "callflows.edr": {
+            "description": "Validator for the edr callflow's data object",
+            "properties": {},
+            "type": "object"
+        },
         "callflows.fax_detect": {
             "description": "Validator for the fax_detect callflow's data object",
             "properties": {
@@ -2826,6 +2866,15 @@
         "callflows.privacy": {
             "description": "Validator for the privacy callflow's data object",
             "properties": {
+                "endpoint_strategy": {
+                    "default": "overwrite",
+                    "description": "whether cf_privacy should overwrite or merge with the caller_id_options of the endpoint.",
+                    "enum": [
+                        "overwrite",
+                        "merge"
+                    ],
+                    "type": "string"
+                },
                 "mode": {
                     "default": "full",
                     "description": "set caller privacy on calls, restricting the presentation some or full parts of Caller ID",
@@ -3274,6 +3323,7 @@
                     "type": "string"
                 },
                 "duration_ms": {
+                    "default": "2000",
                     "description": "How long, in milliseconds, to send each DTMF",
                     "type": [
                         "string",
@@ -3418,7 +3468,7 @@
             "description": "Validator for the TTS (Text-to-speech) callflow action",
             "properties": {
                 "endless_playback": {
-                    "description": "Loop the media until cancelled",
+                    "description": "Loop the media until canceled",
                     "type": "boolean"
                 },
                 "engine": {
@@ -3899,8 +3949,20 @@
                     "type": "array",
                     "uniqueItems": true
                 },
+                "controls": {
+                    "description": "controls",
+                    "type": "object"
+                },
+                "domain": {
+                    "description": "domain",
+                    "type": "string"
+                },
                 "focus": {
                     "description": "This is a read-only property indicating the media server hosting the conference",
+                    "type": "string"
+                },
+                "language": {
+                    "description": "Prompt language to play in the conference",
                     "type": "string"
                 },
                 "max_members_media": {
@@ -3944,6 +4006,10 @@
                                 "type": "string"
                             },
                             "type": "array"
+                        },
+                        "play_entry_prompt": {
+                            "description": "Whether to play the entry prompt on member join",
+                            "type": "boolean"
                         }
                     },
                     "type": "object"
@@ -4024,7 +4090,11 @@
                     "type": "boolean"
                 },
                 "profile": {
-                    "description": "The XML profile name used to configure the conference",
+                    "description": "Profile configuration",
+                    "type": "object"
+                },
+                "profile_name": {
+                    "description": "conference profile name",
                     "type": "string"
                 },
                 "require_moderator": {
@@ -4050,6 +4120,7 @@
                     "type": "string"
                 },
                 "endpoints": {
+                    "description": "Endpoints to dial out to and join to the conference",
                     "items": {
                         "oneOf": [
                             {
@@ -4064,6 +4135,28 @@
                     },
                     "minItems": 1,
                     "type": "array"
+                },
+                "participant_flags": {
+                    "description": "Participant flags applied to each endpoint when it joins the conference",
+                    "items": {
+                        "description": "Participant flag",
+                        "enum": [
+                            "mute",
+                            "deaf",
+                            "distribute_dtmf",
+                            "is_moderator",
+                            "disable_moh",
+                            "ghost",
+                            "join_existing",
+                            "video_mute"
+                        ],
+                        "type": "string"
+                    },
+                    "type": "array"
+                },
+                "profile_name": {
+                    "description": "The profile name to use for configuration",
+                    "type": "string"
                 },
                 "target_call_id": {
                     "description": "Existing UUID to use as a hint for where to start the conference",
@@ -4418,6 +4511,22 @@
                 "caller_id": {
                     "$ref": "#/definitions/caller_id",
                     "description": "The device caller ID parameters"
+                },
+                "caller_id_options": {
+                    "description": "custom properties for configuring caller_id",
+                    "properties": {
+                        "outbound_privacy": {
+                            "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
+                            "enum": [
+                                "full",
+                                "name",
+                                "number",
+                                "none"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
                 },
                 "contact_list": {
                     "default": {},
@@ -6517,6 +6626,84 @@
             ],
             "type": "object"
         },
+        "kapi.acdc_stats.average_wait_time_err": {
+            "description": "AMQP API for acdc_stats.average_wait_time_err",
+            "properties": {
+                "Error-Reason": {
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "acdc_stat"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "average_wait_time_err"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Error-Reason"
+            ],
+            "type": "object"
+        },
+        "kapi.acdc_stats.average_wait_time_req": {
+            "description": "AMQP API for acdc_stats.average_wait_time_req",
+            "properties": {
+                "Account-ID": {
+                    "minLength": 1,
+                    "type": "string"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "acdc_stat"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "average_wait_time_req"
+                    ],
+                    "type": "string"
+                },
+                "Queue-ID": {
+                    "minLength": 1,
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Account-ID",
+                "Queue-ID"
+            ],
+            "type": "object"
+        },
+        "kapi.acdc_stats.average_wait_time_resp": {
+            "description": "AMQP API for acdc_stats.average_wait_time_resp",
+            "properties": {
+                "Average-Wait-Time": {
+                    "type": "integer"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "acdc_stat"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "average_wait_time_resp"
+                    ],
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Average-Wait-Time"
+            ],
+            "type": "object"
+        },
         "kapi.acdc_stats.call_abandoned": {
             "description": "AMQP API for acdc_stats.call_abandoned",
             "properties": {
@@ -6883,6 +7070,9 @@
                 "Pause-Time": {
                     "type": "integer"
                 },
+                "Queue-ID": {
+                    "type": "string"
+                },
                 "Timestamp": {
                     "type": "string"
                 },
@@ -6929,6 +7119,9 @@
                 },
                 "Pause-Time": {
                     "type": "integer"
+                },
+                "Queue-ID": {
+                    "type": "string"
                 },
                 "Timestamp": {
                     "type": "string"
@@ -7001,6 +7194,9 @@
                 "Pause-Time": {
                     "type": "integer"
                 },
+                "Queue-ID": {
+                    "type": "string"
+                },
                 "Timestamp": {
                     "type": "string"
                 },
@@ -7047,6 +7243,9 @@
                 },
                 "Pause-Time": {
                     "type": "integer"
+                },
+                "Queue-ID": {
+                    "type": "string"
                 },
                 "Timestamp": {
                     "type": "string"
@@ -7095,6 +7294,9 @@
                 "Pause-Time": {
                     "type": "integer"
                 },
+                "Queue-ID": {
+                    "type": "string"
+                },
                 "Timestamp": {
                     "type": "string"
                 },
@@ -7141,6 +7343,9 @@
                 },
                 "Pause-Time": {
                     "type": "integer"
+                },
+                "Queue-ID": {
+                    "type": "string"
                 },
                 "Timestamp": {
                     "type": "string"
@@ -7189,6 +7394,9 @@
                 "Pause-Time": {
                     "type": "integer"
                 },
+                "Queue-ID": {
+                    "type": "string"
+                },
                 "Timestamp": {
                     "type": "string"
                 },
@@ -7236,6 +7444,9 @@
                 "Pause-Time": {
                     "type": "integer"
                 },
+                "Queue-ID": {
+                    "type": "string"
+                },
                 "Timestamp": {
                     "type": "string"
                 },
@@ -7272,6 +7483,9 @@
                     "enum": [
                         "status_req"
                     ],
+                    "type": "string"
+                },
+                "Limit": {
                     "type": "string"
                 },
                 "Start-Range": {
@@ -7338,6 +7552,9 @@
                 "Pause-Time": {
                     "type": "integer"
                 },
+                "Queue-ID": {
+                    "type": "string"
+                },
                 "Timestamp": {
                     "type": "string"
                 },
@@ -7384,6 +7601,9 @@
                 },
                 "Pause-Time": {
                     "type": "integer"
+                },
+                "Queue-ID": {
+                    "type": "string"
                 },
                 "Timestamp": {
                     "type": "string"
@@ -8885,7 +9105,13 @@
                 "Other-Leg-Direction": {
                     "type": "string"
                 },
+                "Participant-Flags": {
+                    "type": "string"
+                },
                 "Presence-ID": {
+                    "type": "string"
+                },
+                "Profile-Name": {
                     "type": "string"
                 },
                 "Raw-Application-Data": {
@@ -8973,6 +9199,9 @@
         "kapi.conference.config_req": {
             "description": "AMQP API for conference.config_req",
             "properties": {
+                "Call-ID": {
+                    "type": "string"
+                },
                 "Conference-ID": {
                     "type": "string"
                 },
@@ -9120,6 +9349,12 @@
                     "type": "string"
                 },
                 "Outbound-Call-ID": {
+                    "type": "string"
+                },
+                "Participant-Flags": {
+                    "type": "string"
+                },
+                "Profile-Name": {
                     "type": "string"
                 },
                 "Target-Call-ID": {
@@ -12639,6 +12874,9 @@
                     ],
                     "type": "string"
                 },
+                "Group-ID": {
+                    "type": "string"
+                },
                 "Insert-At": {
                     "enum": [
                         "head",
@@ -13789,6 +14027,60 @@
             },
             "required": [
                 "Results"
+            ],
+            "type": "object"
+        },
+        "kapi.edr_amqp.event": {
+            "description": "AMQP API for edr_amqp.event",
+            "properties": {
+                "Account-ID": {
+                    "type": "string"
+                },
+                "Account-Tree": {
+                    "type": "string"
+                },
+                "Body": {
+                    "type": "object"
+                },
+                "Event-Category": {
+                    "enum": [
+                        "edr"
+                    ],
+                    "type": "string"
+                },
+                "Event-Name": {
+                    "enum": [
+                        "event"
+                    ],
+                    "type": "string"
+                },
+                "Gregorian-Time": {
+                    "type": "integer"
+                },
+                "ID": {
+                    "type": "string"
+                },
+                "Node": {
+                    "type": "string"
+                },
+                "Severity": {
+                    "type": "string"
+                },
+                "Timestamp": {
+                    "type": "string"
+                },
+                "Verbosity": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "Body",
+                "Gregorian-Time",
+                "ID",
+                "Node",
+                "Severity",
+                "Timestamp",
+                "Verbosity"
             ],
             "type": "object"
         },
@@ -18656,6 +18948,9 @@
                 "Expires": {
                     "type": "string"
                 },
+                "Extended-Presence-ID": {
+                    "type": "string"
+                },
                 "From": {
                     "type": "string"
                 },
@@ -18716,6 +19011,9 @@
                     "type": "string"
                 },
                 "Expires": {
+                    "type": "string"
+                },
+                "Extended-Presence-ID": {
                     "type": "string"
                 },
                 "From": {
@@ -19797,6 +20095,9 @@
                 "Originate-Immediate": {
                     "type": "string"
                 },
+                "Origination-Call-ID": {
+                    "type": "string"
+                },
                 "Outbound-Call-ID": {
                     "type": "string"
                 },
@@ -20029,6 +20330,9 @@
                     "type": "string"
                 },
                 "Originate-Immediate": {
+                    "type": "string"
+                },
+                "Origination-Call-ID": {
                     "type": "string"
                 },
                 "Outbound-Call-ID": {
@@ -22990,6 +23294,7 @@
                 }
             },
             "required": [
+                "media_source",
                 "name"
             ],
             "type": "object"
@@ -25049,6 +25354,10 @@
                     "description": "Reseller's account ID",
                     "type": "string"
                 },
+                "caller_id_numbers": {
+                    "description": "String of caller id prefixes separated by ':'",
+                    "type": "string"
+                },
                 "carrier": {
                     "description": "Friendly name for the carrier providing this rate",
                     "type": "string"
@@ -25111,6 +25420,10 @@
                     "description": "If the call duration is shorter than this threshold (seconds), the call is not billed",
                     "minimum": 0,
                     "type": "integer"
+                },
+                "rate_suffix": {
+                    "description": "Suffix applied to rate name",
+                    "type": "string"
                 },
                 "rate_surcharge": {
                     "description": "The upfront cost of connecting the call",
@@ -25526,6 +25839,10 @@
                     "maximum": 20,
                     "minimum": 1,
                     "type": "integer"
+                },
+                "ignore_flags": {
+                    "description": "When set to true this resource is used if the rules/classifiers match regardless of flags",
+                    "type": "boolean"
                 },
                 "media": {
                     "$ref": "#/definitions/endpoint.media",
@@ -26025,6 +26342,7 @@
                             "properties": {
                                 "oauth_doc_id": {
                                     "description": "Doc ID in the system 'auth' database",
+                                    "kazoo-validation": true,
                                     "type": "string"
                                 }
                             },
@@ -26324,6 +26642,11 @@
                     "default": 5,
                     "description": "acdc queue worker count",
                     "type": "integer"
+                },
+                "stats_query_limits_enabled": {
+                    "default": true,
+                    "description": "When enabled, prevent stats queries with limits greater than max_result_set",
+                    "type": "boolean"
                 }
             },
             "type": "object"
@@ -26422,6 +26745,10 @@
                         "type": "string"
                     },
                     "type": "array"
+                },
+                "bindings": {
+                    "description": "blackhole bindings",
+                    "type": "object"
                 },
                 "compress_response_body": {
                     "default": true,
@@ -26640,6 +26967,9 @@
                     "default": true,
                     "description": "callflow default use account caller id",
                     "type": "boolean"
+                },
+                "dialog_subscribed_mwi_prefix": {
+                    "description": "callflow dialog_subscribed_mwi_prefix"
                 },
                 "ensure_valid_caller_id": {
                     "default": false,
@@ -27040,6 +27370,16 @@
                     "description": "conferences bridge username",
                     "type": "string"
                 },
+                "controls": {
+                    "properties": {
+                        "default": {
+                            "description": "conferences controls default"
+                        },
+                        "page": {
+                            "description": "conferences controls page"
+                        }
+                    }
+                },
                 "entry_tone": {
                     "default": "tone_stream://v=-7;>=2;+=.1;%(300,0,523,659);v=-7;>=3;+=.1;%(800,0,659,783)",
                     "description": "conferences entry tone",
@@ -27076,6 +27416,7 @@
                     "type": "integer"
                 },
                 "profiles": {
+                    "default": {},
                     "properties": {
                         "default": {
                             "default": {
@@ -27103,7 +27444,8 @@
                             "description": "conferences page",
                             "type": "object"
                         }
-                    }
+                    },
+                    "type": "object"
                 },
                 "review_name": {
                     "default": false,
@@ -28377,6 +28719,174 @@
                     "default": 3600000,
                     "description": "ecallmgr user cache time in in milliseconds",
                     "type": "integer"
+                }
+            },
+            "type": "object"
+        },
+        "system_config.edr": {
+            "description": "Schema for edr system_config",
+            "properties": {
+                "backends": {
+                    "default": [],
+                    "description": "Registered edr backends",
+                    "items": {
+                        "properties": {
+                            "bindings": {
+                                "description": "The types of events the backend should be notified about",
+                                "items": {
+                                    "description": "An edr binding",
+                                    "properties": {
+                                        "account_id": {
+                                            "anyOf": [
+                                                {
+                                                    "description": "The account id(s) to receive events from. If not specified or * then events for all accounts will be received",
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "items": {
+                                                        "description": "The account id(s) to receive events from. If not specified or * then events for all accounts will be received",
+                                                        "type": "string"
+                                                    },
+                                                    "type": "array"
+                                                }
+                                            ],
+                                            "default": "*"
+                                        },
+                                        "app_name": {
+                                            "default": "*",
+                                            "description": "Which apps should we receive events from? If not specified or * then events for all apps will be received",
+                                            "type": "string"
+                                        },
+                                        "exact_severity": {
+                                            "default": false,
+                                            "description": "If true, then only events with severity exactly matching the severity field will be received. If false then more severe events will also be received",
+                                            "type": "boolean"
+                                        },
+                                        "exact_verbosity": {
+                                            "default": false,
+                                            "description": "If true, then only events with verbosity exactly matching the verbosity field will be received. If false then less verbose events will also be received",
+                                            "type": "boolean"
+                                        },
+                                        "include_descendants": {
+                                            "default": false,
+                                            "description": "Should we receive events relating to descendant accounts if an account is specified?",
+                                            "type": "boolean"
+                                        },
+                                        "severity": {
+                                            "anyOf": [
+                                                {
+                                                    "description": "What severity are we interested in events for?",
+                                                    "enum": [
+                                                        "ok",
+                                                        "warning",
+                                                        "critical"
+                                                    ],
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "items": {
+                                                        "description": "What severity are we interested in events for?",
+                                                        "enum": [
+                                                            "ok",
+                                                            "warning",
+                                                            "critical"
+                                                        ],
+                                                        "type": "string"
+                                                    },
+                                                    "type": "array"
+                                                }
+                                            ],
+                                            "default": "ok"
+                                        },
+                                        "verbosity": {
+                                            "anyOf": [
+                                                {
+                                                    "description": "What verbosity are we interested in events for?",
+                                                    "enum": [
+                                                        "trace",
+                                                        "debug",
+                                                        "info",
+                                                        "warn",
+                                                        "error",
+                                                        "fatal"
+                                                    ],
+                                                    "type": "string"
+                                                },
+                                                {
+                                                    "items": {
+                                                        "description": "What verbosity are we interested in events for?",
+                                                        "enum": [
+                                                            "trace",
+                                                            "debug",
+                                                            "info",
+                                                            "warn",
+                                                            "error",
+                                                            "fatal"
+                                                        ],
+                                                        "type": "string"
+                                                    },
+                                                    "type": "array"
+                                                }
+                                            ],
+                                            "default": "info"
+                                        }
+                                    },
+                                    "type": "object"
+                                },
+                                "type": "array"
+                            },
+                            "enabled": {
+                                "default": true,
+                                "description": "Should the backend be started on edr app start?",
+                                "type": "boolean"
+                            },
+                            "name": {
+                                "description": "A unique identifier for the backend",
+                                "minLength": 1,
+                                "type": "string"
+                            },
+                            "options": {
+                                "description": "Options passed on to the backend module. These vary by module",
+                                "properties": {
+                                    "formatter": {
+                                        "description": "Output format configuration which is used by some (but not all) backends",
+                                        "properties": {
+                                            "options": {
+                                                "description": "Options passed on to the formatter module. These vary by module",
+                                                "type": "object"
+                                            },
+                                            "type": {
+                                                "description": "The formatter module to be used (eg. json refers to edr_fmt_json.erl)",
+                                                "enum": [
+                                                    "json"
+                                                ],
+                                                "type": "string"
+                                            }
+                                        },
+                                        "type": "object"
+                                    }
+                                },
+                                "type": "object"
+                            },
+                            "type": {
+                                "description": "The backend module to be used (eg. amqp refers to edr_be_amqp.erl)",
+                                "enum": [
+                                    "amqp",
+                                    "file",
+                                    "http"
+                                ],
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "name",
+                            "type",
+                            "bindings",
+                            "enabled"
+                        ],
+                        "type": "object"
+                    },
+                    "type": "array"
                 }
             },
             "type": "object"
@@ -30193,6 +30703,11 @@
         "system_config.number_manager.other": {
             "description": "Schema for number_manager.other system_config",
             "properties": {
+                "default_country": {
+                    "default": "US",
+                    "description": "Country to search and acquire blocks of numbers from",
+                    "type": "string"
+                },
                 "endpoints": {
                     "description": "number_manager.other endpoints"
                 },
@@ -30425,6 +30940,15 @@
                                 "personal_parking": "Busy Lamp Field",
                                 "presence": "Busy Lamp Field",
                                 "speed_dial": "Speed Dial"
+                            }
+                        },
+                        "vtech": {
+                            "_": {
+                                "line": "line",
+                                "parking": "blf",
+                                "personal_parking": "blf",
+                                "presence": "presense",
+                                "speed_dial": "speed"
                             }
                         },
                         "yealink": {
@@ -30876,6 +31400,15 @@
                     "description": "speech asr api key",
                     "type": "string"
                 },
+                "asr_api_key_google": {
+                    "default": "",
+                    "description": "API key for Google Cloud Speech",
+                    "type": "string"
+                },
+                "asr_enable_word_time_offsets_google": {
+                    "description": "top result includes a list of words and the start and end time offsets",
+                    "type": "boolean"
+                },
                 "asr_locale": {
                     "default": "en-us",
                     "description": "speech asr default locale",
@@ -30891,6 +31424,10 @@
                     "description": "speech asr preferred content type",
                     "type": "string"
                 },
+                "asr_profanity_filter_google": {
+                    "description": "server will attempt to filter out profanities, replacing all but the initial character in each filtered word with asterisks",
+                    "type": "boolean"
+                },
                 "asr_provider": {
                     "default": "ispeech",
                     "description": "speech asr provider",
@@ -30899,6 +31436,11 @@
                 "asr_url": {
                     "default": "http://api.ispeech.org/api/json",
                     "description": "speech asr url",
+                    "type": "string"
+                },
+                "asr_url_google": {
+                    "default": "https://speech.googleapis.com/v1/speech:recognize",
+                    "description": "Google Cloud Speech API url",
                     "type": "string"
                 },
                 "temporary_storage_path": {
@@ -32098,6 +32640,22 @@
                     "$ref": "#/definitions/caller_id",
                     "description": "The device caller ID parameters"
                 },
+                "caller_id_options": {
+                    "description": "custom properties for configuring caller_id",
+                    "properties": {
+                        "outbound_privacy": {
+                            "description": "Determines what appears as caller id for offnet outbound calls. Values: full - hides name and number; name - hides only name; number - hides only number; none - hides nothing",
+                            "enum": [
+                                "full",
+                                "name",
+                                "number",
+                                "none"
+                            ],
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
                 "contact_list": {
                     "default": {},
                     "description": "Contect List Parameters",
@@ -33006,6 +33564,12 @@
             "required": true,
             "type": "string"
         },
+        "ERROR_ID": {
+            "in": "path",
+            "name": "ERROR_ID",
+            "required": true,
+            "type": "string"
+        },
         "EXTENSION": {
             "in": "path",
             "name": "EXTENSION",
@@ -33049,6 +33613,12 @@
             "minLength": 32,
             "name": "GROUP_ID",
             "pattern": "^[0-9a-f]+$",
+            "required": true,
+            "type": "string"
+        },
+        "HANDLER_ID": {
+            "in": "path",
+            "name": "HANDLER_ID",
             "required": true,
             "type": "string"
         },
@@ -34174,6 +34744,63 @@
                     },
                     {
                         "$ref": "#/parameters/APP_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/att_handlers_errors": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/att_handlers_errors/handler/{HANDLER_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/HANDLER_ID"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/att_handlers_errors/{ERROR_ID}": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ERROR_ID"
                     },
                     {
                         "$ref": "#/parameters/ACCOUNT_ID"
@@ -41168,6 +41795,23 @@
             }
         },
         "/accounts/{ACCOUNT_ID}/service_plans/current": {
+            "get": {
+                "parameters": [
+                    {
+                        "$ref": "#/parameters/auth_token_header"
+                    },
+                    {
+                        "$ref": "#/parameters/ACCOUNT_ID"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "request succeeded"
+                    }
+                }
+            }
+        },
+        "/accounts/{ACCOUNT_ID}/service_plans/editable": {
             "get": {
                 "parameters": [
                     {

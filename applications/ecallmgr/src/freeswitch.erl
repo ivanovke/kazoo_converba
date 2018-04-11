@@ -1,3 +1,8 @@
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2010-2018, 2600Hz
+%%% @doc
+%%% @end
+%%%-----------------------------------------------------------------------------
 -module(freeswitch).
 
 -export([version/1
@@ -41,9 +46,9 @@
 -define(TIMEOUT, 5 * ?MILLISECONDS_IN_SECOND).
 -define(FS_MODULE, mod_kazoo).
 
--type fs_api_ok() :: {'ok', binary()}.
--type fs_api_error():: {'error', 'timeout' | 'exception' | binary()}.
--type fs_api_return() :: fs_api_ok() | fs_api_error() | 'ok'.
+-type fs_api_ok() :: mod_kazoo:fs_api_ok().
+-type fs_api_error():: mod_kazoo:fs_api_error().
+-type fs_api_return() :: mod_kazoo:fs_api_return().
 -export_type([fs_api_ok/0
              ,fs_api_error/0
              ,fs_api_return/0
@@ -89,10 +94,13 @@ api(Node, Cmd, Args) -> ?FS_MODULE:api(Node, Cmd, Args).
 -spec api(atom(), kz_term:text(), kz_term:text(), timeout()) -> fs_api_return().
 api(Node, Cmd, Args, Timeout) -> ?FS_MODULE:api(Node, Cmd, Args, Timeout).
 
+%%------------------------------------------------------------------------------
 %% @doc Make a backgrounded API call to FreeSWITCH. The asynchronous reply is
 %% sent to calling process after it is received. This function
-%% returns the result of the initial bgapi call or `timeout' if FreeSWITCH fails
+%% returns the result of the initial `bgapi' call or `timeout' if FreeSWITCH fails
 %% to respond.
+%% @end
+%%------------------------------------------------------------------------------
 -spec bgapi(atom(), atom(), string() | binary()) -> fs_api_return().
 bgapi(Node, Cmd, Args) -> ?FS_MODULE:bgapi(Node, Cmd, Args).
 

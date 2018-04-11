@@ -1,26 +1,25 @@
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2014-2018, 2600Hz
 %%% @doc
-%%%
 %%% @end
-%%% @contributors
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(kz_attributes_test).
 
 -include_lib("eunit/include/eunit.hrl").
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
+-include_lib("kazoo_fixturedb/include/kz_fixturedb.hrl").
 
--define(NEW_CF_FLAGS, [fun(C) -> kapps_call:set_account_id(<<"account0000000000000000000000002">>, C) end
+-define(NEW_CF_FLAGS, [fun(C) -> kapps_call:set_account_id(?FIXTURE_RESELLER_ACCOUNT_ID, C) end
                       ,fun(C) -> kapps_call:set_authorizing_id(<<"device00000000000000000000000002">>, C) end
                       ,fun(C) -> kapps_call:set_owner_id(<<"user0000000000000000000000000002">>, C) end
                       ]).
 
--define(MIXED_CF_FLAGS, [fun(C) -> kapps_call:set_account_id(<<"account0000000000000000000000003">>, C) end
+-define(MIXED_CF_FLAGS, [fun(C) -> kapps_call:set_account_id(?FIXTURE_PARENT_ACCOUNT_ID, C) end
                         ,fun(C) -> kapps_call:set_authorizing_id(<<"device00000000000000000000000003">>, C) end
                         ,fun(C) -> kapps_call:set_owner_id(<<"user0000000000000000000000000003">>, C) end
                         ]).
 
--define(NEW_TS_FLAGS, [fun(C) -> kapps_call:set_account_id(<<"account0000000000000000000000002">>, C) end
+-define(NEW_TS_FLAGS, [fun(C) -> kapps_call:set_account_id(?FIXTURE_RESELLER_ACCOUNT_ID, C) end
                       ,fun(C) -> kapps_call:set_authorizing_id(<<"trunkstore0000000000000000000002">>, C) end
                       ]).
 

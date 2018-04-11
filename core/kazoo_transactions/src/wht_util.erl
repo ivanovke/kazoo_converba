@@ -1,11 +1,9 @@
-%%%-------------------------------------------------------------------
-%%% @copyright (C) 2013-2018, 2600Hz, INC
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2013-2018, 2600Hz
 %%% @doc
-%%%
+%%% @author Peter Defebvre
 %%% @end
-%%% @contributors
-%%%   Peter Defebvre
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(wht_util).
 
 -export([reasons/0
@@ -97,54 +95,54 @@ reasons(Min, Max)
         Code < Max
     ].
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec dollars_to_units(kz_term:text() | dollars()) -> units().
 dollars_to_units(Dollars) when is_number(Dollars) ->
     round(Dollars * ?DOLLAR_TO_UNIT);
 dollars_to_units(Dollars) ->
     dollars_to_units(kz_term:to_float(Dollars)).
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec units_to_dollars(units()) -> dollars().
 units_to_dollars(Units) when is_number(Units) ->
     trunc(Units) / ?DOLLAR_TO_UNIT;
 units_to_dollars(Units) ->
     units_to_dollars(kz_term:to_integer(Units)).
 
-%% @public
 -spec pretty_print_dollars(dollars()) -> kz_term:ne_binary().
 pretty_print_dollars(Amount) ->
     kz_term:to_binary(io_lib:format("$~.2f", [Amount])).
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
--spec base_call_cost(integer(), integer(), integer()) -> integer().
+%%------------------------------------------------------------------------------
+-spec base_call_cost(units() | dollars(), units() | dollars(), units() | dollars()) -> units().
+base_call_cost(RateCost, 0, RateSurcharge) ->
+    base_call_cost(RateCost, 60, RateSurcharge);
 base_call_cost(RateCost, RateMin, RateSurcharge)
   when is_integer(RateCost),
        is_integer(RateMin),
        is_integer(RateSurcharge) ->
-    RateCost * ( RateMin div 60 ) + RateSurcharge.
+    RateCost * (RateMin div 60) + RateSurcharge;
+base_call_cost(RateCost, RateMin, RateSurcharge) ->
+    Args = [maybe_convert_to_units(X) || X <- [RateCost, RateMin, RateSurcharge]],
+    apply(fun base_call_cost/3, Args).
 
-%%--------------------------------------------------------------------
-%% @public
+-spec maybe_convert_to_units(units() | dollars()) -> units().
+maybe_convert_to_units(Units) when is_integer(Units) -> Units;
+maybe_convert_to_units(Dollars) -> dollars_to_units(Dollars).
+
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -type balance_ret() :: {'ok', units() | dollars()} | {'error', any()}.
 
 -spec current_balance(kz_term:ne_binary()) -> balance_ret().
@@ -266,12 +264,10 @@ get_rollup_balance(Account, Options) ->
             E
     end.
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec current_account_dollars(kz_term:ne_binary()) -> balance_ret().
 current_account_dollars(Account) ->
     case current_balance(Account) of
@@ -279,12 +275,10 @@ current_account_dollars(Account) ->
         {'error', _} = Error -> Error
     end.
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec call_cost(kz_json:object()) -> units().
 call_cost(JObj) ->
     {_Seconds, Cost} = calculate_call(JObj),
@@ -316,7 +310,8 @@ calculate_call(JObj) ->
             Surcharge = get_integer_value(<<"Surcharge">>, CCVs),
             {ChargedSeconds, Cost} = calculate_call(Rate, RateIncr, RateMin, Surcharge, BillingSecs),
             Discount = trunc((get_integer_value(<<"Discount-Percentage">>, CCVs) * 0.01) * Cost),
-            lager:info("rate $~p/~ps,"
+            lager:info("rate $~p,"
+                       " increment ~ps,"
                        " minimum ~ps,"
                        " surcharge $~p,"
                        " for ~ps (~ps),"
@@ -347,12 +342,10 @@ get_integer_value(Key, JObj, Default) ->
     kz_term:to_integer(
       kz_json:get_first_defined(Keys, JObj, Default)).
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec per_minute_cost(kz_json:object()) -> integer().
 per_minute_cost(JObj) ->
     CCVs = kz_json:get_value(<<"Custom-Channel-Vars">>, JObj),
@@ -371,16 +364,12 @@ per_minute_cost(JObj) ->
             end
     end.
 
-%%--------------------------------------------------------------------
-%% @public
-%% @doc
 %% R :: rate, per minute, in units (0.01, 1 cent per minute)
 %% RI :: rate increment, in seconds, bill in this increment AFTER rate minimum is taken from Secs
 %% RM :: rate minimum, in seconds, minimum number of seconds to bill for
 %% Sur :: surcharge, in units, (0.05, 5 cents to connect the call)
 %% Secs :: billable seconds
-%% @end
-%%--------------------------------------------------------------------
+
 -spec calculate_cost(units(), integer(), integer(), units(), integer()) -> units().
 calculate_cost(_, _, _, _, 0) -> 0;
 calculate_cost(R, 0, RM, Sur, Secs) ->
@@ -403,12 +392,10 @@ calculate_call(R, RI, RM, Sur, Secs) ->
             }
     end.
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec default_reason() -> kz_term:ne_binary().
 default_reason() -> unknown().
 
@@ -467,32 +454,26 @@ mobile() -> <<"mobile">>.
 -spec unknown() -> kz_term:ne_binary().
 unknown() -> <<"unknown">>.
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec is_valid_reason(kz_term:ne_binary()) -> boolean().
 is_valid_reason(Reason) ->
     maps:is_key(Reason, reasons()).
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec reason_code(kz_term:ne_binary()) -> pos_integer().
 reason_code(Reason) ->
     maps:get(Reason, reasons(), ?CODE_UNKNOWN).
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec code_reason(pos_integer()) -> kz_term:api_ne_binary().
 code_reason(Code) ->
     case lists:keyfind(Code, 2, maps:to_list(reasons())) of
@@ -500,22 +481,18 @@ code_reason(Code) ->
         {Reason, _} -> Reason
     end.
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec collapse_call_transactions(kz_json:objects()) -> kz_json:objects().
 collapse_call_transactions(Transactions) ->
     collapse_call_transactions(Transactions, dict:new(), []).
 
-%%--------------------------------------------------------------------
-%% @public
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec modb(kz_term:ne_binary()) -> 'ok'.
 modb(?MATCH_MODB_SUFFIX_RAW(_AccountId, Year, Month) = AccountMODb) ->
     {Y, M, _} = erlang:date(),
@@ -595,12 +572,10 @@ update_existing_rollup(_Account, Balance, Transaction) ->
     {'ok', _} = kz_transaction:save(kz_transaction:set_amount_and_type(Balance, Transaction)),
     lager:debug("updated rollup in ~s with new balance ~p", [_Account, Balance]).
 
-%%--------------------------------------------------------------------
-%% @private
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec collapse_call_transactions(kz_json:objects(), dict:dict(), kz_json:objects()) ->
                                         kz_json:objects().
 collapse_call_transactions([], Calls, Transactions) ->
@@ -708,12 +683,10 @@ clean_transactions([{_, Transaction}|Transactions], Acc) ->
 clean_transactions([Transaction|Transactions], Acc) ->
     clean_transactions(Transactions, [clean_transaction(Transaction)|Acc]).
 
-%%--------------------------------------------------------------------
-%% @private
+%%------------------------------------------------------------------------------
 %% @doc
-%%
 %% @end
-%%--------------------------------------------------------------------
+%%------------------------------------------------------------------------------
 -spec clean_transaction(kz_json:object()) -> kz_json:object().
 clean_transaction(Transaction) ->
     Routines = [fun clean_amount/1

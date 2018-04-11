@@ -1,12 +1,10 @@
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 %%% @copyright (C) 2011-2018, 2600Hz
-%%% @doc
-%%% proplists-like interface to json objects
+%%% @doc proplists-like interface to json objects
+%%% @author Karl Anderson
+%%% @author James Aimonetti
 %%% @end
-%%% @contributors
-%%%   Karl Anderson
-%%%   James Aimonetti
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(kz_json_test).
 
 -include_lib("kazoo_stdlib/include/kazoo_json.hrl").
@@ -820,6 +818,68 @@ set_value_test_() ->
     Value = null,
     JObj1 = kz_json:set_value(Key, Value, JObj),
     [{"prop_set_value error", ?_assertEqual(Value, kz_json:get_value(Key, JObj1, Value))}].
+
+-define(FROM_MAP_JSON_1,
+        kz_json:from_list([{options, kz_json:from_list([{opt1,<<"my-opt1">>}
+                                                       ,{opt2,<<"my-opt2">>}
+                                                       ])}])).
+-define(FROM_MAP_JSON_2,
+        kz_json:from_list([{outer_key, kz_json:from_list([{inner_key,<<"inner_value">>}])}])).
+
+-define(FROM_MAP_JSON_3,
+        kz_json:from_list([{outer_key, kz_json:from_list([{inner_key,<<"inner_value">>}
+                                                         ,{inner_options, kz_json:from_list([{opt1,<<"my-opt1">>}
+                                                                                            ,{opt2,<<"my-opt2">>}
+                                                                                            ])}
+                                                         ])}])).
+-define(FROM_MAP_JSON_4_WRONG,
+        kz_json:from_list([{outer_key, kz_json:from_list([{inner_key,<<"inner_value">>}
+                                                         ,{inner_options, [{opt1,<<"my-opt1">>}
+                                                                          ,<<"anykey">>
+                                                                          ,{opt1,<<"my-opt1">>}
+                                                                          ]}
+                                                         ])}])).
+-define(FROM_MAP_JSON_4_RIGHT,
+        kz_json:from_list([{outer_key, kz_json:from_list([{inner_key,<<"inner_value">>}
+                                                         ,{inner_options, [kz_json:from_list([{opt1,<<"my-opt1">>}])
+                                                                          ,<<"anykey">>
+                                                                          ,kz_json:from_list([{opt1,<<"my-opt1">>}])
+                                                                          ]}
+                                                         ])}])).
+
+-define(FROM_MAP_MAP_1, #{options => [{opt1,<<"my-opt1">>},{opt2,<<"my-opt2">>}]}).
+-define(FROM_MAP_MAP_2, #{outer_key => #{inner_key => <<"inner_value">>}}).
+-define(FROM_MAP_MAP_3, #{outer_key => #{inner_key => <<"inner_value">>
+                                        ,inner_options => [{opt1,<<"my-opt1">>}
+                                                          ,{opt2,<<"my-opt2">>}
+                                                          ]}}).
+-define(FROM_MAP_MAP_4, #{outer_key => #{inner_key => <<"inner_value">>
+                                        ,inner_options => [{opt1,<<"my-opt1">>}
+                                                          ,<<"anykey">>
+                                                          ,{opt1,<<"my-opt1">>}
+                                                          ]}}).
+
+from_map_test_() ->
+    [{"Map with a proplist as a key's value"
+     ,?_assertEqual(?FROM_MAP_JSON_1, kz_json:from_map(?FROM_MAP_MAP_1))
+     }
+    ,{"Normal map", ?_assertEqual(?FROM_MAP_JSON_2, kz_json:from_map(?FROM_MAP_MAP_2))}
+    ,{"Submap with a proplist as a key's value"
+     ,?_assertEqual(?FROM_MAP_JSON_3, kz_json:from_map(?FROM_MAP_MAP_3))
+     }
+    ,{"wrong from_map with a mixed proplist inside map"
+     ,?_assertNotEqual(?FROM_MAP_JSON_4_WRONG, kz_json:from_map(?FROM_MAP_MAP_4))
+     }
+    ,{"correct from_map with a mixed proplist inside map"
+     ,?_assertEqual(?FROM_MAP_JSON_4_RIGHT, kz_json:from_map(?FROM_MAP_MAP_4))
+     }
+    ,{"error encoding the invalid json generated in from_map with a mixed proplist inside map"
+     ,?_assertException(throw, {error,{invalid_ejson,{opt1,<<"my-opt1">>}}}, kz_json:encode(?FROM_MAP_JSON_4_WRONG))
+     }
+    ,{"encoding the invalid json generated in from_map with a mixed proplist inside map"
+     ,?_assertEqual(kz_json:encode(?FROM_MAP_JSON_4_RIGHT), kz_json:encode(kz_json:from_map(?FROM_MAP_MAP_4)))
+     }
+    ].
 
 -ifdef(PERF).
 -define(REPEAT, 100000).

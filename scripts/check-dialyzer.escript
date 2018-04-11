@@ -8,35 +8,37 @@
 
 %% API
 
+main([_KazooPLT]) -> 'ok';
 main([KazooPLT | Args]) ->
-    case lists:suffix(".plt", KazooPLT) of
-        'true' -> 'ok';
-        'false' ->
-            usage(),
-            halt(1)
-    end,
-    case [Arg || Arg <- Args,
-                 not is_test(Arg)
-                     andalso (
-                       is_ebin_dir(Arg)
-                       orelse is_beam(Arg)
-                       orelse is_erl(Arg)
-                      )
-         ]
-    of
+    'false' =:= lists:suffix(".plt", KazooPLT)
+        andalso usage(1),
+
+    Env = string:tokens(os:getenv("TO_DIALYZE", ""), " "),
+
+    case filter_for_erlang_files(lists:usort(Args ++ Env)) of
         [] ->
             io:format("No files to process\n"),
-            usage(),
-            halt(0);
+            usage(0);
         Paths ->
-            Count = warn(KazooPLT, Paths),
-            Count > 0
-                andalso io:format("~p Dialyzer warnings\n", [Count]),
-            halt(Count)
+            case warn(KazooPLT, Paths) of
+                0 -> halt(0);
+                Count ->
+                    io:format("~p Dialyzer warnings\n", [Count]),
+                    halt(Count)
+            end
     end;
 main(_) ->
-    usage(),
-    halt(0).
+    usage(0).
+
+filter_for_erlang_files(Files) ->
+    [Arg || Arg <- Files,
+            not is_test(Arg)
+                andalso (
+                  is_ebin_dir(Arg)
+                  orelse is_beam(Arg)
+                  orelse is_erl(Arg)
+                 )
+    ].
 
 %% Internals
 
@@ -53,13 +55,13 @@ is_ebin_dir(Path) ->
     "ebin" == filename:basename(Path).
 
 root_dir(Path) ->
-    filename:join(
-      lists:takewhile(fun ("src") -> 'false';
-                          (_) -> 'true'
-                      end
-                     ,string:tokens(Path, "/")
-                     )
-     ).
+    filename:join(lists:takewhile(fun is_not_src/1
+                                 ,string:tokens(Path, "/")
+                                 )
+                 ).
+
+is_not_src("src") -> 'false';
+is_not_src(_) -> 'true'.
 
 file_exists(Filename) ->
     case file:read_file_info(Filename) of
@@ -119,12 +121,12 @@ do_warn(PLT, Paths) ->
 ensure_kz_types(Beams) ->
     case lists:any(fun(F) -> filename:basename(F, ".beam") =:= "kz_types" end, Beams) of
         'true' -> Beams;
-        'false' -> [code:which(kz_types) | Beams]
+        'false' -> [code:which('kz_types') | Beams]
     end.
 
 do_warn_path({_, []}, Acc) -> Acc;
 do_warn_path({'beams', Beams}, {N, PLT}) ->
-    try lists:split(10, Beams) of
+    try lists:split(5, Beams) of
         {Ten, Rest} ->
             do_warn_path({'beams', Rest}
                         ,{N + scan_and_print(PLT, Ten), PLT}
@@ -134,7 +136,15 @@ do_warn_path({'beams', Beams}, {N, PLT}) ->
             {N + scan_and_print(PLT, Beams), PLT}
     end;
 do_warn_path({'app', Beams}, {N, PLT}) ->
-    {N + scan_and_print(PLT, Beams), PLT}.
+    try lists:split(5, Beams) of
+        {Ten, Rest} ->
+            do_warn_path({'app', Rest}
+                        ,{N + scan_and_print(PLT, Ten), PLT}
+                        )
+    catch
+        'error':'badarg' ->
+            {N + scan_and_print(PLT, Beams), PLT}
+    end.
 
 scan_and_print(PLT, Bs) ->
     Beams = ensure_kz_types(Bs),
@@ -149,10 +159,10 @@ filter({'warn_undefined_callbacks', _, _}) -> 'false';
 filter({'warn_contract_types', _, {'overlapping_contract',_}}) -> 'false';
 filter(_W) -> 'true'.
 
-print({Tag, {File, Line}, _Warning} = W) ->
-    io:format("~s:~p: ~-30.. s~s~n", [File, Line, Tag, dialyzer:format_warning(W)]);
+print({Tag, {File, Line}, _W}=Warning) ->
+    io:format("~s:~p: ~s~n  ~s~n", [File, Line, Tag, dialyzer:format_warning(Warning)]);
 print(_Err) ->
-    _Err.
+    io:format("error: ~p~n", [_Err]).
 
 scan(PLT, Things) ->
     try do_scan(PLT, Things) of
@@ -166,6 +176,7 @@ do_scan(PLT, Paths) ->
     dialyzer:run([{'init_plt', PLT}
                  ,{'analysis_type', 'succ_typings'}
                   %% ,{'files_rec', [Path]}
+                 ,{'from', 'byte_code'}
                  ,{'files', Paths}
                  ,{'warnings', ['error_handling' %% functions that only return via exception
                                 %% ,no_behaviours  %% suppress warnings about behaviour callbacks
@@ -188,8 +199,9 @@ do_scan(PLT, Paths) ->
                                ]}
                  ]).
 
-usage() ->
+usage(Exit) ->
     Arg0 = escript:script_name(),
-    io:format("Usage: ~s  <path to .kazoo.plt> <path to ebin/>+\n", [filename:basename(Arg0)]).
+    io:format("Usage: ~s  <path to .kazoo.plt> <path to ebin/>+\n", [filename:basename(Arg0)]),
+    halt(Exit).
 
 %% End of Module

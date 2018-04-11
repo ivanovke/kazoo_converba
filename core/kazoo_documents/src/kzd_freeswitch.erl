@@ -1,11 +1,9 @@
-%%%-------------------------------------------------------------------
-%%% @copyright (C) 2018, 2600Hz
-%%% @doc
-%%% FreeSWITCH proplists
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2010-2018, 2600Hz
+%%% @doc FreeSWITCH proplists
+%%% @author James Aimonetti
 %%% @end
-%%% @contributors
-%%%   James Aimonetti
-%%%-------------------------------------------------------------------
+%%%-----------------------------------------------------------------------------
 -module(kzd_freeswitch).
 
 -export([account_id/1, account_billing/1, account_trunk_usage/1
@@ -421,7 +419,7 @@ to_tag(Props) ->
 
 -spec origination_call_id(data()) -> kz_term:api_binary().
 origination_call_id(Props) ->
-    props:get_value(<<"variable_sip_origination_call_id">>, Props).
+    props:get_value(<<"variable_sip_origination_call_uuid">>, Props).
 
 -spec conference_name(data()) -> kz_term:api_ne_binary().
 conference_name(Props) ->
