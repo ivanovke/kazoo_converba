@@ -8,6 +8,3 @@ Monster UI apps are written in standard HTML/CSS/JS. Backend Kazoo is written in
     * Not Supported
 * Global Infrastructure
     * Not Supported
-
-## What can you build?
-<include sample products>
