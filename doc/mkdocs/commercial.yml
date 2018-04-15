@@ -256,6 +256,27 @@ pages:
 
 # ADD PUSHER DOCS TOO
 
+
+- '2600Hz App Exchange':
+  - 'Intro': 'doc/appexchange/intro.md'
+  - 'Build Your App':
+    - 'Getting Started': 'doc/appexchange/getting_started.md'
+    - 'Planning Your App': 'doc/appexchange/planning.md'
+    - 'App Guidelines': 'doc/appexchange/guidelines.md'
+    - 'FAQ' : 'doc/appexchange/build_faq.md'
+  - 'List Your App':
+    - 'Submit Your App': 'doc/appexchange/submit_app.md'
+    - 'Approval Process': 'doc/appexchange/approval_process.md'
+    - 'FAQ' : 'doc/appexchange/list_faq.md'
+  - 'Sell Your App':
+    - 'How to Sell Your App': 'doc/appexchange/how_to_sell.md'
+    - 'Pricing': 'doc/appexchange/pricing.md'
+    - 'Financial Terms': 'doc/appexchange/financial_terms.md'
+    - 'Payments': 'doc/appexchange/payments.md'
+    - 'Support & Liability': 'doc/appexchange/support.md'
+    - 'FAQ' : 'doc/appexchange/sell_faq.md'
+
+
 #### ENDS "STILL NEEDS SORTING" SECTION
 
 
@@ -281,9 +302,9 @@ pages:
 #    - 'applications/crossbar/doc/signup.md'
 #    - 'applications/crossbar/doc/templates.md'
 
-  - 'System Status':
+#  - 'System Status':
 #    - 'applications/crossbar/doc/about.md'
-    - 'applications/crossbar/doc/acls.md' ##
+#    - 'applications/crossbar/doc/acls.md' ##
 
 
 theme: 'material'
