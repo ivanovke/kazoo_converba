@@ -4,3 +4,4 @@
 3. Click My Submissions
 4. Fill out the application submission form and upload related assets. 
 5. Accept the Application Exchange Agreement, and submit your application.
+<this is all wrong now chris has to fix>
