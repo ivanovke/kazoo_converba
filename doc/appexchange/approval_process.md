@@ -1,4 +1,4 @@
-# QA Approval Guide
+# Quality Assurance Approval Guide
 ### Provide marketing assets
 Any marketing material required for the sale or marketing on the App Exchange platform must be included. It is recommended that any other marketing material (email, social media, etc) also be included.
 ### Reasonable pricing
