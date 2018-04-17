@@ -23,14 +23,4 @@ Under the condition that your application requires an external element to functi
 ### Secure authentication
 Whilst your app may make use of Basic authentication for ease of development/speed during development, this shall not be the case for any public, approved app. Additionally, shared secrets from customer-installed apps shall be stored in a secure manner.
 ### No duplicate listings
-### Additional technical requirements Karl may have 
 
-## Style Guide
-<need to build out external style guide>
-
-## Whitelabel Support
-You should utilize the existing Kazoo whitelabel system. This allows partners and their end-users to have a consistent UI experience. To do this, utilize this procedure:
-
-
-## 2600Hz Assets
-<include guidelines for usage of 2600Hz assets, logo/typography/color palette>
