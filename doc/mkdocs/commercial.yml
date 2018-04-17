@@ -268,6 +268,8 @@ pages:
     - 'Getting Started': 'doc/appexchange/getting_started.md'
     - 'Planning Your App': 'doc/appexchange/planning.md'
     - 'App Guidelines': 'doc/appexchange/guidelines.md'
+    - 'Style & Asset Guide': 'doc/appexchange/style_guide.md'
+    - 'Whitelabeling': 'doc/appexchange/whitelabeling.md'
     - 'FAQ' : 'doc/appexchange/build_faq.md'
   - 'List Your App':
     - 'Submit Your App': 'doc/appexchange/submit_app.md'
