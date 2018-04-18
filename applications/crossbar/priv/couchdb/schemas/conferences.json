@@ -154,7 +154,8 @@
             "type": [
                 "boolean",
                 "string"
-            ]
+            ],
+            "support_level":"supported"
         },
         "play_name": {
             "default": false,
