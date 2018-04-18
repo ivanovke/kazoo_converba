@@ -29,12 +29,14 @@
                 "keep_caller_id": {
                     "default": true,
                     "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "support_level": "supported"
                 },
                 "number": {
                     "description": "The number to forward calls to",
                     "maxLength": 35,
-                    "type": "string"
+                    "type": "string",
+                    "support_level": "supported"
                 },
                 "require_keypress": {
                     "default": true,
@@ -99,7 +101,8 @@
             "properties": {
                 "exclude": {
                     "description": "If set to true the device is excluded from the contact list",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "support_level": "supported"
                 }
             },
             "type": "object"
@@ -127,12 +130,14 @@
             "format": "email",
             "maxLength": 254,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "enabled": {
             "default": true,
             "description": "Determines if the user is currently enabled",
-            "type": "boolean"
+            "type": "boolean",
+            "support_level": "supported"
         },
         "feature_level": {
             "description": "The user level for assigning feature sets",
@@ -142,7 +147,8 @@
             "description": "The first name of the user",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "formatters": {
             "$ref": "formatters",
@@ -183,13 +189,15 @@
         },
         "language": {
             "description": "The language for this user",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "last_name": {
             "description": "The last name of the user",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "media": {
             "$ref": "endpoint.media",
@@ -213,11 +221,13 @@
         },
         "password": {
             "description": "The GUI login password",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "presence_id": {
             "description": "Static presence ID (used instead of SIP username)",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "priv_level": {
             "default": "user",
@@ -226,7 +236,8 @@
                 "user",
                 "admin"
             ],
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "profile": {
             "$ref": "profile",
@@ -267,14 +278,16 @@
         },
         "timezone": {
             "description": "User's timezone",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "username": {
             "description": "The GUI login username - alpha-numeric, dashes, at symbol, periods, plusses, and underscores allowed",
             "maxLength": 256,
             "minLength": 1,
             "pattern": "^([+@.\\w_-]+)$",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "verified": {
             "default": false,

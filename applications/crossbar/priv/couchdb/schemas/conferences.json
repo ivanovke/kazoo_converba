@@ -56,12 +56,14 @@
                 "join_deaf": {
                     "default": false,
                     "description": "Determines if a member will join deaf",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "support_level": "supported"
                 },
                 "join_muted": {
                     "default": true,
                     "description": "Determines if a member will join muted",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "support_level": "supported"
                 },
                 "numbers": {
                     "default": [],
@@ -134,20 +136,23 @@
             "description": "A friendly name for the conference",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "owner_id": {
             "description": "The user ID who manages this conference",
             "maxLength": 32,
             "minLength": 32,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "play_entry_tone": {
             "description": "Whether to play an entry tone, or the entry tone to play",
             "type": [
                 "boolean",
                 "string"
-            ]
+            ],
+            "support_level": "supported"
         },
         "play_exit_tone": {
             "description": "Whether to play an exit tone, or the exit tone to play",
@@ -155,7 +160,7 @@
                 "boolean",
                 "string"
             ],
-            "support_level":"supported"
+            "support_level": "supported"
         },
         "play_name": {
             "default": false,

@@ -73,14 +73,16 @@
         "enabled": {
             "default": true,
             "description": "Determines if the account is currently enabled",
-            "type": "boolean"
+            "type": "boolean",
+            "support_level": "supported"
         },
         "formatters": {
             "$ref": "formatters"
         },
         "language": {
             "description": "The language for this account",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "metaflows": {
             "$ref": "metaflows"
@@ -101,7 +103,8 @@
             "description": "A friendly name for the account",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "notifications": {
             "description": "account notification settings",
@@ -168,7 +171,8 @@
             "maxLength": 253,
             "minLength": 4,
             "pattern": "^[.\\w_-]+$",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "ringtones": {
             "default": {},
@@ -191,7 +195,8 @@
             "description": "The default timezone",
             "maxLength": 32,
             "minLength": 5,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "topup": {
             "description": "Topup settings for the account",
