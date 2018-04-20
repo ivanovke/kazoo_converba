@@ -12,7 +12,8 @@
                 "monthly",
                 "yearly"
             ],
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "days": {
             "description": "The recurrence days for this rule",
@@ -21,25 +22,29 @@
                 "minimum": 1,
                 "type": "integer"
             },
-            "type": "array"
+            "type": "array",
+            "support_level": "supported"
         },
         "interval": {
             "default": 1,
             "description": "The recurrence interval for this rule",
             "minimum": 1,
-            "type": "integer"
+            "type": "integer",
+            "support_level": "supported"
         },
         "month": {
             "description": "The recurrence month for this rule",
             "maximum": 12,
             "minimum": 1,
-            "type": "integer"
+            "type": "integer",
+            "support_level": "supported"
         },
         "name": {
             "description": "A friendly name for the temporal rule",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "ordinal": {
             "description": "The recurrence ordinal for this rule",
@@ -52,18 +57,21 @@
                 "fifth",
                 "last"
             ],
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "start_date": {
             "default": 62586115200,
             "description": "The date that any recurrence should be calculated as starting on",
-            "type": "integer"
+            "type": "integer",
+            "support_level": "supported"
         },
         "time_window_start": {
             "description": "Seconds from the start of a day to stop considering this rule valid",
             "maximum": 86400,
             "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "support_level": "supported"
         },
         "wdays": {
             "description": "The recurrence weekdays for this rule",
@@ -80,7 +88,8 @@
                 ],
                 "type": "string"
             },
-            "type": "array"
+            "type": "array",
+            "support_level": "supported"
         }
     },
     "required": [

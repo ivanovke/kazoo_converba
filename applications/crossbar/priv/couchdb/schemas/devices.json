@@ -10,19 +10,19 @@
                     "default": false,
                     "description": "Determines if the calls that are not directly sent to the device should be forwarded",
                     "type": "boolean",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "enabled": {
                     "default": false,
                     "description": "Determines if the call forwarding should be used",
                     "type": "boolean",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "failover": {
                     "default": false,
                     "description": "Enable the call-forwarding parameters if the device is offline",
                     "type": "boolean",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "ignore_early_media": {
                     "default": true,
@@ -33,25 +33,25 @@
                     "default": true,
                     "description": "Determines if the caller id is kept when the call is forwarded, if not the devices caller id is used",
                     "type": "boolean",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "number": {
                     "description": "The number to forward calls to",
                     "maxLength": 15,
                     "type": "string",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "require_keypress": {
                     "default": true,
                     "description": "Determines if the callee is prompted to press 1 to accept the call",
                     "type": "boolean",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "substitute": {
                     "default": true,
                     "description": "Determines if the call forwarding replaces the device",
                     "type": "boolean",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 }
             },
             "type": "object"
@@ -106,7 +106,8 @@
             "properties": {
                 "exclude": {
                     "description": "If set to true the device is excluded from the contact list",
-                    "type": "boolean"
+                    "type": "boolean",
+                    "support_level": "supported"
                 }
             },
             "type": "object"
@@ -132,7 +133,8 @@
         "enabled": {
             "default": true,
             "description": "Determines if the device is currently enabled",
-            "type": "boolean"
+            "type": "boolean",
+            "support_level": "supported"
         },
         "exclude_from_queues": {
             "default": false,
@@ -144,11 +146,13 @@
         },
         "language": {
             "description": "The language for the device",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "mac_address": {
             "description": "The MAC Address of the device (if applicable)",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "media": {
             "$ref": "endpoint.media",
@@ -179,7 +183,8 @@
             "description": "A friendly name for the device",
             "maxLength": 128,
             "minLength": 1,
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "outbound_flags": {
             "description": "List of flags (features) this device requires when making outbound calls",
@@ -219,7 +224,8 @@
         },
         "presence_id": {
             "description": "Static presence ID (used instead of SIP username)",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "provision": {
             "description": "Provision data",
@@ -367,7 +373,7 @@
                     "default": 300,
                     "description": "The time, in seconds, sent to the provisioner for the registration period that the device should be configured with.",
                     "type": "integer",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "ignore_completed_elsewhere": {
                     "description": "When set to false the phone should not consider ring group calls answered elsewhere as missed",
@@ -385,12 +391,12 @@
                         "contact"
                     ],
                     "type": "string",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "ip": {
                     "description": "IP address for this device",
                     "type": "string",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "method": {
                     "default": "password",
@@ -400,7 +406,7 @@
                         "ip"
                     ],
                     "type": "string",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "number": {
                     "description": "The number used if the invite format is 1npan, npan, or e164 (if not set the dialed number is used)",
@@ -411,7 +417,7 @@
                     "maxLength": 32,
                     "minLength": 5,
                     "type": "string",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 },
                 "realm": {
                     "description": "The realm this device should use, overriding the account realm. Should rarely be necessary.",
@@ -422,7 +428,8 @@
                 },
                 "route": {
                     "description": "The SIP URL used if the invite format is 'route'",
-                    "type": "string"
+                    "type": "string",
+                    "support_level": "supported"
                 },
                 "static_route": {
                     "description": "Sends all inbound calls to this string (instead of dialed number or username)",
@@ -433,7 +440,7 @@
                     "maxLength": 32,
                     "minLength": 2,
                     "type": "string",
-                    "support_level":"supported"
+                    "support_level": "supported"
                 }
             },
             "type": "object"
@@ -445,7 +452,8 @@
         },
         "timezone": {
             "description": "Device's timezone",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         }
     },
     "required": [

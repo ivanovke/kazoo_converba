@@ -17,7 +17,8 @@
         },
         "hook": {
             "description": "The trigger event for a request being made to 'callback_uri'.",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "http_verb": {
             "default": "post",
@@ -26,7 +27,8 @@
                 "get",
                 "post"
             ],
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "include_internal_legs": {
             "default": true,
@@ -35,23 +37,27 @@
         },
         "include_subaccounts": {
             "description": "Should the webhook be fired for subaccount events.",
-            "type": "boolean"
+            "type": "boolean",
+            "support_level": "supported"
         },
         "name": {
             "description": "A friendly name for the webhook",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         },
         "retries": {
             "default": 2,
             "description": "Retry the request this many times (if it fails)",
             "maximum": 4,
             "minimum": 0,
-            "type": "integer"
+            "type": "integer",
+            "support_level": "supported"
         },
         "uri": {
             "description": "The 3rd party URI to call out to an event",
             "format": "uri",
-            "type": "string"
+            "type": "string",
+            "support_level": "supported"
         }
     },
     "required": [
