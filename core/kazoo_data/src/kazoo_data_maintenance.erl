@@ -24,6 +24,7 @@
         ]).
 
 -export([load_doc_from_file/2]).
+-export([refresh_views/1]).
 
 -export([cache_strategy/0, set_cache_strategy/1]).
 
@@ -142,3 +143,7 @@ print_strategy_details('async') ->
     ?STRATEGY_DETAILS('false', 'true');
 print_strategy_details('stampede_async') ->
     ?STRATEGY_DETAILS('true', 'true').
+
+-spec refresh_views(kz_term:ne_binary()) -> no_return.
+refresh_views(Db) ->
+    kz_datamgr:refresh_views(Db).
