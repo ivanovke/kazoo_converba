@@ -1570,10 +1570,10 @@ refresh_views(DbName) ->
 -spec view_definitions(atom() | kz_term:ne_binary()) -> views_listing().
 view_definitions(Classification) when is_atom(Classification) ->
     case get_result_docs(?KZ_DATA_DB, <<"views/views_by_classification">>, [kz_term:to_binary(Classification)]) of
-                  {'error', _} -> [];
-                  {'ok', JObjs} ->
-                      ViewDefs = [kz_json:get_json_value(<<"view_definition">>, JObj) || JObj <- JObjs],
-                      [{kz_doc:id(ViewDef), ViewDef} || ViewDef <- ViewDefs]
+        {'error', _} -> [];
+        {'ok', JObjs} ->
+            ViewDefs = [kz_json:get_json_value(<<"view_definition">>, JObj) || JObj <- JObjs],
+            [{kz_doc:id(ViewDef), ViewDef} || ViewDef <- ViewDefs]
     end;
 view_definitions(DbName) ->
     view_definitions(kzs_util:db_classification(DbName)).
