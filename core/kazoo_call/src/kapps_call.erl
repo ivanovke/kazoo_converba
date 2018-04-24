@@ -270,7 +270,7 @@ from_route_req(RouteReq, #kapps_call{call_id=OldCallId
 
     Call1#kapps_call{call_id=CallId
                     ,request=Request
-                    ,request_user=to_e164(RequestUser)
+                    ,request_user=RequestUser
                     ,request_realm=RequestRealm
                     ,from=From
                     ,from_user=binary:replace(FromUser, <<"sip:">>, <<>>)
