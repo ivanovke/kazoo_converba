@@ -1407,5 +1407,7 @@ route_resp_set_control_info(Props) ->
                          ,kz_term:to_binary(props:get_value(control_p, Props))
                          ,";ecallmgr_Ecallmgr-Node="
                          ,kz_term:to_binary(node())
+                         ,";Call-Control-Node="
+                         ,kz_term:to_binary(node())
                          ]),
     action_el(App, Arg).
