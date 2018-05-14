@@ -51,6 +51,7 @@
 -export([type/0
         ,fetch/1, fetch/2
         ,fetch_name/1, fetch_realm/1
+        ,delete/1
 
         ,api_key/1, set_api_key/2
         ,is_enabled/1, enable/1, disable/1
@@ -997,3 +998,55 @@ sent_initial_call(Doc) ->
 -spec set_initial_call_sent(doc(), boolean()) -> doc().
 set_initial_call_sent(Doc, Sent) ->
     set_notifications_first_occurrence_sent_initial_call(Doc, Sent).
+
+-spec delete(kz_term:ne_binary()) -> 'ok'.
+delete(Account) ->
+    ?MATCH_ACCOUNT_RAW(AccountId) = kz_util:format_account_id(Account),
+    AccountDb = kz_util:format_account_db(AccountId),
+
+    DbExists = kz_datamgr:db_exists(AccountDb),
+
+    _ = kz_services:delete(AccountId),
+    _ = DbExists
+        andalso knm_numbers:free(AccountId),
+    _ = cleanup_sip_aggregates(AccountId),
+    _ = delete_databases(AccountId, AccountDb),
+    _ = maybe_cleanup_master(AccountId),
+    lager:info("finished deleting account ~s", [AccountId]).
+
+delete_databases(AccountId, AccountDb) ->
+    _ = kz_datamgr:db_delete(AccountDb),
+    _ = [kz_datamgr:db_delete(MODB) || MODB <- kapps_util:get_account_mods(AccountId)],
+    delete_accounts_doc(AccountId).
+
+delete_accounts_doc(AccountId) ->
+    case kz_datamgr:open_doc(?KZ_ACCOUNTS_DB, AccountId) of
+        {'error', 'not_found'} -> 'ok';
+        {'ok', JObj} ->
+            _Deleted = kz_datamgr:del_doc(?KZ_ACCOUNTS_DB, JObj),
+            lager:debug("deleted account '~s' from ~s", [AccountId, ?KZ_ACCOUNTS_DB])
+    end.
+
+cleanup_sip_aggregates(AccountId) ->
+    ViewOptions = ['include_docs'
+                  ,{'key', AccountId}
+                  ],
+    _ = case kz_datamgr:get_results(?KZ_SIP_DB, <<"credentials/lookup_by_account">>, ViewOptions) of
+            {'ok', []} -> 'ok';
+            {'ok', JObjs} ->
+                Docs = [kz_json:get_value(<<"doc">>, JObj) || JObj <- JObjs],
+                kz_datamgr:del_docs(?KZ_SIP_DB, Docs),
+                lager:debug("cleaned up endpoints in ~s for ~s", [?KZ_SIP_DB, AccountId]);
+            {'error', _E} ->
+                lager:debug("failed to clean up endpoints in ~s for ~s: ~p", [?KZ_SIP_DB, AccountId, _E])
+        end.
+
+maybe_cleanup_master(AccountId) ->
+    case kapps_util:get_master_account_id() of
+        {'ok', AccountId} ->
+            lager:warning("removing master account id ~s - hopefully this is the only account"
+                         ,[AccountId]
+                         ),
+            kapps_util:set_master_account_id('null');
+        _ -> 'ok'
+    end.
