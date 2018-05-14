@@ -1538,22 +1538,10 @@ delete_remove_db(Context) ->
 
 -spec delete_mod_dbs(cb_context:context()) -> 'true'.
 delete_mod_dbs(Context) ->
-    AccountId = cb_context:account_id(Context),
-    {Year, Month, _} = erlang:date(),
-    delete_mod_dbs(AccountId, Year, Month).
-
--spec delete_mod_dbs(kz_term:ne_binary(), kz_time:year(), kz_time:month()) -> 'true'.
-delete_mod_dbs(AccountId, Year, Month) ->
-    Db = kz_util:format_account_mod_id(AccountId, Year, Month),
-    case kz_datamgr:db_delete(Db) of
-        'true' ->
-            lager:debug("removed account mod: ~s", [Db]),
-            {PrevYear, PrevMonth} = kazoo_modb_util:prev_year_month(Year, Month),
-            delete_mod_dbs(AccountId, PrevYear, PrevMonth);
-        'false' ->
-            lager:debug("failed to delete account mod: ~s", [Db]),
-            'true'
-    end.
+    lists:foreach(fun kz_datamgr:db_delete/1
+                 ,kapps_util:get_account_mods(cb_context:account_id(Context))
+                 ),
+    'true'.
 
 -spec delete_remove_from_accounts(cb_context:context()) -> cb_context:context().
 delete_remove_from_accounts(Context) ->
@@ -1564,7 +1552,6 @@ delete_remove_from_accounts(Context) ->
                                                 ,{fun cb_context:set_doc/2, JObj}
                                                 ]),
             crossbar_doc:delete(UpdatedContext);
-
         {'error', 'not_found'} ->
             crossbar_util:response(kz_json:new(), Context);
         {'error', _R} ->
