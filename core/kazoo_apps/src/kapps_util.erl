@@ -30,6 +30,7 @@
         ]).
 -export([get_master_account_id/0
         ,get_master_account_db/0
+        ,set_master_account_id/1
         ]).
 -export([is_master_account/1]).
 -export([account_depth/1]).
@@ -151,6 +152,15 @@ get_master_account_id() ->
         Default -> {'ok', Default}
     end.
 
+-spec set_master_account_id(kz_term:ne_binary() | 'null') -> 'ok'.
+set_master_account_id(AccountId) when is_binary(AccountId)
+                                      orelse 'null' =:= AccountId ->
+    {'ok', _} = kapps_config:set_default(?KZ_SYSTEM_CONFIG_ACCOUNT, <<"master_account_id">>, AccountId),
+    lager:info("set master account id to ~s", [AccountId]).
+
+find_master_account_id({'error', 'timeout'}) ->
+    lager:warning("fetching the accounts' listing_by_id view timed out; check db logs"),
+    {'error', 'timeout'};
 find_master_account_id({'error', _}=E) -> E;
 find_master_account_id({'ok', []}) -> {'error', 'no_accounts'};
 find_master_account_id({'ok', Accounts}) ->
