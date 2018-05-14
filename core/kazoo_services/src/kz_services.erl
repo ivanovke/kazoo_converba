@@ -1456,10 +1456,12 @@ incorporate_depreciated_service_plans(Plans, JObj) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
--spec get_reseller_id(kz_term:ne_binaries() | kz_term:ne_binary()) -> kz_term:ne_binary().
+-spec get_reseller_id(kz_term:ne_binaries() | kz_term:ne_binary()) -> kz_term:api_ne_binary().
 get_reseller_id([]) ->
-    {'ok', MasterAccountId} = master_account_id(),
-    MasterAccountId;
+    case master_account_id() of
+        {'ok', MasterAccountId} -> MasterAccountId;
+        {'error', 'not_found'} -> 'undefined'
+    end;
 get_reseller_id([Parent|Ancestors]) ->
     case fetch_services_doc(Parent, cache_failures) of
         {'error', _R} ->
