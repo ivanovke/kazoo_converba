@@ -54,6 +54,7 @@
 -export([change_console_log_level/1
         ,change_error_log_level/1
         ,change_syslog_log_level/1
+        ,change_file_log_level/2
         ]).
 
 -export([node_name/0, node_hostname/0]).
@@ -151,8 +152,7 @@ change_console_log_level(L) ->
 
 -spec change_error_log_level(log_level()) -> 'ok'.
 change_error_log_level(L) when is_atom(L) ->
-    lager:info("updated error_log to level ~s", [L]),
-    lager:set_loglevel({'lager_file_backend', "log/error.log"}, L);
+    change_file_log_level("log/error.log", L);
 change_error_log_level(L) ->
     change_error_log_level(kz_term:to_atom(L)).
 
@@ -163,6 +163,10 @@ change_syslog_log_level(L) when is_atom(L) ->
 change_syslog_log_level(L) ->
     change_syslog_log_level(kz_term:to_atom(L)).
 
+-spec change_file_log_level(file:filename(), log_level()) -> 'ok'.
+change_file_log_level(File, Level) when is_atom(Level) ->
+    lager:info("updating ~s level to ~s", [File, Level]),
+    lager:set_loglevel({'lager_file_backend', File}, Level).
 
 -type account_format() :: 'unencoded' | 'encoded' | 'raw'.
 
