@@ -585,9 +585,8 @@ create_account(Context) ->
         _Status ->
             {'error', {_Code, _Msg, Errors}} = cb_context:response(Context1),
             AccountId = kz_doc:id(cb_context:req_data(Context)),
-            kz_datamgr:db_delete(kz_util:format_account_db(AccountId)),
-
-            io:format("failed to create the account: ~p ~s", [_Code, _Msg]),
+            kzd_accounts:delete(AccountId),
+            io:format("failed to create the account: ~p ~s~n", [_Code, _Msg]),
             throw(Errors)
     end.
 
