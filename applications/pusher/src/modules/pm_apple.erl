@@ -61,20 +61,11 @@ code_change(_OldVsn, State, _Extra) ->
 maybe_send_push_notification('undefined', _) -> 'ok';
 maybe_send_push_notification(Pid, JObj) ->
     TokenID = kz_json:get_value(<<"Token-ID">>, JObj),
-    Sender = kz_json:get_value(<<"Alert-Body">>, JObj),
-    CallId = kz_json:get_value(<<"Call-ID">>, JObj),
-    APNsTopic = apns_topic(JObj),
-    apns:push_notification(Pid
-                          ,TokenID
-                          ,#{aps => #{alert => #{'loc-key' => <<"IC_MSG">>
-                                                ,'loc-args' => [Sender]
-                                                }
-                                     ,sound => <<"ring.caf">>
-                                     }
-                            ,'call-id' => CallId
-                            }
-                          ,#{apns_topic => APNsTopic}
-                          ).
+    Topic = apns_topic(JObj),
+    TopicArg = #{apns_topic => Topic},
+    Msg = kz_json:to_map(<<"Body">>, JObj),
+    {Result, _Props, _Ignore} = apns:push_notification(Pid, TokenID, Msg, TopicArg),
+    lager:debug("apns result for ~s : ~B", [Topic, Result]).
 
 -spec get_apns(kz_term:api_binary(), ets:tid()) -> kz_term:api_pid().
 get_apns('undefined', _) -> 'undefined';
@@ -96,7 +87,8 @@ maybe_load_apns(App, _, 'undefined', _) ->
     'undefined';
 maybe_load_apns(App, ETS, CertBin, Host) ->
     {Key, Cert} = pusher_util:binary_to_keycert(CertBin),
-    Connection = #{name => 'undefined'
+    lager:debug("starting apple push connection for ~s : ~s", [App, Host]),
+    Connection = #{name => kz_term:to_atom(App, 'true')
                   ,apple_host => kz_term:to_list(Host)
                   ,apple_port => 443
                   ,certdata => Cert
