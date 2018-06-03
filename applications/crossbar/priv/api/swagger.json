@@ -19458,6 +19458,9 @@
                 "Badge": {
                     "type": "string"
                 },
+                "Body": {
+                    "type": "string"
+                },
                 "Call-ID": {
                     "type": "string"
                 },
