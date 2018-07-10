@@ -18,6 +18,7 @@
         ,is_protocol_family_supported/1
         ,is_cidr/1
         ]).
+
 -export([to_cidr/1
         ,to_cidr/2
         ,verify_cidr/2
