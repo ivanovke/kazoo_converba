@@ -65,7 +65,7 @@ dep_meck = git https://github.com/eproxus/meck
 dep_nklib = git https://github.com/NetComposer/nklib
 dep_plists = hex 1.0.0
 
-dep_graphql = git https://github.com/shopgun/graphql-erlang.git 0.13.0
+dep_graphql = git https://github.com/shopgun/graphql-erlang.git master
 
 dep_erlcloud = git https://github.com/lazedo/erlcloud 54fe6b96eb0bc591b80161fc552afb821072222c
 ## waiting on pull request https://github.com/erlcloud/erlcloud/pull/437

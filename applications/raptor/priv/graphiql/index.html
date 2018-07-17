@@ -37,8 +37,8 @@
       copy them directly into your environment, or perhaps include them in your
       favored resource bundler.
      -->
-    <link rel="stylesheet" href="./assets/graphiql.css" />
-    <script src="./assets/graphiql.min.js"></script>
+    <link rel="stylesheet" href="___graphql/assets/graphiql.css" />
+    <script src="___graphql/assets/graphiql.min.js"></script>
 
   </head>
   <title>Kazoo Graphql API</title>
@@ -110,7 +110,7 @@
       function graphQLFetcher(graphQLParams) {
         // This example expects a GraphQL server at the path /graphql.
         // Change this to point wherever you host your GraphQL server.
-        return fetch('/___graphql', {
+        return fetch('/', {
           method: 'post',
           headers: {
             'Accept': 'application/json',

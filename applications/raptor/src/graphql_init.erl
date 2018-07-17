@@ -7,6 +7,8 @@
 -module(graphql_init).
 
 -export([start_link/0
+        ,mapping_rules/0
+        ,setup_root/0
         ]).
 
 -include("raptor.hrl").
@@ -30,25 +32,23 @@ load_schema() ->
     'ok' = graphql:validate_schema(),
     'ok'.
 
+-spec mapping_rules() -> map().
 mapping_rules() ->
-    #{'scalars' => #{'default' => 'gql_core_scalar'}
-     ,'interfaces' => #{'default' => 'gql_core_type'}
-     ,'unions' => #{'default' => 'gql_core_type'}
-     ,'enums' => #{'Episode' => 'gql_core_enum'
-                  ,'default'   => 'gql_core_enum'
-                  }
+    #{'interfaces' => #{'default' => 'gql_core_type'}
+     ,'enums' => #{'default'   => 'gql_core_enum'}
      ,'objects' => #{'Account' => 'gql_core_account'
 
                     ,'Query' => 'gql_core_query'
-                    ,'Mutation' => 'gql_core_mutation'
                     ,'default' => 'gql_core_object'
                     }
+     %% ,'unions' => #{'default' => 'gql_core_type'}
+     %% ,'scalars' => #{'default' => 'gql_core_scalar'}
      }.
 
+-spec setup_root() -> any().
 setup_root() ->
     Root = {'root'
            ,#{'query' => 'Query'
-             ,'mutation' => 'Mutation'
              ,'interfaces' => ['Node']
              }
            },

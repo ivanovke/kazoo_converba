@@ -4,7 +4,7 @@
 %%% @author Hesaam Farhang
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(graphql_resource).
+-module(raptor_graphql_handler).
 
 -include("raptor.hrl").
 
@@ -35,7 +35,7 @@
 %%------------------------------------------------------------------------------
 -spec init(cowboy_req:req(), kz_term:proplist()) ->
                   {'cowboy_rest', cowboy_req:req(), raptor_context:context()}.
-init(Req, {'priv_file', _, _} = PrivFile) ->
+init(Req, {'priv_dir', _, _} = PrivFile) ->
     {'cowboy_rest', Req, #{'grapgql_ide_location' => PrivFile}}.
 
 -spec allowed_methods(cowboy_req:req(), raptor_context:context()) ->
@@ -75,7 +75,7 @@ resource_exists(#{method := <<"POST">>} = Req, State) ->
 
 -spec to_html(cowboy_req:req(), raptor_context:context()) ->
                      {iolist(), cowboy_req:req(), raptor_context:context()}.
-to_html(Req, #{index_location := {'priv_file', App, FileLocation}} = State) ->
+to_html(Req, #{grapgql_ide_location := {'priv_dir', App, FileLocation}} = State) ->
     Filename = filename:join(code:priv_dir(App), FileLocation),
     case file:read_file(Filename) of
         {'ok', Data} ->

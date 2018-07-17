@@ -25,14 +25,19 @@ start_link() ->
 -spec graphql_routes() -> cowboy_router:routes().
 graphql_routes() ->
     [{'_'
-     ,[assets_path()
+     ,[graphiql_path()
+      ,assets_path()
       ,graphql_path()
       ]
      }
     ].
 
+graphiql_path() ->
+    {"/___graphql", 'cowboy_static', {'priv_file', ?APP, "graphiql/index.html"}}.
+
 assets_path() ->
-    {"/___graphql/[...]", 'cowboy_static', {'priv_dir', ?APP, "graphiql"}}.
+    ?DEV_LOG("Hello"),
+    {"/___graphql/assets/[...]", 'cowboy_static', {'priv_dir', ?APP, "graphiql/assets"}}.
 
 graphql_path() ->
     {"/", 'raptor_graphql_handler', {'priv_dir', ?APP, "graphiql/index.html"}}.
