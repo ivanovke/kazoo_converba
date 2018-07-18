@@ -15,5 +15,12 @@
 %% @end
 %%------------------------------------------------------------------------------
 -spec execute(any()) -> {'ok', any()} | {'error', any()}.
-execute(#{'$type' := <<"Account">>}) -> {'ok', 'Account'};
-execute(_) -> {'error', 'unknown_type'}.
+execute(#{'$type' := <<"Account">>}) ->
+    ?DEV_LOG("type Account"),
+    {'ok', 'Account'};
+execute(#{'$type' := <<"account">>}) ->
+    ?DEV_LOG("type account"),
+    {'ok', 'Account'};
+execute(_Other) ->
+    ?DEV_LOG("unkown type ~p", [_Other]),
+    {'error', 'unknown_type'}.

@@ -17,14 +17,18 @@
 %%------------------------------------------------------------------------------
 -spec normalize_key(any()) -> any().
 normalize_key(Key) when is_binary(Key) ->
-    << <<(normalize_key_char(Char))>> || <<Char>> <= Key >>.
+    << <<(normalize_key_char(Char))/binary>> || <<Char>> <= normalize_key_word(Key) >>.
 
 normalize_key_char(C) when is_integer(C), $A =< C, C =< $Z ->
-    <<"_", (C + 22)/binary>>;
+    <<"_", (C + 32)>>;
 %% Converts latin capital letters to lowercase, skipping 16#D7 (extended ascii 215) "multiplication sign: x"
 normalize_key_char(C) when is_integer(C), 16#C0 =< C, C =< 16#D6 ->
-    <<"_", (C + 32)/binary>>;
+    <<"_", (C + 32)>>;
 normalize_key_char(C) when is_integer(C), 16#D8 =< C, C =< 16#DE ->
-    <<"_", (C + 32)/binary>>; % so we only loop once
+    %% so we only loop once
+    <<"_", (C + 32)>>;
 normalize_key_char(C) ->
-    C.
+    <<C>>.
+
+normalize_key_word(Key) ->
+    binary:replace(Key, <<"ID">>, <<"_id">>).

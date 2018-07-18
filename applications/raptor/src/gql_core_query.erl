@@ -22,17 +22,17 @@ execute(Context, Object, Field, Args) ->
 
 -spec run_execute(any(), any(), any(), any()) -> any().
 run_execute(Context, _Object, <<"node">>, #{<<"id">> := ID}) ->
-    load_node(Context, 'any', ID);
+    load_node(Context, ID);
 run_execute(Context, _Object, <<"account">>, #{<<"id">> := ID}) ->
-    load_doc(Context, <<"account">>, kz_util:format_account_id(ID)).
+    load_doc(Context, [<<"account">>], kz_util:format_account_id(ID)).
 
-load_node(Context, 'any', InputID) ->
+load_node(Context, InputID) ->
     try
         case binary:split(InputID, <<":">>) of
             [Type, ID] ->
-                load_doc(Context, 'any', {Type, ID});
+                load_doc(Context, [Type], ID);
             _Error ->
-                ?DEV_LOG("~p psplit error: ~p", [InputID, _Error]),
+                ?DEV_LOG("~p split error: ~p", [InputID, _Error]),
                 exit('invalid_id')
         end
     catch
@@ -41,28 +41,27 @@ load_node(Context, 'any', InputID) ->
             {'error', 'invalid_id'}
     end.
 
-load_doc(Context, 'any', {Type, ID}) ->
-    load_doc(Context, [Type], ID);
-load_doc(Context, Types, {Type, ID}) ->
-    case lists:member(Type, Types) of
-        'true' -> load_doc(Context, Type, ID);
-        'false' ->
-            ?DEV_LOG("type ~p is not member of ~p", [Type, Types]),
-            {'error', 'invalid_id'}
-    end;
-load_doc(_Context, Type, ID) ->
+load_doc(_Context, Types, ID) ->
     %% dummy load for now
     case kz_datamgr:open_doc(kz_util:format_account_db(ID), ID) of
         {'ok', JObj} ->
-            case kz_doc:type(JObj) of
-                Type -> {'ok', #{'$type' => Type
-                                ,'object' => kz_json:to_map(JObj)
-                                }
-                        };
-                _Other ->
-                    ?DEV_LOG("expected type ~p is not document ~p with ~p", [Type, ID, _Other]),
+            case check_doc_type(Types, JObj) of
+                {'ok', Type} ->
+                    ?DEV_LOG("type matched ~p", [Type]),
+                    {'ok', #{'$type' => Type
+                            ,'object' => kz_json:to_map(JObj)
+                            }
+                    };
+                {'error', Expected, Type} ->
+                    ?DEV_LOG("document ~p with type ~p does not matched expected types ~p", [ID, Type, Expected]),
                     {'error', 'invalid_id'}
             end;
         {'error', _}=Error -> Error
     end.
 
+check_doc_type(Expected, JObj) ->
+    Type = kz_doc:type(JObj),
+    case lists:member(Type, Expected) of
+        'true' -> {'ok', Type};
+        'false' -> {'error', Expected, Type}
+    end.

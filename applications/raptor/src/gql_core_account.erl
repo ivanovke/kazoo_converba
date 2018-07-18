@@ -17,7 +17,8 @@
 %%------------------------------------------------------------------------------
 -spec execute(any(), any(), any(), any()) -> any().
 execute(_Context, #{'object' := JObj}, Field, _Args) ->
+    ?DEV_LOG("normalizing key: ~p", [Field]),
     Key = graphql_utils:normalize_key(Field),
-    ?DEV_LOG("normalize_key: ~p", [Key]),
+    ?DEV_LOG("normalized key: ~p", [Key]),
     {'ok', maps:get(Key, JObj, 'null')}.
 

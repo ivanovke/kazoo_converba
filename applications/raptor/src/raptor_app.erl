@@ -26,5 +26,8 @@ start(_StartType, _StartArgs) ->
 %%------------------------------------------------------------------------------
 -spec stop(any()) -> any().
 stop(_State) ->
+    ?DEV_LOG("hello"),
+    spawn(fun() -> application:stop(graphql) end),
+    ?DEV_LOG("bye"),
     'ok'.
 
