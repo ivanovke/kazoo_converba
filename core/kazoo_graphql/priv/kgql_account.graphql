@@ -1,0 +1,21 @@
+type Account implements Node {
+  id: ID!
+  callRecording: AccountCallRecording
+  callRestriction: AccountCallRestriction
+  callerID: CallerID
+  enabled: Boolean
+  language: String
+  name: String!
+  realm: String!
+  timezone: String
+}
+
+type AccountCallRecording {
+  account: CallRecording
+  endpoint: CallRecording
+}
+
+type AccountCallRestriction {
+  action: CallRestrictionEnum
+}
+

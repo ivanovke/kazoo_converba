@@ -4,18 +4,18 @@
 %%% @author Hesaam Farhang
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(raptor_sup).
+-module(kazoo_graphql_sup).
 
 -behaviour(supervisor).
 
 -export([start_link/0]).
 -export([init/1]).
 
--include("raptor.hrl").
+-include("kz_graphql.hrl").
 
 -define(SERVER, ?MODULE).
 
--define(CHILDREN, [?WORKER('raptor_init')
+-define(CHILDREN, [?WORKER('kz_graphql_init')
                   %% ,?CACHE_ARGS(?CACHE_NAME, ?CACHE_PROPS)
                   ]
        ).

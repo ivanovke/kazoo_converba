@@ -4,15 +4,15 @@
 %%% @author Hesaam Farhang
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(graphql_utils).
+-module(kgql_utils).
 
 -export([normalize_key/1
         ]).
 
--include("raptor.hrl").
+-include("kz_graphql.hrl").
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc Convert GraphQL camelCase key name to our JSON underscore key name.
 %% @end
 %%------------------------------------------------------------------------------
 -spec normalize_key(any()) -> any().

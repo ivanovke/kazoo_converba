@@ -1,0 +1,9 @@
+{application,kazoo_graphql,
+             [{applications,[graphql,jsx,kazoo,kazoo_config,kazoo_data,
+                             kernel,lager,stdlib]},
+              {description,"Kazoo GraphQL dimension"},
+              {env,[]},
+              {mod,{kazoo_graphql_app,[]}},
+              {modules,[]},
+              {registered,[]},
+              {vsn,"4.0.0"}]}.

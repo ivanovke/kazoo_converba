@@ -7,9 +7,10 @@
 -module(gql_core_query).
 
 -export([execute/4
+        ,load_doc/3
         ]).
 
--include("raptor.hrl").
+-include("kz_graphql.hrl").
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -41,6 +42,7 @@ load_node(Context, InputID) ->
             {'error', 'invalid_id'}
     end.
 
+-spec load_doc(any(), kz_term:binaries(), kz_term:binary()) -> {'ok', any()} | {'error', any()}.
 load_doc(_Context, Types, ID) ->
     %% dummy load for now
     case kz_datamgr:open_doc(kz_util:format_account_db(ID), ID) of
