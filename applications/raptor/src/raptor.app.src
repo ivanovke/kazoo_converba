@@ -1,5 +1,5 @@
 {application,raptor,
-             [{applications,[cowboy,graphql,jsx,kazoo,kazoo_config,kazoo_data,
+             [{applications,[cowboy,graphql,jsx,kazoo,kazoo_graphql,kazoo_config,kazoo_data,
                              kernel,lager,stdlib]},
               {description,"Raptor - GraphQL Interface to the other dimension"},
               {env,[{is_kazoo_app,true}]},

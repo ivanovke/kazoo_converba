@@ -27,30 +27,56 @@ start_link() ->
 load_schema() ->
     Resolvers = ['gql_core_account'
                 ],
-    SchemaData = read_schema_files(["root_queries", "core" | Resolvers]),
+    lager:info("loading GraphQL Schema for: ~p", [Resolvers]),
+    SchemaData = read_schema_files([<<"gql_root_queries">>, <<"gql_core">> | Resolvers]),
     MappingRules = inject_core(Resolvers),
-    'ok' = graphql:load_schema(MappingRules, SchemaData),
-    'ok' = setup_root(),
-    'ok' = graphql:validate_schema(),
-    'ok'.
+
+    try graphql:load_schema(MappingRules, SchemaData) of
+        'ok' -> setup_and_validate();
+        {'error', {error, {already_exists, _Id}=Error}} ->
+            lager:error("Id ~p is already defined in GraphQL Schema", []),
+            exit(Error);
+        {'error', Error} ->
+            lager:error("failed to GraphQL Schemas: ~p", [Error]),
+            exit(Error)
+    catch
+        'error':Error ->
+            lager:error("failed to GraphQL Schemas: ~p", [Error]),
+            exit(Error)
+    end.
+
+setup_and_validate() ->
+    case setup_root() of
+        'ok' ->
+            try 'ok' = graphql:validate_schema()
+            catch
+                'error':Error ->
+                    lager:error("GraphQL Schema validation failed: ~p", [Error]),
+                    exit(Error)
+            end;
+        {'error', Error} ->
+            lager:error("inserting GraphQL root schema failed: ~p", [Error]),
+            exit(Error)
+    end.
 
 read_schema_files(Resolvers) ->
     PrivDir = code:priv_dir(?APP),
-    kz_term:to_list([read_schema(PrivDir, Resolver) || Resolver <- Resolvers]).
+    kz_term:to_binary([read_schema(PrivDir, Resolver) || Resolver <- Resolvers]).
 
 read_schema(PrivDir, Resolver) ->
-    File = <<"kgql_", Resolver/binary, ".graphql">>,
-    {'ok', SchemaData} = file:read_file(filename:join(PrivDir, File)),
+    File = <<(kz_term:to_binary(Resolver))/binary, ".graphql">>,
+    {'ok', SchemaData} = file:read_file(filename:join([PrivDir, <<"schemas">>, File])),
     <<SchemaData/binary, "\n">>.
 
 inject_core(Resolvers) ->
     ResolversMapping = [Resolver:mapping_rules() || Resolver <- Resolvers],
     merge_mapping_rules([core_mapping_rules() | ResolversMapping], #{}).
 
+-spec merge_mapping_rules(map(), map()) -> map().
 merge_mapping_rules([], Acc) ->
     Acc;
 merge_mapping_rules([ResolverRules | Other], MappingRules) ->
-    NewAcc = maps:fold(fun(K, V, Acc) -> maps:merge(V, maps:get(K, Acc, #{})) end
+    NewAcc = maps:fold(fun(K, V, Acc) -> Acc#{K => maps:merge(V, maps:get(K, Acc, #{}))} end
                       ,MappingRules
                       ,ResolverRules
                       ),
