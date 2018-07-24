@@ -11,7 +11,7 @@
 -export([max_bulk_insert/0
         ,max_bulk_read/0
         ]).
--export([init_dbs/0]).
+-export([init_dbs/0, init_dbs/1]).
 %% format
 -export([format_error/1]).
 
@@ -1482,9 +1482,13 @@ add_doc_type_from_view(View, Options) ->
 
 -spec init_dbs() -> boolean().
 init_dbs() ->
+    init_dbs(fun db_create/1).
+
+-spec init_dbs(fun((kz_term:ne_binary()) -> boolean())) -> boolean().
+init_dbs(Fun) ->
     Result = case db_exists(?KZ_ACCOUNTS_DB) of
                  'true' -> 'false';
-                 'false' -> [db_create(DbName) || DbName <- ?KZ_SYSTEM_DBS],
+                 'false' -> [Fun(DbName) || DbName <- ?KZ_SYSTEM_DBS],
                             'true'
              end,
     revise_docs_from_folder(?KZ_DATA_DB, 'kazoo_data', <<"views">>),

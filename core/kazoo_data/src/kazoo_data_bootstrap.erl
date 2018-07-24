@@ -50,7 +50,8 @@ init([]) ->
     kz_dataconnections:wait_for_connection(),
     #data_connection{tag=Tag} = Connection,
     Server = #{tag => Tag, server => kz_dataconnections:get_server(Tag)},
-    kzs_db:db_create(Server, ?KZ_DATA_DB),
+    Fun = fun(DB) -> kzs_db:db_create(Server, DB, []) end,
+    kz_datamgr:init_dbs(Fun),
     {'ok', #state{}, 100}.
 
 %%------------------------------------------------------------------------------
