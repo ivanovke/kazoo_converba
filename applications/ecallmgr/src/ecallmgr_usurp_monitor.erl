@@ -13,7 +13,7 @@
 %% API
 -export([start_link/0]).
 
--export([register/1, register/2]).
+-export([register/2, register/3]).
 
 %% gen_listener callbacks
 -export([init/1
@@ -32,6 +32,7 @@
 -type state() :: map().
 
 -record(cache, {call_id :: kz_term:ne_binary()
+               ,fetch_id :: kz_tern:ne_binary()
                ,pid :: pid()
                }).
 -type cache() :: #cache{}.
@@ -94,8 +95,9 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec handle_cast(any(), state()) -> kz_types:handle_cast_ret_state(state()).
-handle_cast({register, CallId, Pid}, State) ->
-    {'noreply', handle_register(#cache{call_id=CallId, pid=Pid}, State)};
+handle_cast({register, CallId, FetchId, Pid}, State) ->
+    kz_util:put_callid(CallId),
+    {'noreply', handle_register(#cache{call_id=CallId, fetch_id=FetchId, pid=Pid}, State)};
 handle_cast(_, State) ->
     {'noreply', State}.
 
@@ -119,11 +121,13 @@ handle_info(_Msg, State) ->
 -spec handle_event(kz_json:object(), state()) -> gen_listener:handle_event_return().
 handle_event(JObj, #{calls := Calls}) ->
     kz_util:put_callid(JObj),
-    _ = case ets:lookup(Calls, kz_call_event:call_id(JObj)) of
-            [#cache{pid=Pid}] -> Pid ! {'usurp_control', kz_call_event:fetch_id(JObj), JObj};
-            _ -> 'ok'
-        end,
+    _ = handle_usurp(kz_call_event:call_id(JObj), kz_call_event:fetch_id(JObj), JObj, Calls),
     'ignore'.
+
+-spec handle_usurp(kz_term:ne_binary(), kz_term:ne_binary(), kz_json:object(), ets:tid()) -> 'ok'.
+handle_usurp(CallId, FetchId, JObj, Calls) ->
+    _ = [Pid ! {'usurp_control', FetchId, JObj} || #cache{pid=Pid} <- ets:lookup(Calls, CallId)],
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc This function is called by a gen_listener when it is about to
@@ -145,16 +149,17 @@ terminate(_Reason, _State) -> 'ok'.
 code_change(_OldVsn, State, _Extra) ->
     {'ok', State}.
 
--spec register(kz_term:ne_binary()) -> 'ok'.
-register(CallId) ->
-    register(CallId, self()).
+-spec register(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
+register(CallId, FetchId) ->
+    register(CallId, FetchId, self()).
 
--spec register(kz_term:ne_binary(), pid()) -> 'ok'.
-register(CallId, Pid) ->
-    gen_listener:cast(?SERVER, {register, CallId, Pid}).
+-spec register(kz_term:ne_binary(), kz_term:ne_binary(), pid()) -> 'ok'.
+register(CallId, FetchId, Pid) ->
+    gen_listener:cast(?SERVER, {register, CallId, FetchId, Pid}).
 
 -spec handle_register(cache(), state()) -> state().
-handle_register(#cache{pid=Pid}=Cache, #{calls := Calls, pids := Pids} = State) ->
+handle_register(#cache{call_id=CallId, fetch_id=FetchId, pid=Pid}=Cache, #{calls := Calls, pids := Pids} = State) ->
+    _ = handle_usurp(CallId, FetchId, kz_json:new(), Calls),
     _ = ets:insert(Calls, Cache),
     _ = ets:insert(Pids, Cache),
     _ = erlang:monitor(process, Pid),
