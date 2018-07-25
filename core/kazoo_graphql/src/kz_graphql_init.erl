@@ -25,10 +25,16 @@ start_link() ->
 
 -spec load_schema() -> 'ok'.
 load_schema() ->
-    Resolvers = ['gql_core_account'
+    graphql_schema:reset(),
+    CoreResolvers = [<<"gql_core_enum">>
+                    ,<<"gql_core_object">>
+                    ,<<"gql_core_scalar">>
+                    ,<<"gql_root_queries">>
+                    ],
+    Resolvers = ['gql_account'
                 ],
     lager:info("loading GraphQL Schema for: ~p", [Resolvers]),
-    SchemaData = read_schema_files([<<"gql_root_queries">>, <<"gql_core">> | Resolvers]),
+    SchemaData = read_schema_files([CoreResolvers | Resolvers]),
     MappingRules = inject_core(Resolvers),
 
     try graphql:load_schema(MappingRules, SchemaData) of
@@ -91,7 +97,7 @@ core_mapping_rules() ->
                     %% ,'Mutation' => 'gql_core_mutation'
                     }
      %% ,'unions' => #{'default' => 'gql_core_type'}
-     %% ,'scalars' => #{'default' => 'gql_core_scalar'}
+     ,'scalars' => #{'default' => 'gql_core_scalar'}
      }.
 
 -spec setup_root() -> any().

@@ -4,7 +4,7 @@
 %%% @author Hesaam Farhang
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(gql_core_account).
+-module(gql_account).
 
 -export([execute/1 %% type resolution
         ,execute/4 %% object resolution
@@ -22,8 +22,8 @@
 %%------------------------------------------------------------------------------
 -spec mapping_rules() -> map().
 mapping_rules() ->
-    #{'interfaces' => #{'Account' => 'gql_core_account'}
-     ,'objects' => #{'Account' => 'gql_core_account'}
+    #{'interfaces' => #{'Account' => 'gql_account'}
+     ,'objects' => #{'Account' => 'gql_account'}
      }.
 
 %%------------------------------------------------------------------------------
@@ -42,5 +42,16 @@ execute(#{'$type' := <<"account">>}) ->
 -spec execute(any(), any(), any(), any()) -> any().
 execute(_Context, #{'object' := JObj}, Field, _Args) ->
     Key = kgql_utils:normalize_key(Field),
-    {'ok', maps:get(Key, JObj, 'null')}.
+    ?DEV_LOG("field ~s(~s) from account object:~nValue ~p", [Field, Key, maps:get(Key, JObj, 'null')]),
+    resolve_field(Field, maps:get(Key, JObj, 'null')).
 
+resolve_field(<<"callRestriction">>, Value) ->
+    kgql_utils:resolve_jobj_to_list(Value);
+resolve_field(<<"formatters">>, Value) ->
+    kgql_utils:resolve_jobj_to_list(Value, 'false', 'matchKey');
+resolve_field(<<"musicOnHold">>, 'null') ->
+    {'ok', 'null'};
+resolve_field(<<"musicOnHold">>, Value) ->
+    {'ok', maps:get(<<"media_id">>, Value, null)};
+resolve_field(_Key, Value) ->
+    {'ok', Value}.

@@ -1,0 +1,149 @@
+"Relay Modern Node Interface"
+interface Node {
+  """
+  Represents a unique identifier that could be alphanum or Base64 obfuscated.
+  It is often used to fetch an object. The ID type appears in a JSON response
+  as a String; however, it is not intended to be human-readable.
+  """
+  id : ID!
+}
+
+"Restrict call based on dialed number classification"
+type CallRestriction {
+  "The number classification name"
+  name: String!
+  "If set to deny all calls of this type will be rejected. If set to inherit the user/device rules apply"
+  action: CallRestrictionEnum!
+}
+
+"Endpoint recording settings based on call direction"
+type CallRecording {
+  any: CallRecordingSource
+  inbound: CallRecordingSource
+  outbound: CallRecordingSource
+}
+
+"Call recording source settings based on call intended to go offnet or onnet or any direction"
+type CallRecordingSource {
+  any: CallRecordingParamters
+  offnet: CallRecordingParamters
+  onnet: CallRecordingParamters
+}
+
+"Call recording parameters"
+type CallRecordingParamters {
+  "Is recording enabled"
+  enabled: Boolean
+  "What format to store the recording on storage"
+  format: AudioRecordingFormat
+  "The minimum length, in seconds, the recording must be to be considered successful. Otherwise it is deleted"
+  recordMinSec: Int
+  "Recording should start on answer"
+  recordOnAnswer: Boolean
+  "Recording should start on bridge"
+  recordOnBridge: Boolean
+  "What sampling rate to use on the recording"
+  recrodSampleRate: Int
+  "Time limit, in seconds, for the recording"
+  timeLimit: CallRecordingTimeLimit
+  "The URL to use when sending the recording for storage"
+  url: URI
+}
+
+"Defines Caller ID settings based on the type of call being made."
+type CallerID {
+  "The Caller ID used when a resource is flagged as 'emergency'."
+  emergency: CallerIDFields
+  "The default Caller ID used when dialing external numbers"
+  external: CallerIDFields
+  "The default Caller ID used when dialing internal extensions"
+  internal: CallerIDFields
+}
+
+type CallerIDFields {
+  "The Caller ID used when a resource is flagged as 'emergency'."
+  name: String35
+  "The Caller ID number for the object type."
+  number: String35
+}
+
+"Determines what appears as caller id for offnet outbound calls."
+type CallerIDOptions {
+  outboundPrivacy: PrivacyEnum
+}
+
+"Permit local dialing by converting the dialed number to a routable form."
+type DialPlan {
+  "List of system dial plans."
+  system: [String]
+  "List of custom dial plans"
+  rules: [DialPlanRules]
+}
+
+"Permit local dialing by converting the dialed number to a routable form."
+type DialPlanRules {
+  "Friendly name for this regex dialplan."
+  description: String
+  "Name of this dialplan"
+  name: String
+  "Prefix the prepend to the capture group after applying the regex."
+  prefix: String
+  "Suffix the append to the capture group after applying the regex."
+  suffix: String
+}
+
+"Formates SIP headers."
+type RequestFormatters {
+  "Key to match in the route request JSON."
+  matchKey: RequestFormattersKey
+  "Formatter options."
+  options: [FormattersOption]
+}
+
+"Request formatter options."
+type FormattersOption {
+  "Only apply the formatter on the relevant request direction."
+  direction: CallDirectionEnum
+  "Applicable on fields with SIP URIs. Will format the username portion to match the invite format of the outbound request."
+  matchInvite: Boolean
+  "Prepends value against the result of a successful regex match."
+  prefix: String
+  "Matches against the value, with optional capture group."
+  regex: Regex
+  "If set to true, the field will be stripped from the payload."
+  strip: Boolean
+  "Appends value against the result of a successful regex match."
+  suffix: String
+  "Replaces the current value with the static value defined."
+  value: String
+}
+
+"Ringtone Parameters."
+type Ringtones {
+  "The alert info SIP header added when the call is from internal sources."
+  external: String # TODO: max: 256
+  "The alert info SIP header added when the call is from external sources."
+  internal: String # TODO: mac: 256
+}
+
+"Voicemail notify paramters."
+type VoicemailNotify {
+  callback: VoicemailNotifyCallBack
+}
+
+"Voicemail notify callback parameters."
+type VoicemailNotifyCallBack {
+  "How many attempts without answer will system do."
+  attempts: Int
+  "Determines if the system will call to callback number."
+  disabled: Boolean
+  "How long will system wait between call back notification attempts."
+  intervalS: Int
+  "Number for callback notifications about new messages."
+  number: String
+  "Schedules interval between callbacks."
+  schedule: [Int]
+  "How long will system wait for answer to callback."
+  timeoutS: Int
+}
+

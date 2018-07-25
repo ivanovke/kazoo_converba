@@ -23,8 +23,10 @@ execute(Context, Object, Field, Args) ->
 
 -spec run_execute(any(), any(), any(), any()) -> any().
 run_execute(Context, _Object, <<"node">>, #{<<"id">> := ID}) ->
+    ?DEV_LOG("resolving a node query"),
     load_node(Context, ID);
 run_execute(Context, _Object, <<"account">>, #{<<"id">> := ID}) ->
+    ?DEV_LOG("resovling account query"),
     load_doc(Context, [<<"account">>], kz_util:format_account_id(ID)).
 
 load_node(Context, InputID) ->
@@ -45,11 +47,14 @@ load_node(Context, InputID) ->
 -spec load_doc(any(), kz_term:binaries(), kz_term:binary()) -> {'ok', any()} | {'error', any()}.
 load_doc(_Context, Types, ID) ->
     %% dummy load for now
-    case kz_datamgr:open_doc(kz_util:format_account_db(ID), ID) of
+    Db = kz_util:format_account_db(ID),
+    ?DEV_LOG("loading doc ~s from db ~s", [ID, Db]),
+    case kz_datamgr:open_doc(Db, ID) of
         {'ok', JObj} ->
             case check_doc_type(Types, JObj) of
                 {'ok', Type} ->
-                    ?DEV_LOG("type matched ~p", [Type]),
+                    ?DEV_LOG("doc type ~p matched to expected type", [Type]),
+                    % ?DEV_LOG("JObj~n~p~n~n", [JObj]),
                     {'ok', #{'$type' => Type
                             ,'object' => kz_json:to_map(JObj)
                             }

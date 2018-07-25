@@ -1,0 +1,30 @@
+"If set to deny all calls of this type will be rejected. If set to inherit the user/device rules apply"
+enum CallRestrictionEnum {
+  INHERIT
+  DENY
+}
+
+"Privacy value Enum"
+enum PrivacyEnum {
+  "Hides name and number."
+  FULL
+  "Hides only name."
+  NAME
+  "Hides only number."
+  NUMBER
+  "Hides nothing."
+  NONE
+}
+
+"Format to store the recording on storage"
+enum AudioRecordingFormat {
+  MP3
+  WAV
+}
+
+"Call directions."
+enum CallDirectionEnum {
+  BOTH
+  INBOUND
+  OUTBOUND
+}

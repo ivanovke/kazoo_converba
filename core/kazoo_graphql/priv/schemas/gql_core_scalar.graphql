@@ -1,0 +1,31 @@
+"An Integer containig time limit, in seconds, for the call recording. Minimum is 5 seconds and maximum is 10800 seconds (180 minutes)."
+scalar CallRecordingTimeLimit
+
+"A Boolean which determines if server side call waiting is enabled/disabled"
+scalar CallWaitingBol
+
+"An ISO-8601 encoded UTC date string."
+scalar DateTime
+
+"An string containing an Email adderess"
+scalar Email
+
+"An String containing maximum 35 UTF-8 character"
+scalar String35
+
+"An RFC 3986, RFC 3987, and RFC 6570 (level 4) compliant URI string."
+scalar URI
+
+"An String containing the key name to match in the route request JSON. Must be lower case alphanumber including underscore `(_)`."
+scalar RequestFormattersKey
+
+"""
+An String containing an regex. The matching algorithms of the Erlang are based on the PCRE library,
+but not all of the PCRE library is interfaced and some parts of the library go beyond what PCRE offers.
+
+Currently PCRE version 8.40 (release date 2017-01-11) is used.
+
+You need to escape backslashes in literal strings with an extra backslash, that is, "\\".
+"""
+scalar Regex
+

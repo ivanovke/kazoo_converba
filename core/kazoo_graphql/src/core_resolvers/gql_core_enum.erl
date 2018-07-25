@@ -17,15 +17,14 @@
 %% @end
 %%------------------------------------------------------------------------------
 -spec input(any(), any()) -> any().
-input(<<"CallRestrictionEnum">>, <<"INHERIT">>=Val) -> {'ok', Val};
-input(<<"CallRestrictionEnum">>, <<"DENY">>=Val) -> {'ok', Val};
-input(<<"AudioRecordingFormat">>, <<"MP3">>=Val) -> {'ok', Val};
-input(<<"AudioRecordingFormat">>, <<"WAV">>=Val) -> {'ok', Val}.
+input(_K, Input) ->
+    ?DEV_LOG("enum to lower case, ~s:~s", [_K, Input]),
+    {'ok', kz_term:to_lower_binary(Input)}.
 
 %%------------------------------------------------------------------------------
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
 -spec output(any(), any()) -> any().
-output(<<"CallRestrictionEnum">>, Val) -> {'ok', Val};
-output(<<"AudioRecordingFormat">>, Val) -> {'ok', Val}.
+output(_, Output) ->
+    {'ok', kz_term:to_upper_binary(Output)}.
