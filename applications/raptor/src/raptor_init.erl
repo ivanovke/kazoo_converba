@@ -19,7 +19,8 @@
 start_link() ->
     kz_util:put_callid(?DEFAULT_LOG_SYSTEM_ID),
     Dispatch = cowboy_router:compile(graphql_routes()),
-    maybe_start_plaintext(Dispatch),
+    IP = kz_network_utils:get_supported_binding_ip(),
+    maybe_start_plaintext(Dispatch, IP),
     'ignore'.
 
 -spec graphql_routes() -> cowboy_router:routes().
@@ -42,14 +43,14 @@ assets_path() ->
 graphql_path() ->
     {"/", 'raptor_graphql_handler', {'priv_dir', ?APP, "graphiql/index.html"}}.
 
-maybe_start_plaintext(Dispatch) ->
+-spec maybe_start_plaintext(cowboy_router:dispatch_rules(), inet:ip_address()) -> 'ok'.
+maybe_start_plaintext(Dispatch, IP) ->
     Port = kapps_config:get_integer(?CONFIG_CAT, <<"port">>, 8001),
     ReqTimeout = kapps_config:get_integer(?CONFIG_CAT, <<"request_timeout_ms">>, 10 * ?MILLISECONDS_IN_SECOND),
     Workers = kapps_config:get_integer(?CONFIG_CAT, <<"workers">>, 100),
 
     %% Name, NbAcceptors, Transport, TransOpts, Protocol, ProtoOpts
     try
-        IP = kz_network_utils:get_binding_ip(),
         lager:info("trying to bind to address ~s port ~b", [inet:ntoa(IP), Port]),
         cowboy:start_clear('graphql_resource'
                           ,[{'ip', IP}
@@ -89,3 +90,4 @@ maybe_start_plaintext(Dispatch) ->
         _E:_R ->
             lager:warning("crashed starting GraphQL server: ~s: ~p", [_E, _R])
     end.
+
