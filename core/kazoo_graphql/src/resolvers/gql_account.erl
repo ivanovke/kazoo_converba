@@ -32,7 +32,10 @@ mapping_rules() ->
 %%------------------------------------------------------------------------------
 -spec execute(any()) -> {'ok', any()} | {'error', any()}.
 execute(#{'$type' := <<"account">>}) ->
-    ?DEV_LOG("type account"),
+    ?DEV_LOG("$type map account"),
+    {'ok', 'Account'};
+execute(_So) ->
+    ?DEV_LOG("type account so ~p", [_So]),
     {'ok', 'Account'}.
 
 %%------------------------------------------------------------------------------
@@ -40,8 +43,12 @@ execute(#{'$type' := <<"account">>}) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec execute(any(), any(), any(), any()) -> any().
+execute(_Context, #{'id' := Id, 'object' := #{}}, <<"id">>, _Args) ->
+    ?DEV_LOG("_Args ~p", [_Args]),
+    {'ok', Id};
 execute(_Context, #{'object' := JObj}, Field, _Args) ->
     Key = kgql_utils:normalize_key(Field),
+    ?DEV_LOG("_Args ~p", [_Args]),
     ?DEV_LOG("field ~s(~s) from account object:~nValue ~p", [Field, Key, maps:get(Key, JObj, 'null')]),
     resolve_field(Field, maps:get(Key, JObj, 'null')).
 

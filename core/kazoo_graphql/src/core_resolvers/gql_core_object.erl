@@ -21,6 +21,9 @@ execute(_Context, JObj, <<"callRestriction">> = Field, _Args) ->
     ?DEV_LOG("CallRestriction"),
     {'ok', maps:get(Key, JObj, 'null')};
 execute(_Context, JObj, Field, _Args) when is_map(JObj) ->
+    ?DEV_LOG("core oject _Context~n~p~n~nJObj ~p~n~nField ~p~n~n Args ~p~n~n~n"
+            ,[_Context, JObj, Field, _Args]
+            ),
     Key = kgql_utils:normalize_key(Field),
     ?DEV_LOG("core object normalized key: ~p", [Key]),
     {'ok', maps:get(Key, JObj, 'null')};

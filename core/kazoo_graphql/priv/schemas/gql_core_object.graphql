@@ -68,7 +68,7 @@ type CallerIDFields {
 }
 
 "Determines what appears as caller id for offnet outbound calls."
-type CallerIDOptions {
+type CallerIdOptions {
   outboundPrivacy: PrivacyEnum
 }
 

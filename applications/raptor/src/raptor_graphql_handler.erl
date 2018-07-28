@@ -139,6 +139,7 @@ run_preprocess(#{document := AST} = ReqCtx, Req, State) ->
                    )
     catch
         'throw':Err ->
+            ?DEV_LOG("Error ~p", [Err]),
             error_response(400, Err, Req, State)
     end.
 

@@ -26,16 +26,17 @@ start_link() ->
 -spec load_schema() -> 'ok'.
 load_schema() ->
     graphql_schema:reset(),
-    CoreResolvers = [<<"gql_core_enum">>
-                    ,<<"gql_core_object">>
-                    ,<<"gql_core_scalar">>
-                    ,<<"gql_root_queries">>
-                    ],
-    Resolvers = ['gql_account'
+    AppResolvers = ['gql_account'
+                   ],
+    Resolvers = [<<"gql_core_enum">>
+                ,<<"gql_core_object">>
+                ,<<"gql_core_scalar">>
+                ,<<"gql_root_queries">>
+                 | AppResolvers
                 ],
-    lager:info("loading GraphQL Schema for: ~p", [Resolvers]),
-    SchemaData = read_schema_files([CoreResolvers | Resolvers]),
-    MappingRules = inject_core(Resolvers),
+    lager:info("loading GraphQL Schema for: ~p", [AppResolvers]),
+    SchemaData = read_schema_files(Resolvers),
+    MappingRules = inject_core(AppResolvers),
 
     try graphql:load_schema(MappingRules, SchemaData) of
         'ok' -> setup_and_validate();
@@ -54,10 +55,11 @@ load_schema() ->
 setup_and_validate() ->
     case setup_root() of
         'ok' ->
-            try 'ok' = graphql:validate_schema()
+            ?DEV_LOG("yello"),
+            try graphql:validate_schema()
             catch
-                'error':Error ->
-                    lager:error("GraphQL Schema validation failed: ~p", [Error]),
+                _T:Error ->
+                    ?DEV_LOG("GraphQL Schema validation failed: ~p:~p", [_T, Error]),
                     exit(Error)
             end;
         {'error', Error} ->
@@ -70,9 +72,14 @@ read_schema_files(Resolvers) ->
     kz_term:to_binary([read_schema(PrivDir, Resolver) || Resolver <- Resolvers]).
 
 read_schema(PrivDir, Resolver) ->
-    File = <<(kz_term:to_binary(Resolver))/binary, ".graphql">>,
-    {'ok', SchemaData} = file:read_file(filename:join([PrivDir, <<"schemas">>, File])),
-    <<SchemaData/binary, "\n">>.
+    File = filename:join([PrivDir, <<"schemas">>, <<(kz_term:to_binary(Resolver))/binary, ".graphql">>]),
+    case file:read_file(File) of
+        {'ok', SchemaData} ->
+            <<SchemaData/binary, "\n">>;
+        {'error', _Reason}=Error ->
+            lager:error("failed to read GraphQL schema file ~s: ~p", [File, _Reason]),
+            exit(Error)
+    end.
 
 inject_core(Resolvers) ->
     ResolversMapping = [Resolver:mapping_rules() || Resolver <- Resolvers],

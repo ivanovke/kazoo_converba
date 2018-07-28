@@ -6,7 +6,7 @@ type Account implements Node {
   "The account default caller ID parameters."
   callerId: CallerID
   "Custom properties for configuring Caller ID."
-  callerIdOptions: CallerIDOptionsi
+  callerIdOptions: CallerIdOptions
   "Default rules used to modify dialed numbers."
   dialPlan: DialPlan
   doNotDisturb: Boolean

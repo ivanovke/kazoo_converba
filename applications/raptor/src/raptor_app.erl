@@ -18,6 +18,7 @@
 %%------------------------------------------------------------------------------
 -spec start(application:start_type(), any()) -> kz_types:startapp_ret().
 start(_StartType, _StartArgs) ->
+    application:ensure_all_started('kazoo_graphql'),
     raptor_sup:start_link().
 
 %%------------------------------------------------------------------------------
@@ -26,8 +27,12 @@ start(_StartType, _StartArgs) ->
 %%------------------------------------------------------------------------------
 -spec stop(any()) -> any().
 stop(_State) ->
-    ?DEV_LOG("hello"),
-    spawn(fun() -> application:stop(graphql) end),
+    ?DEV_LOG("good"),
+    _ = spawn(fun() ->
+                      application:stop('kazoo_graphql'),
+                      application:stop('graphql')
+              end
+             ),
     ?DEV_LOG("bye"),
     'ok'.
 
