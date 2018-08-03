@@ -171,6 +171,7 @@ from_json(JObj, Conference) ->
 
 -spec do_from_json(kz_json:object(), conference()) -> conference().
 do_from_json(JObj, Conference) ->
+    lager:info("do_from_json: ~p", [JObj]),
     ConferenceName = kz_json:get_ne_binary_value(<<"Conference-Name">>, JObj, id(Conference)),
     ConferenceId =
         case kz_json:get_ne_binary_value(<<"Conference-ID">>, JObj, id(Conference)) of
@@ -287,6 +288,7 @@ from_conference_doc(JObj) ->
 
 -spec from_conference_doc(kzd_conferences:doc(), conference()) -> conference().
 from_conference_doc(JObj, Conference) ->
+    lager:info("from conf doc ~p", [JObj]),
     ConferenceName = kzd_conferences:name(JObj, name(Conference)),
     ConferenceId = kz_doc:id(JObj, ConferenceName),
 
