@@ -288,7 +288,7 @@ weekly_recurrence_test_() ->
     ,?_assertEqual({2018,?JAN,20}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"saturday">>], start_date={1983,?APR,11}}, {2018,?JAN,14}))
     ,?_assertEqual({2018,?JAN,21}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"sunday">>], start_date={1983,?APR,11}}, {2018,?JAN,15}))
 
-    %% multiple days long span
+     %% multiple days long span
     ,?_assertEqual({2018,?JAN,15}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"monday">>,<<"tuesday">>,<<"wednesday">>,<<"thursday">>,<<"friday">>,<<"saturday">>,<<"sunday">>], start_date={1983,?APR,11}}, {2018,?JAN,15}))
     ,?_assertEqual({2018,?JAN,8}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"monday">>,<<"tuesday">>,<<"wednesday">>,<<"thursday">>,<<"friday">>,<<"saturday">>,<<"sunday">>], start_date={2018,?JAN,1}}, {2018,?JAN,8}))
     ,?_assertEqual({2018,?JAN,15}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"monday">>,<<"tuesday">>,<<"wednesday">>,<<"thursday">>,<<"friday">>,<<"saturday">>,<<"sunday">>], start_date={2018,?JAN,1}}, {2018,?JAN,15}))
@@ -296,7 +296,7 @@ weekly_recurrence_test_() ->
     ,?_assertEqual({2018,?JAN,15}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"monday">>], start_date={2018,?JAN,2}}, {2018,?JAN,14}))
     ,?_assertEqual({2018,?JAN,16}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, interval=1, wdays=[<<"tuesday">>], start_date={2018,?JAN,2}}, {2018,?JAN,15}))
 
-    %% increment over the week boundaries with shifting DOTW
+     %% increment over the week boundaries with shifting DOTW
     ,?_assertEqual({2011,?JAN,3}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, wdays=[<<"monday">>], start_date={2011,?JAN,1}}, {2011,?JAN,3}))
     ,?_assertEqual({2011,?JAN,3}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, wdays=[<<"monday">>], start_date={2011,?JAN,2}}, {2011,?JAN,3}))
     ,?_assertEqual({2011,?JAN,3}, cf_temporal_route:next_rule_date(#rule{cycle = <<"weekly">>, wdays=[<<"monday">>], start_date={2011,?JAN,3}}, {2011,?JAN,3}))
