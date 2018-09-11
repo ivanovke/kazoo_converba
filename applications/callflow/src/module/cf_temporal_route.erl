@@ -721,11 +721,18 @@ find_next_weekly_date(Interval
                ),
 
     case find_active_days(Weekdays, DOW0) of
-        [_Day|_] when Today < StartDate andalso Distance =:= Offset ->
+        %% When the start date is in the future but within the week,
+        %% skip over the invalid rule dates by recursively calling
+        %% self with Today as StartDate
+        [_Day|_] when Today < StartDate
+                 andalso Distance =:= Offset ->
             lager:debug("rule starts in the future jumping to search from ~p", [StartDate]),
             find_next_weekly_date(Interval, Weekdays, StartDate, StartDate);
 
-        [Day|_] when Today =:= StartDate andalso Day =:= DOW0 andalso Distance =:= Offset ->
+        %% When today is the first rule day and also the start date return the start date
+        [Day|_] when Today =:= StartDate
+                andalso Day =:= DOW0
+                andalso Distance =:= Offset ->
             lager:debug("rule starts today ~b", [Day]),
             StartDate;
 
