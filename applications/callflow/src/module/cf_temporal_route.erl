@@ -714,56 +714,8 @@ next_rule_date(#rule{cycle = <<"yearly">>
             find_next_yearly_ordinal_weekday(Y0 + Offset + I0, Month, Weekday, Ordinal, I0)
     end.
 
--spec find_next_weekly_date(integer(), kz_term:ne_binaries(), kz_time:date(), kz_time:date()) -> kz_time:date().
-find_next_weekly_date(Interval
-                     ,Weekdays
-                     ,{Y0, M0, D0}=StartDate
-                     ,{Y1, M1, D1}=Today
-                     ) ->
-    DOW0 = calendar:day_of_the_week({Y1, M1, D1}),
-    Distance = iso_week_difference({Y0, M0, D0}, {Y1, M1, D1}),
-    Offset = trunc( Distance / Interval ) * Interval,
-    Weekday = calendar:day_of_the_week(StartDate),
 
-    lager:debug("today is: ~p dow: ~p, startdate is: ~p, start dow is ~b, interval is: ~b, distance is: ~b, offset is: ~b, rule days found: ~p"
-               ,[Today, DOW0, StartDate, Weekday, Interval, Distance, Offset, find_active_days(Weekdays, DOW0)]
-               ),
-
-    case find_active_days(Weekdays, DOW0) of
-        %% When the start date is in the future but within the week,
-        %% skip over the invalid rule dates by recursively calling
-        %% self with Today as StartDate
-        [_Day|_] when Today < StartDate
-                      andalso Distance =:= Offset ->
-            lager:debug("rule starts in the future jumping to search from ~p", [StartDate]),
-            find_next_weekly_date(Interval, Weekdays, StartDate, StartDate);
-
-        %% When today is the first rule day and also the start date return the start date
-        [Day|_] when Today =:= StartDate
-                     andalso Day =:= DOW0
-                     andalso Distance =:= Offset ->
-            lager:debug("rule starts today ~b", [Day]),
-            StartDate;
-
-        %% During an 'active' week but before the last weekday in the list
-        %%   move to the next day this week
-        [Day|_] when Distance =:= Offset ->
-            lager:debug("next day in rule is ~w and day is ~w", [Day, DOW0]),
-            kz_date:normalize({Y1, M1, D1 + Day - DOW0});
-
-        %% Empty list:
-        %%   The last DOW during an 'active' week,
-        %% Non Empty List that failed the guard:
-        %%   During an 'inactive' week
-        _Val ->
-            lager:debug("no rule found for this week"),
-            {WY0, W0} = calendar:iso_week_number({Y0, M0, D0}),
-            {Y2, M2, D2} = kz_date:from_iso_week({WY0, W0 + Offset + Interval}),
-            kz_date:normalize({Y2, M2, ( D2 - 1 ) + kz_date:wday_to_dow( hd( Weekdays ) )})
-    end.
-
-
--spec find_next_yearly_ordinal_weekday(kz_time:year(), kz_time:month(), kz_time:daynum(), kz_time:ordinal(), interval()) -> kz_time:date().
+-spec find_next_yearly_ordinal_weekday(kz_time:year(), kz_time:month(), wday(), kz_time:ordinal(), interval()) -> kz_time:date().
 find_next_yearly_ordinal_weekday(Y0, M0, Weekday, Ordinal, Interval) ->
     case find_ordinal_weekday(Y0, M0, Weekday, Ordinal) of
         {_Y1, M0, _D1}=Date ->
