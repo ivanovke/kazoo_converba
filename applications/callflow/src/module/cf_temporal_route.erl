@@ -109,8 +109,8 @@ process_rules(Temporal
 process_rules(#temporal{local_sec=LSec
                        ,local_date={Y, M, D}
                        }=T
-             ,[#rule{id=Id
-                    ,cycle=Cycle
+             ,[#rule{cycle=Cycle
+                    ,id=Id
                     ,name=Name
                     ,wtime_start=TStart
                     ,wtime_stop=TStop
@@ -124,8 +124,10 @@ process_rules(#temporal{local_sec=LSec
     %% Weekly logic becomes convoluted when prev date is passed for SearchDate.
     %% This creates lots of edge cases so pass today in weekly only.
     SearchDate = case Cycle of
-                    'weekly' -> {Y, M, D};
-                    _ -> kz_date:normalize({Y, M, D - 1})
+                     <<"weekly">> ->
+                         {Y, M, D};
+                     _ ->
+                         kz_date:normalize({Y, M, D - 1})
                  end,
     BaseDate = next_rule_date(Rule, SearchDate),
     BaseTime = calendar:datetime_to_gregorian_seconds({BaseDate, {0,0,0}}),
@@ -201,7 +203,7 @@ build_rule(Id, RulesDoc, StartDate, RuleName) ->
          ,start_date = StartDate
          ,wdays = sort_wdays(kzd_temporal_rules:wdays(RulesDoc, ?RULE_DEFAULT_WDAYS))
          ,wtime_start = kzd_temporal_rules:time_window_start(RulesDoc, ?RULE_DEFAULT_WTIME_START)
-         ,wtime_stop = kzd_temporal_rules:time_window_start(RulesDoc, ?RULE_DEFAULT_WTIME_STOP)
+         ,wtime_stop = kzd_temporal_rules:time_window_stop(RulesDoc, ?RULE_DEFAULT_WTIME_STOP)
          }.
 
 -spec days_in_rule(kzd_temporal_rules:doc()) -> kz_term:integers().
