@@ -107,9 +107,10 @@ process_rules(Temporal
     lager:error("time based rule ~p (~s) is invalid, skipping", [Id, Name]),
     process_rules(Temporal, Rules, Call);
 process_rules(#temporal{local_sec=LSec
-                       ,local_date=Today   %{Y, M, D}
+                       ,local_date={Y, M, D}
                        }=T
              ,[#rule{id=Id
+                    ,cycle=Cycle
                     ,name=Name
                     ,wtime_start=TStart
                     ,wtime_stop=TStop
@@ -119,8 +120,14 @@ process_rules(#temporal{local_sec=LSec
              ,Call
              ) ->
     lager:info("processing temporal rule ~s (~s)", [Id, Name]),
-                                                %PrevDay = kz_date:normalize({Y, M, D - 1}),
-    BaseDate = next_rule_date(Rule, Today),
+
+    %% Weekly logic becomes convoluted when prev date is passed for SearchDate.
+    %% This creates lots of edge cases so pass today in weekly only.
+    SearchDate = case Cycle of
+                    'weekly' -> {Y, M, D};
+                    _ -> kz_date:normalize({Y, M, D - 1})
+                 end,
+    BaseDate = next_rule_date(Rule, SearchDate),
     BaseTime = calendar:datetime_to_gregorian_seconds({BaseDate, {0,0,0}}),
 
     case {BaseTime + TStart, BaseTime + TStop} of
