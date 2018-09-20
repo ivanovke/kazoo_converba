@@ -1,17 +1,5 @@
+Do not put any documentation in this file or directory.
 
-# Media Manager
-Single play stream
-
-ECALLMGR         MEDIA MGR
-media_req    --> media_listener
-                   verify media exists
-                   generate URL to SHOUT server
-call_control <--   media_resp
-                   prefetch attachment if not cached locally
-
-
-FS
-playback() -->   media_shout_protocol
-                   accept client
-                   verify stream path exists (can issue redirect to couch?)
-                   send chunked data to socket
+* `internal`: Any documentation that describes implementation details about this application, not intended for 2600Hz official publications, should be placed here.
+* `api`: Any documentation that describes usage of this application for users developing using Kazoo HTTP API or integration developers should be placed here.
+* `guide`: All documentations intended for users, administrators and resellers or reference manual or user guides should be placed here.

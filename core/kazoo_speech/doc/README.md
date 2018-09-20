@@ -1,16 +1,5 @@
-# kazoo Speech
+Do not put any documentation in this file or directory.
 
-This core library governs integrations with [Text-to-Speech (TTS) providers](https://en.wikipedia.org/wiki/Speech_synthesis) and with (Automatic Speech Recognition (ASR) engines)[https://en.wikipedia.org/wiki/Speech_recognition] to allow Kazoo callflows to take advantage of the advanced functionality these provide.
-
-## TTS
-
-Kazoo, by default, will use the internal [mod_flite](https://freeswitch.org/confluence/display/FREESWITCH/mod_flite) to play the text from a [TTS callflow action](../../../applications/callflow/doc/tts.md).
-
-There are also modules for [iSpeech](http://www.ispeech.org/api/#text-to-speech) and [VoiceFabric](https://voicefabric.ru/user_documentation).
-
-## ASR
-
-Kazoo currently supports as an ASR engine:
-
-1. [iSpeech](http://www.ispeech.org/api/#automated-speech-recognition)
-2. [Google Cloud Speech API](https://cloud.google.com/speech/)
+* `internal`: Any documentation that describes implementation details about this application, not intended for 2600Hz official publications, should be placed here.
+* `api`: Any documentation that describes usage of this application for users developing using Kazoo HTTP API or integration developers should be placed here.
+* `guide`: All documentations intended for users, administrators and resellers or reference manual or user guides should be placed here.

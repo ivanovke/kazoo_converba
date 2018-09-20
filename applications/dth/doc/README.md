@@ -1,13 +1,5 @@
+Do not put any documentation in this file or directory.
 
-Getting started:
-
-Get the WSDL file from your DTH server:
-
-wget http://IP.OF.DTH.SERVER/DTHSOAPAPI_v3/dthSOAP.asmx?WSDL
-
-Adjust URL above as necessary. Save this file to "dth/priv/dthsoap.wsdl"
-
-Starting up the kapps container, ensure the DTH whapp has been started and a
-new file should be written to "dth/include/dthsoap.hrl" containing the records
-for the WSDL. (You will need to rename the file if it exists already, and re-
-start the DTH whapp to create a new version of the .hrl file).
+* `internal`: Any documentation that describes implementation details about this application, not intended for 2600Hz official publications, should be placed here.
+* `api`: Any documentation that describes usage of this application for users developing using Kazoo HTTP API or integration developers should be placed here.
+* `guide`: All documentations intended for users, administrators and resellers or reference manual or user guides should be placed here.

@@ -1,9 +1,5 @@
+Do not put any documentation in this file or directory.
 
-# Overview
-
-Teletype listens for events within Kazoo and notifies those that are interested. This application replaces the `notify` application of old.
-
-## Autostart modules
-
-The teletype modules listed in the `autoload_modules` section of `system_config/notify` will
-automatically be started when teletype is started.
+* `internal`: Any documentation that describes implementation details about this application, not intended for 2600Hz official publications, should be placed here.
+* `api`: Any documentation that describes usage of this application for users developing using Kazoo HTTP API or integration developers should be placed here.
+* `guide`: All documentations intended for users, administrators and resellers or reference manual or user guides should be placed here.
