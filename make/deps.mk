@@ -113,4 +113,5 @@ dep_syslog = git https://github.com/2600hz/erlang-syslog bbad537a1cb5e4f37e672d2
 dep_meta = git https://github.com/efcasado/meta 0.1.3
 
 ### needed for creating OpenAPI(swagger) 3.0
-dep_yamerl = git https://github.com/yakaz/yamerl 4e5a54a5a4a0cd9dc8ee30c8356642e9a2c3a443
+### using below repo until issue with folded line chomping is fixed by upstream
+dep_yamerl = git https://github.com/icehess/yamerl 6f52ab8a93d677773102ab8dee050e97f3e8cdd9
