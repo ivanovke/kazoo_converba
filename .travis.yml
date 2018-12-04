@@ -1,3 +1,4 @@
+dist: xenial
 language: erlang
 notifications:
   email:
@@ -25,6 +26,9 @@ addons:
 
 cache:
   apt: true
+
+before_script:
+  - kerl list installations
 
 before_install:
   - set -e

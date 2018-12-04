@@ -3,7 +3,7 @@ RELX = $(ROOT)/deps/relx
 ELVIS = $(ROOT)/deps/elvis
 FMT = $(ROOT)/make/erlang-formatter/fmt.sh
 TAGS = $(ROOT)/TAGS
-ERLANG_MK_COMMIT = d30dda39b08e6ed9e12b44533889eaf90aba86de
+ERLANG_MK_COMMIT = 2163fef859c46ebe5f3d7827ce8ddfd45ee56691
 
 # You can override this when calling make, e.g. make JOBS=1
 # to prevent parallel builds, or make JOBS="8".
