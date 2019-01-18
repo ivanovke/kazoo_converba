@@ -47,7 +47,7 @@
 
 -export_type([data/0]).
 
--define(CI_DIR, "/var/log/kazoo/call_inspector").
+-define(CI_DIR, kapps_config:get_ne_binary(?CONFIG_CAT, <<"ci_dir">>, <<"/var/log/kazoo/call_inspector">>)).
 
 %%%=============================================================================
 %%% API
@@ -118,7 +118,7 @@ flush(CallId) ->
 -spec init([]) -> {'ok', #state{}}.
 init([]) ->
     lager:debug("ensuring directory ~s exists", [?CI_DIR]),
-    mkdir(?CI_DIR),
+    'ok' = kz_util:ensure_path_exists(?CI_DIR, dir),
     {'ok', #state{}}.
 
 %%------------------------------------------------------------------------------
@@ -204,15 +204,10 @@ make_name(CallId) ->
     <<D1:2/binary, D2:2/binary, Rest/binary>> = kz_binary:md5(CallId),
     filename:join([?CI_DIR, D1, D2, Rest]).
 
--spec ensure_path_exists(file:filename()) -> 'ok'.
-ensure_path_exists(CallIdPath) ->
-    mkdir(filename:dirname(filename:dirname(CallIdPath))),
-    mkdir(filename:dirname(CallIdPath)).
-
 -spec insert_object(object()) -> 'ok'.
 insert_object(#object{call_id = CallId} = Object) ->
     Path = make_name(CallId),
-    ensure_path_exists(Path),
+    kz_util:ensure_path_exists(Path),
     IoData = io_lib:fwrite("~p.\n", [Object]),
     kz_util:write_file(Path, IoData, ['append']).
 
@@ -232,12 +227,5 @@ recursive_remove() ->
                 'ok' = file:delete(AbsPath)
         end,
     filelib:fold_files(?CI_DIR, ".+", 'true', F, 'ok').
-
--spec mkdir(file:filename()) -> 'ok'.
-mkdir(Path) ->
-    case file:make_dir(Path) of
-        'ok' -> 'ok';
-        {'error', 'eexist'} -> 'ok'
-    end.
 
 %% End of Module.

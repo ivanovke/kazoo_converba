@@ -45,6 +45,7 @@
         ,delete_file/1
         ,delete_dir/1
         ,make_dir/1
+        ,ensure_path_exists/1, ensure_path_exists/2
         ]).
 
 -export([calling_app/0]).
@@ -637,6 +638,28 @@ make_dir(Filename) ->
         'ok' -> 'ok';
         {'error', _}=_E ->
             lager:error("creating directory ~s failed : ~p", [Filename, _E])
+    end.
+
+-spec ensure_path_exists(file:filename()) -> 'ok' | {'error', file:posix()}.
+ensure_path_exists(Path) ->
+    ensure_path_exists(Path, file).
+
+-spec ensure_path_exists(file:filename(), file | dir) -> 'ok' | {'error', file:posix()}.
+ensure_path_exists(Path, Type) ->
+    case filelib:ensure_dir(Path) of
+        'ok' when Type =:= dir ->
+            case file:make_dir(Path) of
+                'ok' -> 'ok';
+                {'error', 'eexist'} -> 'ok';
+                {'error', _PosixError}=Error ->
+                    lager:error("ensuring directory ~s failed : ~p", [Path, _PosixError]),
+                    Error
+            end;
+        'ok' -> 'ok';
+        {'error', 'eexist'} -> 'ok';
+        {'error', _PosixError}=Error ->
+            lager:error("ensuring path ~s failed : ~p", [Path, _PosixError]),
+            Error
     end.
 
 -spec process_fold([tuple()], atom()) -> tuple() | atom().
