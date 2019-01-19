@@ -742,6 +742,11 @@ delete_resource(Req, Context) ->
                               {boolean(), cowboy_req:req(), cb_context:context()}.
 delete_completed(Req, Context) ->
     lager:debug("run: delete_completed"),
+
+    [{Mod, Params} | _] = cb_context:req_nouns(Context),
+    Event = api_util:create_event_name(Context, <<"delete_completed.", Mod/binary>>),
+    _ = crossbar_bindings:pmap(Event, [Context | Params]),
+
     api_util:create_push_response(Req, Context).
 
 -spec is_conflict(cowboy_req:req(), cb_context:context()) ->

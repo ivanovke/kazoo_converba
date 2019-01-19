@@ -58,7 +58,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.execute.post.webhooks">>, ?MODULE, 'post'),
     _ = crossbar_bindings:bind(<<"*.execute.patch.webhooks">>, ?MODULE, 'patch'),
     _ = crossbar_bindings:bind(<<"*.execute.delete.webhooks">>, ?MODULE, 'delete'),
-    _ = crossbar_bindings:bind(<<"*.execute.delete.accounts">>, ?MODULE, 'delete_account'),
+    _ = crossbar_bindings:bind(<<"*.execute.delete_completed.accounts">>, ?MODULE, 'delete_account'),
     'ok'.
 
 -spec init_master_account_db() -> 'ok'.
@@ -244,12 +244,12 @@ delete(Context, _) ->
 
 -spec delete_account(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 delete_account(Context, AccountId) ->
-    lager:debug("account ~s deleted, removing any webhooks", [AccountId]),
     kz_util:spawn(fun delete_account_webhooks/1, [AccountId]),
     Context.
 
 -spec delete_account_webhooks(kz_term:ne_binary()) -> 'ok'.
 delete_account_webhooks(AccountId) ->
+    lager:debug("account ~s deleted, removing any webhooks", [AccountId]),
     case fetch_account_hooks(AccountId) of
         {'ok', []} -> 'ok';
         {'error', _E} ->
