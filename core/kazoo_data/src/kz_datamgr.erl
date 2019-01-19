@@ -1010,8 +1010,8 @@ del_doc(DbName, Doc) ->
 -spec del_doc(kz_term:text(), kz_json:object() | kz_json:objects() | kz_term:ne_binary(), kz_term:proplist()) ->
                      {'ok', kz_json:objects()} |
                      data_error().
-del_doc(DbName, Doc, Options) when is_list(Doc) ->
-    del_docs(DbName, Doc, Options);
+del_doc(DbName, Docs, Options) when is_list(Docs) ->
+    del_docs(DbName, Docs, Options);
 del_doc(DbName, Doc, Options) when ?VALID_DBNAME(DbName) ->
     kzs_doc:del_doc(kzs_plan:plan(DbName, Doc), DbName, Doc, Options);
 del_doc(DbName, Doc, Options) ->
