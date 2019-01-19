@@ -131,7 +131,7 @@ del_doc(#{server := {App, Conn}}=Server, DbName, Doc, Options) ->
     catch
         Ex:Er ->
             lager:error("exception ~p: ~p", [Ex, Er]),
-            failed
+            'failed'
     end.
 
 -spec del_docs(map(), kz_term:ne_binary(), kz_json:objects() | kz_term:ne_binaries(), kz_term:proplist()) ->
@@ -156,12 +156,12 @@ prepare_doc_for_del(Server, Db, ?NE_BINARY=DocId) ->
 prepare_doc_for_del(Server, DbName, Doc) ->
     Id = kz_doc:id(Doc),
     Rev0 = kz_doc:revision(Doc),
-    DocRev = case Rev0 =:= undefined
+    DocRev = case Rev0 =:= 'undefined'
                  andalso lookup_doc_rev(Server, DbName, Id)
              of
-                 false -> Rev0;
-                 {ok, Rev} -> Rev;
-                 {error, not_found} -> undefined
+                 'false' -> Rev0;
+                 {'ok', Rev} -> Rev;
+                 {'error', 'not_found'} -> 'undefined'
              end,
     kz_json:from_list(
       [{<<"_id">>, Id}
