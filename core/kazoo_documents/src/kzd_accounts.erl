@@ -105,6 +105,7 @@
 
         ,is_in_account_hierarchy/2, is_in_account_hierarchy/3
         ,normalize_name/1
+        ,normalized_name/1
 
         ,validate/3
         ,add_pvt_api_key/1
@@ -1514,14 +1515,18 @@ is_unique_account_name(AccountId, Name) ->
         {'ok', []} -> 'true';
         {'error', 'not_found'} -> 'true';
         {'ok', [JObj|_]} ->
-            lager:debug("found account ~s with existing id ~s; requested id ~s"
-                       ,[Name, kz_doc:id(JObj), AccountId]
-                       ),
-            kz_doc:id(JObj) =:= AccountId;
+            lager:debug("~p", [JObj]),
+            is_unique_account_name(AccountId, Name, kz_doc:id(JObj));
         _Else ->
             lager:error("error ~p checking view ~p in ~p", [_Else, ?AGG_VIEW_NAME, ?KZ_ACCOUNTS_DB]),
             'false'
     end.
+
+is_unique_account_name(AccountId, _Name, AccountId) ->
+    'true';
+is_unique_account_name(_RequestedId, _Name, _AccountId) ->
+    lager:info("found account ~s with existing id ~s", [_Name, _AccountId]),
+    'false'.
 
 -spec validate_schema(kz_term:api_ne_binary(), kz_term:api_ne_binary(), validate_acc()) -> validate_acc().
 validate_schema(ParentId, AccountId, {Doc, Errors}) ->
@@ -1602,6 +1607,10 @@ normalize_alphanum_name(_AccountId, {Doc, Errors}) ->
     {kz_json:set_value(<<"pvt_alphanum_name">>, Normalized, Doc)
     ,Errors
     }.
+
+-spec normalized_name(doc()) -> kz_term:api_ne_binary().
+normalized_name(Doc) ->
+    kz_json:get_value(<<"pvt_alphanum_name">>, Doc).
 
 %%------------------------------------------------------------------------------
 %% @doc This function returns the private fields to be added to a new account
