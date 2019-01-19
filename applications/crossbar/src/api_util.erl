@@ -1587,7 +1587,7 @@ do_create_resp_envelope(Context) ->
                    ,{<<"data">>, RespData}
                    ];
                {'error', {ErrorCode, ErrorMsg, RespData}} ->
-                   lager:debug("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
+                   lager:info("generating error ~b ~s response", [ErrorCode, ErrorMsg]),
                    [{<<"auth_token">>, kz_term:to_binary(cb_context:auth_token(Context))}
                    ,{<<"request_id">>, cb_context:req_id(Context)}
                    ,{<<"node">>, kz_nodes:node_encoded()}
