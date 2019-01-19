@@ -122,6 +122,7 @@ delete_remove_from_accounts({AccountJObj, Errors}=Acc) ->
     case kzd_accounts:fetch(kz_doc:id(AccountJObj), 'accounts') of
         {'ok', AccountsJObj} ->
             _Deleted = kz_datamgr:del_doc(?KZ_ACCOUNTS_DB, AccountsJObj),
+            refresh_accounts_index(AccountsJObj),
             lager:info("deleted 'accounts' account doc: ~p", [_Deleted]),
             Acc;
         {'error', 'not_found'} ->
@@ -131,6 +132,13 @@ delete_remove_from_accounts({AccountJObj, Errors}=Acc) ->
             lager:info("failed to fetch 'accounts' account doc: ~p", [_R]),
             {AccountJObj, [{'error', <<"unable to remove account definition">>, 500} | Errors]}
     end.
+
+-spec refresh_accounts_index(kzd_accounts:doc()) -> 'ok'.
+refresh_accounts_index(AccountsJObj) ->
+    AccountName = kzd_accounts:normalized_name(AccountsJObj),
+    ViewOptions = [{'key', AccountName}, {'limit', 1}],
+    _Results = kz_datamgr:get_results(?KZ_ACCOUNTS_DB, ?AGG_VIEW_NAME, ViewOptions),
+    lager:debug("refreshed ~s: ~p", [?AGG_VIEW_NAME, _Results]).
 
 -spec create(kz_term:ne_binary(), kz_json:object()) -> kzd_accounts:doc() | 'undefined'.
 create(AccountId, ReqJObj) ->
