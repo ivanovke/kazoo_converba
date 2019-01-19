@@ -1487,6 +1487,7 @@ validate_account_name_is_unique(AccountId, {Doc, Errors}) ->
             lager:debug("name ~s is indeed unique", [Name]),
             {Doc, Errors};
         'false' ->
+            lager:error("account ~s already in use", [Name]),
             Msg = kz_json:from_list(
                     [{<<"message">>, <<"Account name already in use">>}
                     ,{<<"cause">>, Name}
@@ -1512,7 +1513,11 @@ is_unique_account_name(AccountId, Name) ->
     case kz_datamgr:get_results(?KZ_ACCOUNTS_DB, ?AGG_VIEW_NAME, ViewOptions) of
         {'ok', []} -> 'true';
         {'error', 'not_found'} -> 'true';
-        {'ok', [JObj|_]} -> kz_doc:id(JObj) =:= AccountId;
+        {'ok', [JObj|_]} ->
+            lager:debug("found account ~s with existing id ~s; requested id ~s"
+                       ,[Name, kz_doc:id(JObj), AccountId]
+                       ),
+            kz_doc:id(JObj) =:= AccountId;
         _Else ->
             lager:error("error ~p checking view ~p in ~p", [_Else, ?AGG_VIEW_NAME, ?KZ_ACCOUNTS_DB]),
             'false'
