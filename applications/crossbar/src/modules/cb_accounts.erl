@@ -407,6 +407,7 @@ delete(Context, Account) ->
                                                      ,cb_context:auth_token(Context)
                                                      ),
             _ = cb_mobile_manager:delete_account(Context1),
+            lager:info("deleting ~s completed successfully", [AccountId]),
             Context1;
         {'error', Errors} when is_list(Errors) ->
             lists:foldl(fun({'error', Msg, Code}, C) ->
@@ -637,7 +638,7 @@ validate_delete_request(AccountId, Context) ->
         'true' ->  cb_context:add_system_error('account_has_descendants', Context);
         'false' ->
             case knm_port_request:account_has_active_port(AccountId) of
-                'false' -> cb_context:set_resp_status(Context, 'success');
+                'false' -> load_account(AccountId, Context);
                 'true' ->
                     lager:debug("prevent deleting account ~s due to has active port request", [AccountId]),
                     Msg = kz_json:from_list(
