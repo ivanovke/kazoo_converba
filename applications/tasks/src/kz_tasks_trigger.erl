@@ -20,6 +20,11 @@
         ,terminate/2
         ]).
 
+-ifdef(TEST).
+-export([sort_by_disk_size/1
+        ]).
+-endif.
+
 -include("tasks.hrl").
 -include_lib("couchbeam/include/couchbeam.hrl"). %% Contains #server{} record definition
 
@@ -216,12 +221,7 @@ ref_to_id(Ref) ->
 -spec browse_dbs_for_triggers(atom() | reference()) -> 'ok'.
 browse_dbs_for_triggers(Ref) ->
     kz_util:put_callid(<<"cleanup_pass_", (kz_binary:rand_hex(4))/binary>>),
-    #{'server' := {_App, #server{}=Conn}} = kzs_plan:plan(),
-    {'ok', Dbs} = kz_datamgr:db_info(),
-    F = fun(Db, State) -> get_db_disk_and_data(Conn, Db, State, 20) end,
-    {DbsDiskAndSizes, _} = lists:foldl(F, {[], 0}, Dbs),
-    SortedByDiskSize = lists:sort(fun sort_by_disk_size/2, DbsDiskAndSizes),
-    Sorted = props:get_keys(SortedByDiskSize),
+    Sorted = props:get_keys(sort_by_disk_size(get_dbs_disk_and_data())),
     TotalSorted = length(Sorted),
     lager:debug("starting cleanup pass of databases"),
     _ = lists:foldl(fun(Db, Ctr) -> cleanup_pass(Db, Ctr, TotalSorted) end, 1, Sorted),
@@ -259,6 +259,14 @@ db_to_trigger(Db, [{Classifier, Trigger} | Classifiers]) ->
 is_system_db(Db) ->
     lists:member(Db, ?KZ_SYSTEM_DBS).
 
+-spec get_dbs_disk_and_data() -> kz_term:proplist().
+get_dbs_disk_and_data() ->
+    #{'server' := {_App, #server{}=Conn}} = kzs_plan:plan(),
+    {'ok', Dbs} = kz_datamgr:db_info(),
+    F = fun(Db, State) -> get_db_disk_and_data(Conn, Db, State, 20) end,
+    {DbsSizes, _} = lists:foldl(F, {[], 0}, Dbs),
+    DbsSizes.
+
 -spec get_db_disk_and_data(#server{}
                           ,kz_term:ne_binary()
                           ,{[kt_compactor_worker:db_disk_and_data()], non_neg_integer()}
@@ -280,6 +288,10 @@ get_db_disk_and_data(Conn, UnencDb, {Acc, Counter}, _ChunkSize) ->
 do_get_db_disk_and_data(Conn, UnencDb, Acc, Counter) ->
     EncDb = kz_util:uri_encode(UnencDb),
     {[{UnencDb, kt_compactor_worker:get_db_disk_and_data(Conn, EncDb)} | Acc], Counter + 1}.
+
+-spec sort_by_disk_size(kz_term:proplist()) -> kz_term:proplist().
+sort_by_disk_size(DbsSizes) when is_list(DbsSizes) ->
+    lists:sort(fun sort_by_disk_size/2, DbsSizes).
 
 -spec sort_by_disk_size({kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
                        ,{kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
