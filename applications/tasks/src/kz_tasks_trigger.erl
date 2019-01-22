@@ -21,6 +21,7 @@
         ]).
 
 -include("tasks.hrl").
+-include_lib("couchbeam/include/couchbeam.hrl"). %% Contains #server{} record definition
 
 -define(SERVER, {'via', 'kz_globals', ?MODULE}).
 
@@ -215,15 +216,27 @@ ref_to_id(Ref) ->
 -spec browse_dbs_for_triggers(atom() | reference()) -> 'ok'.
 browse_dbs_for_triggers(Ref) ->
     kz_util:put_callid(<<"cleanup_pass_", (kz_binary:rand_hex(4))/binary>>),
+    #{'server' := {_App, #server{}=Conn}} = kzs_plan:plan(),
     {'ok', Dbs} = kz_datamgr:db_info(),
-    Shuffled = kz_term:shuffle_list(Dbs),
+    F = fun(Db, State) -> get_db_disk_and_data(Conn, Db, State, 20) end,
+    {DbsDiskAndSizes, _} = lists:foldl(F, {[], 0}, Dbs),
+    SortedByDiskSize = lists:sort(fun sort_by_disk_size/2, DbsDiskAndSizes),
+    Sorted = props:get_keys(SortedByDiskSize),
+    TotalSorted = length(Sorted),
     lager:debug("starting cleanup pass of databases"),
-    lists:foreach(fun cleanup_pass/1, Shuffled),
+    _ = lists:foldl(fun(Db, Ctr) -> cleanup_pass(Db, Ctr, TotalSorted) end, 1, Sorted),
     lager:debug("pass completed for ~p", [Ref]),
     gen_server:cast(?SERVER, {'cleanup_finished', Ref}).
 
--spec cleanup_pass(kz_term:ne_binary()) -> boolean().
-cleanup_pass(Db) ->
+-spec cleanup_pass(kz_term:ne_binary(), pos_integer(), pos_integer()) -> pos_integer().
+cleanup_pass(Db, Counter, TotalSorted) ->
+    lager:debug("Compacting ~p out of ~p dbs (~p remaining)",
+                [Counter, TotalSorted, (TotalSorted - Counter)]),
+    do_cleanup_pass(Db),
+    Counter + 1.
+
+-spec do_cleanup_pass(kz_term:ne_binary()) -> boolean().
+do_cleanup_pass(Db) ->
     _ = tasks_bindings:map(db_to_trigger(Db), Db),
     erlang:garbage_collect(self()).
 
@@ -245,5 +258,37 @@ db_to_trigger(Db, [{Classifier, Trigger} | Classifiers]) ->
 -spec is_system_db(kz_term:ne_binary()) -> boolean().
 is_system_db(Db) ->
     lists:member(Db, ?KZ_SYSTEM_DBS).
+
+-spec get_db_disk_and_data(#server{}
+                          ,kz_term:ne_binary()
+                          ,{[kt_compactor_worker:db_disk_and_data()], non_neg_integer()}
+                          , pos_integer()
+                          ) -> {[kt_compactor_worker:db_disk_and_data()], pos_integer()}.
+get_db_disk_and_data(Conn, UnencDb, {Acc, Counter}, ChunkSize)
+  when Counter rem ChunkSize =:= 0 ->
+    %% Every `ChunkSize' handled requests, sleep 100ms (give the db a rest).
+    timer:sleep(100),
+    do_get_db_disk_and_data(Conn, UnencDb, Acc, Counter);
+get_db_disk_and_data(Conn, UnencDb, {Acc, Counter}, _ChunkSize) ->
+    do_get_db_disk_and_data(Conn, UnencDb, Acc, Counter).
+
+-spec do_get_db_disk_and_data(#server{}
+                             ,kz_term:ne_binary()
+                             ,[kt_compactor_worker:db_disk_and_data()]
+                             ,non_neg_integer()
+                             ) -> {[kt_compactor_worker:db_disk_and_data()], pos_integer()}.
+do_get_db_disk_and_data(Conn, UnencDb, Acc, Counter) ->
+    EncDb = kz_util:uri_encode(UnencDb),
+    {[{UnencDb, kt_compactor_worker:get_db_disk_and_data(Conn, EncDb)} | Acc], Counter + 1}.
+
+-spec sort_by_disk_size({kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
+                       ,{kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
+                       ) -> boolean().
+sort_by_disk_size({_UnencDb1, {DiskSize1, _}}, {_UnencDb2, {DiskSize2, _}}) ->
+    DiskSize1 > DiskSize2;
+sort_by_disk_size({_UnencDb1, {_DiskSize1, _}}, {_UnencDb2, _Else}) -> %% Else = 'not_found' | 'undefined'
+    'true';
+sort_by_disk_size({_UnencDb1, _Else}, {_UnencDb2, {_DiskSize2, _}}) -> %% Else = 'not_found' | 'undefined'
+    'false'.
 
 %%% End of Module.

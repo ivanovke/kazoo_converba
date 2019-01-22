@@ -45,7 +45,10 @@
                    }).
 
 -type compactor() :: #compactor{}.
--export_type([compactor/0]).
+-type db_disk_and_data() :: {pos_integer(), pos_integer()} | 'undefined' | 'not_found'.
+-export_type([compactor/0
+             ,db_disk_and_data/0
+             ]).
 
 -spec run_compactor(compactor()) -> 'ok'.
 run_compactor(Compactor) ->
@@ -55,7 +58,10 @@ run_compactor(Compactor) ->
             lager:info("compacting db '~s' on node '~s'"
                       ,[compactor_database(Compactor), compactor_node(Compactor)]
                       ),
-            run_compactor_job(Compactor, compactor_shards(Compactor))
+            run_compactor_job(Compactor, compactor_shards(Compactor)),
+            lager:info("finished compacting db '~s' on node '~s'"
+                      ,[compactor_database(Compactor), compactor_node(Compactor)]
+                      )
     end.
 
 -spec run_compactor_job(compactor(), kz_term:ne_binaries()) -> 'ok'.
@@ -103,13 +109,16 @@ compact_shards(Compactor) ->
 compact_shard(#compactor{shards=[Shard]}=Compactor) ->
     kz_util:put_callid(<<"compact_shard_", Shard/binary>>),
 
+    %% Make sure this shard is not already being compacted before start compacting it.
     wait_for_compaction(compactor_admin(Compactor), Shard),
 
     case get_db_disk_and_data(compactor_admin(Compactor), Shard) of
         'undefined' ->
             lager:info("beginning shard compaction"),
             start_compacting_shard(Compactor);
-        'not_found' -> 'ok';
+        'not_found' ->
+            lager:info("disk and data size not found, skip and return ok"),
+            'ok';
         {BeforeDisk, BeforeData} ->
             lager:info("beginning shard compaction: ~p disk/~p data", [BeforeDisk, BeforeData]),
             start_compacting_shard(Compactor)
@@ -239,14 +248,12 @@ should_compact(Compactor, ?HEUR_RATIO) ->
     end.
 
 -spec get_db_disk_and_data(kz_data:connection(), kz_term:ne_binary()) ->
-                                  {pos_integer(), pos_integer()} |
-                                  'undefined' | 'not_found'.
+                                  db_disk_and_data().
 get_db_disk_and_data(Conn, DbName) ->
     get_db_disk_and_data(Conn, DbName, 0).
 
 -spec get_db_disk_and_data(kz_data:connection(), kz_term:ne_binary(), 0..3) ->
-                                  {pos_integer(), pos_integer()} |
-                                  'undefined' | 'not_found'.
+                                  db_disk_and_data().
 get_db_disk_and_data(_Conn, _DbName, 3=_N) ->
     lager:warning("getting db info for ~s failed ~b times", [_DbName, _N]),
     'undefined';
