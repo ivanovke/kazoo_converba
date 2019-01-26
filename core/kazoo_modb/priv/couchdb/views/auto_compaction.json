@@ -1,0 +1,24 @@
+{
+    "_id": "_design/auto_compaction",
+    "kazoo": {
+        "view_map": [
+            {
+                "classification": "modb"
+            }
+        ]
+    },
+    "language": "javascript",
+    "views": {
+        "crossbar_listing": {
+            "map": [
+                "function(doc) {",
+                "  if (doc.pvt_type != 'auto_compaction' || doc.pvt_deleted) return;",
+                "  emit(doc.pvt_created, {",
+                "    'id': doc._id,",
+                "    'call_id': doc.call_id,",
+                "  });",
+                "}"
+            ]
+        }
+    }
+}

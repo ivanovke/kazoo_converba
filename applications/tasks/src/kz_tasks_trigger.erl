@@ -8,7 +8,9 @@
 -behaviour(gen_server).
 
 -export([start_link/0]).
--export([status/0, auto_compaction_status/0]).
+-export([status/0]).
+%% Handlers for automatic compaction SUP commands
+-export([auto_compaction/1, auto_compaction/2]).
 -export([browse_dbs_for_triggers/1]).
 
 %%% gen_server callbacks
@@ -51,6 +53,7 @@
 -type state() :: #state{}.
 -type auto_compaction() :: #auto_compaction{}.
 
+-define(AUTO_COMPACTION_VIEW, <<"auto_compaction/crossbar_listing">>).
 -define(CLEANUP_TIMER
        ,kapps_config:get_pos_integer(?CONFIG_CAT, <<"browse_dbs_interval_s">>, ?SECONDS_IN_DAY)).
 
@@ -67,12 +70,30 @@ status() ->
     gen_server:call(?SERVER, 'status').
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc Handler for automatic compaction SUP command
 %% @end
 %%------------------------------------------------------------------------------
--spec auto_compaction_status() -> kz_term:proplist() | kz_term:ne_binary().
-auto_compaction_status() ->
-    gen_server:call(?SERVER, 'auto_compaction_status').
+-spec auto_compaction(kz_term:ne_binary()) -> kz_term:proplist() | 'ok'.
+auto_compaction(<<"status">>) ->
+    gen_server:call(?SERVER, 'auto_compaction_status');
+auto_compaction(<<"history">>) ->
+    auto_compaction_history(5);
+auto_compaction(Else) ->
+    io:format("Invalid argument: ~p~n", [Else]).
+
+%%------------------------------------------------------------------------------
+%% @doc Handler for automatic compaction SUP command
+%% @end
+%%------------------------------------------------------------------------------
+-spec auto_compaction(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
+auto_compaction(<<"history">>, BinN) when is_binary(BinN) ->
+    auto_compaction(<<"history">>, kz_term:to_integer(BinN));
+auto_compaction(<<"history">>, N) when is_integer(N)
+                                       andalso N < 1 ->
+    io:format("Invalid argument \"~p\"~n", [N]);
+auto_compaction(<<"history">>, N) when is_integer(N) ->
+    auto_compaction_history(N).
+
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -248,6 +269,66 @@ ref_to_id(Ref) ->
 %% =======================================================================================
 %% Start - Automatic Compaction Section
 %% =======================================================================================
+
+%%------------------------------------------------------------------------------
+%% @doc Print automatic compaction history according to user's request.
+%% @end
+%%------------------------------------------------------------------------------
+-spec auto_compaction_history(pos_integer()) -> 'ok'.
+auto_compaction_history(N) ->
+    {'ok', AccountId} = kapps_util:get_master_account_id(),
+    QSJObj = kz_json:from_list([{<<"page_size">>, N}]),
+    Setters = [{fun cb_context:set_query_string/2, QSJObj}
+              ,{fun cb_context:set_account_id/2, AccountId}
+              ,{fun cb_context:set_should_paginate/2, 'true'}
+              ,{fun cb_context:set_api_version/2, <<"v2">>} %% pagination
+              ],
+    Context = cb_context:setters(cb_context:new(), Setters),
+    Context1 =  crossbar_view:load_modb(Context, ?AUTO_COMPACTION_VIEW, ['include_docs']),
+    case cb_context:resp_data(Context1) of
+        [] ->
+            io:format("Not history found yet");
+        [_|_] = JObjs ->
+            Header = ["call_id"
+                     ,"to_compact"
+                     ,"compacted"
+                     ,"recovered_space"
+                     ,"started_at"
+                     ,"finished_at"
+                     ,"exec_time"
+                     ],
+            %% Last 8 is because the count of | (pipe) chars within `FStr' string.
+            HLine = lists:flatten(lists:duplicate(21+10+9+15+19+19+10+8, "-")),
+            %% Format string for printing header and values of the table including "columns".
+            FStr = "|~.21s|~.10s|~.9s|~.15s|~.19s|~.19s|~.10s|~n",
+            %% Print top line of table, then prints the header and then another line below.
+            io:format("~s~n" ++ FStr ++ "~s~n", [HLine] ++ Header ++ [HLine]),
+            lists:foreach(fun(Obj) -> print_auto_compaction_result(Obj, FStr) end, JObjs),
+            io:format("~s~n", [HLine])
+    end.
+
+-spec print_auto_compaction_result(kz_json:object(), string()) -> string().
+print_auto_compaction_result(JObj, FStr) ->
+    Doc = kz_json:get_json_value(<<"doc">>, JObj),
+    Str = fun(K, From) -> kz_json:get_string_value(K, From) end,
+    Int = fun(K, From) -> kz_json:get_integer_value(K, From) end,
+    StartInt = Int(<<"started">>, Doc),
+    EndInt = Int(<<"finished">>, Doc),
+    Row = [Str(<<"call_id">>, Doc)
+          ,Str(<<"total_dbs_to_compact">>, Doc)
+          ,Str(<<"total_dbs_already_compacted">>, Doc)
+          ,kz_util:pretty_print_bytes(Int(<<"recovered_bytes">>, Doc))
+          ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
+          ,kz_term:to_list(kz_time:pretty_print_datetime(EndInt))
+          ,kz_term:to_list(kz_time:pretty_print_elapsed_s(EndInt - StartInt))
+          ],
+    io:format(FStr, Row).
+
+%%------------------------------------------------------------------------------
+%% @doc Set automatic compaction's PID, that way it knows which process to ask about
+%% current status of the automatic compaction job.
+%% @end
+%%------------------------------------------------------------------------------
 -spec set_auto_compaction_pid(pid()) -> 'ok'.
 set_auto_compaction_pid(Pid) ->
     gen_server:cast(?SERVER, {'set_auto_compaction_pid', Pid}).
@@ -264,11 +345,25 @@ auto_compaction_status(Pid) ->
         lager:debug("timeout retrieving automatic compaction status")
     end.
 
+%%------------------------------------------------------------------------------
+%% @doc Entry point for starting the automatic compaction job.
+%%
+%% This functions gets triggered by the `browse_dbs_ref' based on `browse_dbs_timer'
+%% function. By default it triggers the action 1 day after the timer starts.
+%%
+%% This function spawns a process (`cleanup/0') in charge of triggering dbs compaction.
+%% After starting the process it gets the process id (pid) and stores it within gen_server's
+%% state, that way when the user asks for current status of the compaction job via SUP
+%% command the gen_server knows who to ask about the status. Then it waits for the spawned
+%% process to finish in order to mark the cleanup process as completed.
+%% @end
+%%------------------------------------------------------------------------------
 -spec browse_dbs_for_triggers(atom() | reference()) -> 'ok'.
 browse_dbs_for_triggers(Ref) ->
     lager:debug("starting cleanup pass of databases"),
     {Pid, CompactRef} = kz_util:spawn_monitor(fun cleanup/0, []),
     'ok' = set_auto_compaction_pid(Pid),
+    %% Wait for cleanup/0 spawned process to finish.
     receive
         {'DOWN', CompactRef, 'process', Pid, _Info} ->
             'ok'
@@ -277,6 +372,21 @@ browse_dbs_for_triggers(Ref) ->
     lager:debug("pass completed for ~p", [Ref]),
     gen_server:cast(?SERVER, {'cleanup_finished', Ref}).
 
+%%------------------------------------------------------------------------------
+%% @doc Retrieves all the dbs within the current system, get their disk and data size
+%% and then sort dbs by disk_size (bigger dbs have bigger priority). Then spawn a process
+%% (cleanup/3) that will trigger db compaction one db at the time and start listening for
+%% all the events from this process to keep the current compaction job status information
+%% so it has up to date information to return when it is asked for the current status.
+%%
+%% cleanup/0 process also listens for `auto_compaction_status' request and returns its
+%% current state.
+%%
+%% After cleanup/3 finishes its execution this function receives the collected stats after
+%% running the compaction job and saves it within BigCouch under the master_account's modb
+%% so it can be used later to report automatic compaction history via SUP command.
+%% @end
+%%------------------------------------------------------------------------------
 -spec cleanup() -> 'ok'.
 cleanup() ->
     CallId = <<"cleanup_pass_", (kz_binary:rand_hex(4))/binary>>,
@@ -316,6 +426,12 @@ do_cleanup(From, {Db, _}, _Conn) ->
     cleanup_pass(Db),
     'ok'.
 
+%%------------------------------------------------------------------------------
+%% @doc Listen for events from cleanup/3 process and react upon them. Also take care of
+%% answering `auto_compaction_status' requests and wait for `cleanup/3' process to exit
+%% to return the state.
+%% @end
+%%------------------------------------------------------------------------------
 -spec loop(kz_term:pid_ref(), auto_compaction()) -> auto_compaction().
 loop({Pid, Ref} = PidRef, State) ->
     receive
@@ -413,14 +529,14 @@ sort_by_disk_size({_UnencDb1, _Else}, {_UnencDb2, {_DiskSize2, _}}) -> %% Else =
 
 -spec save_compaction_job_info(auto_compaction()) -> 'ok'.
 save_compaction_job_info(State) ->
-    %% TODO: use modb
-    {'ok', MasterAccountDb} = kapps_util:get_master_account_db(),
+    {'ok', AccountId} = kapps_util:get_master_account_id(),
+    EncMODB = kz_util:format_account_modb(kz_util:format_account_mod_id(AccountId), 'encoded'),
     JObj = kz_json:from_list(?RECORD_TO_PROPLIST('auto_compaction', State)),
     NewJObj = kz_json:set_values([{<<"pvt_type">>, <<"auto_compaction">>}
                                  ,{<<"pvt_created">>, kz_time:now_s()}
                                  ], JObj),
-    {'ok', SavedDoc} = kz_datamgr:save_doc(MasterAccountDb, NewJObj),
-    lager:debug("SavedDoc after automatic compaction finished: ~p", [SavedDoc]),
+    {'ok', Doc} = kz_datamgr:save_doc(EncMODB, NewJObj),
+    lager:debug("Created Doc after automatic compaction finished: ~p", [Doc]),
     'ok'.
 
 %% =======================================================================================
