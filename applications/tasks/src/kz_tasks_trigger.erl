@@ -30,9 +30,6 @@
 -include("tasks.hrl").
 -include_lib("couchbeam/include/couchbeam.hrl"). %% Contains #server{} record definition
 
--define(RECORD_TO_PROPLIST(RecName, Record),
-        lists:zip([kz_term:to_binary(K) || K <- record_info('fields', RecName)],
-                  tl(tuple_to_list(Record)))).
 -define(SERVER, {'via', 'kz_globals', ?MODULE}).
 
 -record(state, {minute_ref = minute_timer() :: reference()
@@ -41,17 +38,29 @@
                ,browse_dbs_ref = browse_dbs_timer() :: reference() %%TODO: gen_listen for DB news!
                ,auto_compaction_pid = 'undefined' :: pid() | 'undefined'
                }).
--record('auto_compaction', {'call_id' :: kz_term:ne_binary()
-                           ,'total_dbs_to_compact' :: pos_integer()
-                           ,'total_dbs_already_compacted' = 0 :: non_neg_integer()
-                           ,'current_db' = 'undefined' :: kz_term:ne_binary() | 'undefined'
-                           ,'recovered_bytes' = 0 :: non_neg_integer()
-                           ,'running' = 'false' :: boolean()
-                           ,'started' = kz_time:now_s() :: kz_time:gregorian_seconds()
-                           ,'finished' = 'undefined' :: kz_time:gregorian_seconds() | 'undefined'
+-record('auto_compaction', {%% Databases
+                           'id' :: kz_term:ne_binary()
+                           ,'found' :: pos_integer() %% Number of dbs found to be compacted
+                           ,'compacted' = 0 :: non_neg_integer() %% Number of dbs compacted so far
+                           ,'queued' = 0 :: non_neg_integer() %% remaining dbs to be compacted
+                           ,'failures' = 0 :: non_neg_integer() %% Number of 'not_found' and 'undefined' got when asking for disk and data size
+                           ,'current_db' = 'undefined' :: kz_term:ne_binary()
+                           %% Storage
+                           ,'disk_start' = 0 :: non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history sup command)
+                           ,'disk_end' = 0 :: non_neg_integer() %% disk_size sum of all dbs in bytes after compaction (for history sup command)
+                           ,'data_start' = 0 :: non_neg_integer() %% data_size sum of all dbs in bytes before compaction (for history sup command)
+                           ,'data_end' = 0 :: non_neg_integer() %% data_size sum of all dbs in bytes after compaction (for history sup command)
+                           ,'recovered_disk' = 0 :: non_neg_integer() %% bytes recovered so far (auto_compaction status command)
+                           %% Worker
+                           ,'pid' = 'undefined' :: pid() %% worker's pid
+                           ,'node' = 'undefined' :: node() %% node where the worker is running
+                           ,'started' = kz_time:now_s() :: kz_time:gregorian_seconds() %% datetime (in seconds) when the compaction started
+                           ,'finished' = 'undefined' :: kz_time:gregorian_seconds() %% datetime (in seconds) when the compaction ended
                            }).
+
 -type state() :: #state{}.
 -type auto_compaction() :: #auto_compaction{}.
+-type db_disk_and_data() :: {kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}.
 
 -define(AUTO_COMPACTION_VIEW, <<"auto_compaction/crossbar_listing">>).
 -define(CLEANUP_TIMER
@@ -73,26 +82,31 @@ status() ->
 %% @doc Handler for automatic compaction SUP command
 %% @end
 %%------------------------------------------------------------------------------
--spec auto_compaction(kz_term:ne_binary()) -> kz_term:proplist() | 'ok'.
+-spec auto_compaction(kz_term:ne_binary()) -> 'ok'.
 auto_compaction(<<"status">>) ->
-    gen_server:call(?SERVER, 'auto_compaction_status');
+    case gen_server:call(?SERVER, 'auto_compaction_status') of
+        [_ | _] = Props ->
+            lists:foreach(fun({K, V}) -> io:format("~s: ~s~n", [K, V]) end, Props);
+        Bin when is_binary(Bin) -> io:format("~s~n", [Bin])
+    end;
 auto_compaction(<<"history">>) ->
-    auto_compaction_history(5);
+    {Year, Month, _} = erlang:date(),
+    auto_compaction_history(Year, Month);
 auto_compaction(Else) ->
-    io:format("Invalid argument: ~p~n", [Else]).
+    io:format("Invalid command: ~p~n", [Else]).
 
 %%------------------------------------------------------------------------------
-%% @doc Handler for automatic compaction SUP command
+%% @doc Handler for automatic compaction SUP command. Accepts <<"YYYYMM">> or <<"YYYYM">>
+%% as param to requests auto_compaction history for the given Year and Month.
 %% @end
 %%------------------------------------------------------------------------------
 -spec auto_compaction(kz_term:ne_binary(), kz_term:ne_binary()) -> 'ok'.
-auto_compaction(<<"history">>, BinN) when is_binary(BinN) ->
-    auto_compaction(<<"history">>, kz_term:to_integer(BinN));
-auto_compaction(<<"history">>, N) when is_integer(N)
-                                       andalso N < 1 ->
-    io:format("Invalid argument \"~p\"~n", [N]);
-auto_compaction(<<"history">>, N) when is_integer(N) ->
-    auto_compaction_history(N).
+auto_compaction(<<"history">>, <<Year:4/binary, Month:2/binary>>) ->
+    auto_compaction_history(kz_term:to_integer(Year), kz_term:to_integer(Month));
+auto_compaction(<<"history">>, <<Year:4/binary, Month:1/binary>>) ->
+    auto_compaction_history(kz_term:to_integer(Year), kz_term:to_integer(Month));
+auto_compaction(<<"history">>, Else) ->
+    io:format("Invalid argument *~p*~n", [Else]).
 
 
 %%------------------------------------------------------------------------------
@@ -274,33 +288,26 @@ ref_to_id(Ref) ->
 %% @doc Print automatic compaction history according to user's request.
 %% @end
 %%------------------------------------------------------------------------------
--spec auto_compaction_history(pos_integer()) -> 'ok'.
-auto_compaction_history(N) ->
+-spec auto_compaction_history(kz_time:year(), kz_time:month()) -> 'ok'.
+auto_compaction_history(Year, Month) ->
     {'ok', AccountId} = kapps_util:get_master_account_id(),
-    QSJObj = kz_json:from_list([{<<"page_size">>, N}]),
-    Setters = [{fun cb_context:set_query_string/2, QSJObj}
-              ,{fun cb_context:set_account_id/2, AccountId}
-              ,{fun cb_context:set_should_paginate/2, 'true'}
-              ,{fun cb_context:set_api_version/2, <<"v2">>} %% pagination
-              ],
-    Context = cb_context:setters(cb_context:new(), Setters),
-    Context1 =  crossbar_view:load_modb(Context, ?AUTO_COMPACTION_VIEW, ['include_docs']),
-    case cb_context:resp_data(Context1) of
-        [] ->
-            io:format("Not history found yet");
-        [_|_] = JObjs ->
-            Header = ["call_id"
-                     ,"to_compact"
+    Opts = [{'year', Year}, {'month', Month}, 'include_docs'],
+    case kazoo_modb:get_results(AccountId, ?AUTO_COMPACTION_VIEW, Opts) of
+        {'ok', []} ->
+            io:format("Not history found for ~p-~p (year-month)~n", [Year, Month]);
+        {'ok', JObjs} ->
+            Header = ["id"
+                     ,"found"
                      ,"compacted"
-                     ,"recovered_space"
+                     ,"recovered"
                      ,"started_at"
                      ,"finished_at"
                      ,"exec_time"
                      ],
             %% Last 8 is because the count of | (pipe) chars within `FStr' string.
-            HLine = lists:flatten(lists:duplicate(21+10+9+15+19+19+10+8, "-")),
+            HLine = lists:flatten(lists:duplicate(21+6+9+15+19+19+12+8, "-")),
             %% Format string for printing header and values of the table including "columns".
-            FStr = "|~.21s|~.10s|~.9s|~.15s|~.19s|~.19s|~.10s|~n",
+            FStr = "|~.21s|~.6s|~.9s|~.15s|~.19s|~.19s|~.12s|~n",
             %% Print top line of table, then prints the header and then another line below.
             io:format("~s~n" ++ FStr ++ "~s~n", [HLine] ++ Header ++ [HLine]),
             lists:foreach(fun(Obj) -> print_auto_compaction_result(Obj, FStr) end, JObjs),
@@ -312,12 +319,13 @@ print_auto_compaction_result(JObj, FStr) ->
     Doc = kz_json:get_json_value(<<"doc">>, JObj),
     Str = fun(K, From) -> kz_json:get_string_value(K, From) end,
     Int = fun(K, From) -> kz_json:get_integer_value(K, From) end,
-    StartInt = Int(<<"started">>, Doc),
-    EndInt = Int(<<"finished">>, Doc),
-    Row = [Str(<<"call_id">>, Doc)
-          ,Str(<<"total_dbs_to_compact">>, Doc)
-          ,Str(<<"total_dbs_already_compacted">>, Doc)
-          ,kz_util:pretty_print_bytes(Int(<<"recovered_bytes">>, Doc))
+    StartInt = Int([<<"worker">>, <<"started">>], Doc),
+    EndInt = Int([<<"worker">>, <<"finished">>], Doc),
+    Row = [Str(<<"_id">>, Doc)
+          ,Str([<<"databases">>, <<"found">>], Doc)
+          ,Str([<<"databases">>, <<"compacted">>], Doc)
+          ,kz_util:pretty_print_bytes(Int([<<"storage">>, <<"disk">>, <<"start">>], Doc) -
+                                      Int([<<"storage">>, <<"disk">>, <<"end">>], Doc))
           ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
           ,kz_term:to_list(kz_time:pretty_print_datetime(EndInt))
           ,kz_term:to_list(kz_time:pretty_print_elapsed_s(EndInt - StartInt))
@@ -392,13 +400,19 @@ cleanup() ->
     CallId = <<"cleanup_pass_", (kz_binary:rand_hex(4))/binary>>,
     kz_util:put_callid(CallId),
     #{'server' := {_App, #server{}=Conn}} = kzs_plan:plan(),
-    Sorted = sort_by_disk_size(get_dbs_disk_and_data(Conn)),
-    State = #auto_compaction{'call_id' = CallId
-                            ,'total_dbs_to_compact' = length(Sorted)
-                            ,'running' = 'true'
+    {DbsAndSizes, DiskStart, DataStart, _} = get_dbs_disk_and_data(Conn),
+    Sorted = sort_by_disk_size(DbsAndSizes),
+    TotalSorted = length(Sorted),
+    State = #auto_compaction{'id' = CallId
+                            ,'found' = TotalSorted
+                            ,'queued' = TotalSorted
+                            ,'disk_start' = DiskStart
+                            ,'data_start' = DataStart
+                            ,'pid' = self()
+                            ,'node' = node()
                             },
     NewState = loop(kz_util:spawn_monitor(fun cleanup/3, [self(), Sorted, Conn]), State),
-    save_compaction_job_info(NewState).
+    save_auto_compaction_job_info(NewState).
 
 -spec cleanup(pid()
              ,[{kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}]
@@ -407,22 +421,34 @@ cleanup() ->
 cleanup(From, Sorted, Conn) ->
     lists:foreach(fun(Db) -> do_cleanup(From, Db, Conn) end, Sorted).
 
+%%------------------------------------------------------------------------------
+%% @doc Trigger db compaction for found dbs
+%%
+%% Recovered bytes can ONLY be calculated for dbs that include sizes, e.g:
+%% `{DbName, {DiskSize, DataSize}}'
+%%
+%% Dbs WITHOUT sizes only trigger `current_db' event.
+%% @end
+%%------------------------------------------------------------------------------
 -spec do_cleanup(pid()
                 ,{kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
                 ,#server{}
                 ) -> 'ok'.
-do_cleanup(From, {Db, {OldDiskSize, _OldDataSize}}, Conn) ->
-    From ! {'current_db', Db},
+do_cleanup(Handler, {Db, {OldDisk, OldData}}, Conn) ->
+    EncDb = kz_util:uri_encode(Db),
+    Handler ! {'current_db', Db},
     cleanup_pass(Db),
-    case kt_compactor_worker:get_db_disk_and_data(Conn, Db) of
-      {NewDiskSize, _} ->
-          From ! {'recovered_bytes', Db, (OldDiskSize - NewDiskSize)},
-          'ok';
-      _ ->
-          'ok'
+    case kt_compactor_worker:get_db_disk_and_data(Conn, EncDb) of
+        {NewDisk, NewData} ->
+            Handler ! {'finished_db', Db, OldDisk, OldData, NewDisk, NewData},
+            'ok';
+        _ ->
+            %% If not sizes found then it is not possible to calculate recovered bytes
+            'ok'
     end;
-do_cleanup(From, {Db, _}, _Conn) ->
-    From ! {'current_db', Db},
+do_cleanup(Handler, {Db, _}, _Conn) -> %% _ = 'not_found' | 'undefined'
+    Handler ! {'current_db', Db},
+    Handler ! {'failure_db', Db}, %% Failure because it doesn't have old disk and data sizes.
     cleanup_pass(Db),
     'ok'.
 
@@ -433,32 +459,67 @@ do_cleanup(From, {Db, _}, _Conn) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec loop(kz_term:pid_ref(), auto_compaction()) -> auto_compaction().
-loop({Pid, Ref} = PidRef, State) ->
+loop(PidRef, State) ->
     receive
-        {'current_db', Db} ->
-            TotalDbs = State#auto_compaction.total_dbs_to_compact,
-            Counter = State#auto_compaction.total_dbs_already_compacted + 1,
-            lager:debug("compacting ~p out of ~p dbs (~p remaining)",
-                        [Counter, TotalDbs, (TotalDbs - Counter)]),
-            NewState = State#auto_compaction{'current_db' = Db
-                                            ,'total_dbs_already_compacted' = Counter
-                                            },
-            loop(PidRef, NewState);
-        {'recovered_bytes', Db, Recovered} ->
-            lager:debug("recovered ~p bytes after compacting ~p db", [Recovered, Db]),
-            SoFar = State#auto_compaction.recovered_bytes,
-            NewState = State#auto_compaction{'recovered_bytes' = SoFar + Recovered},
-            loop(PidRef, NewState);
-        {'compaction_status', ReplyTo} ->
-            ReplyTo ! {self(), ?RECORD_TO_PROPLIST('auto_compaction', State)},
-            loop(PidRef, State);
-        {'DOWN', Ref, 'process', Pid, _Info} ->
-            %% Finished cleanup_pass. cleanup/0 function exited.
-            State#auto_compaction{'current_db' = 'undefined'
-                                 ,'running' = 'false'
-                                 ,'finished' = kz_time:now_s()
-                                 }
+        Event -> process_event(Event, PidRef, State)
     end.
+
+-spec process_event( {'current_db' | 'failure_db', kz_term:ne_binary()}
+                    |{'finished_db'
+                     ,kz_term:ne_binary()
+                     ,non_neg_integer()
+                     ,non_neg_integer()
+                     ,non_neg_integer()
+                     ,non_neg_integer()
+                     }
+                    |{'compaction_status', pid()}
+                    |{'DOWN', reference(), 'process', pid(), any()}
+                   ,kz_term:pid_ref()
+                   ,auto_compaction()
+                   ) -> auto_compaction().
+process_event({'current_db', Db}, PidRef, State) ->
+    Found = State#auto_compaction.found,
+    Compacted = State#auto_compaction.compacted + 1,
+    Queued = State#auto_compaction.queued - 1,
+    lager:debug("compacting ~p out of ~p dbs (~p remaining)", [Compacted, Found, Queued]),
+    loop(PidRef, State#auto_compaction{'current_db' = Db});
+process_event({'finished_db', Db, OldDisk, _OldData, NewDisk, NewData}, PidRef, State) ->
+    CurrentRec = State#auto_compaction.recovered_disk,
+    DiskEnd = State#auto_compaction.disk_end,
+    DataEnd = State#auto_compaction.data_end,
+    Compacted = State#auto_compaction.compacted,
+    Queued = State#auto_compaction.queued,
+    Recovered = (OldDisk-NewDisk),
+    lager:debug("recovered ~p bytes after compacting ~p db", [Recovered, Db]),
+    loop(PidRef,
+         State#auto_compaction{'recovered_disk' = CurrentRec + Recovered
+                              ,'disk_end' = DiskEnd + NewDisk
+                              ,'data_end' = DataEnd + NewData
+                              ,'compacted' = Compacted + 1
+                              ,'queued' = Queued - 1
+                              });
+process_event({'failure_db', _}, PidRef, #auto_compaction{'failures' = Fails} = State) ->
+    %% Db without disk and data sizes (was not possible to get these sizes when auto compaction started).
+    loop(PidRef, State#auto_compaction{failures = Fails + 1});
+process_event({'compaction_status', From}, PidRef, State) ->
+    Ret = [{<<"id">>, kz_term:to_binary(State#auto_compaction.id)}
+          ,{<<"found">>, kz_term:to_binary(State#auto_compaction.found)}
+          ,{<<"compacted">>, kz_term:to_binary(State#auto_compaction.compacted)}
+          ,{<<"queued">>, kz_term:to_binary(State#auto_compaction.queued)}
+          ,{<<"failures">>, kz_term:to_binary(State#auto_compaction.failures)}
+          ,{<<"current_db">>, kz_term:to_binary(State#auto_compaction.current_db)}
+          ,{<<"recovered_disk">>, kz_term:to_binary(State#auto_compaction.recovered_disk)}
+          ,{<<"pid">>, kz_term:to_binary(State#auto_compaction.pid)}
+          ,{<<"node">>, kz_term:to_binary(State#auto_compaction.node)}
+          ,{<<"started">>, kz_term:to_binary(State#auto_compaction.started)}
+          ],
+    From ! {self(), Ret},
+    loop(PidRef, State);
+process_event({'DOWN', Ref, 'process', Pid, _Info}, {Pid, Ref}, State) ->
+    %% Finished cleanup_pass. cleanup/0 function exited.
+    State#auto_compaction{'current_db' = 'undefined'
+                         ,'finished' = kz_time:now_s()
+                         }.
 
 -spec cleanup_pass(kz_term:ne_binary()) -> boolean().
 cleanup_pass(Db) ->
@@ -484,42 +545,63 @@ db_to_trigger(Db, [{Classifier, Trigger} | Classifiers]) ->
 is_system_db(Db) ->
     lists:member(Db, ?KZ_SYSTEM_DBS).
 
--spec get_dbs_disk_and_data(#server{}) -> {[kt_compactor_worker:db_disk_and_data()], pos_integer()}.
+-spec get_dbs_disk_and_data(#server{}) -> {[db_disk_and_data()]
+                                          ,pos_integer() %% disk_size (bytes) start
+                                          ,pos_integer() %% data_size (bytes) start
+                                          ,pos_integer() %% counter used by the fold
+                                          }.
 get_dbs_disk_and_data(Conn) ->
     {'ok', Dbs} = kz_datamgr:db_info(),
     F = fun(Db, State) -> get_db_disk_and_data_fold(Conn, Db, State, 20) end,
-    {DbsSizes, _} = lists:foldl(F, {[], 0}, Dbs),
-    DbsSizes.
+    lists:foldl(F, {[], 0, 0, 0}, Dbs).
 
 -spec get_db_disk_and_data_fold(#server{}
                                ,kz_term:ne_binary()
-                               ,{[kt_compactor_worker:db_disk_and_data()], non_neg_integer()}
+                               ,{[db_disk_and_data()]
+                                ,non_neg_integer()
+                                ,non_neg_integer()
+                                ,non_neg_integer()
+                                }
                                , pos_integer()
-                               ) -> {[kt_compactor_worker:db_disk_and_data()], pos_integer()}.
-get_db_disk_and_data_fold(Conn, UnencDb, {Acc, Counter}, ChunkSize)
+                               ) -> {[db_disk_and_data()]
+                                    ,pos_integer()
+                                    ,pos_integer()
+                                    ,pos_integer()
+                                    }.
+get_db_disk_and_data_fold(Conn, UnencDb, {_, _, _, Counter} = State, ChunkSize)
   when Counter rem ChunkSize =:= 0 ->
     %% Every `ChunkSize' handled requests, sleep 100ms (give the db a rest).
     timer:sleep(100),
-    do_get_db_disk_and_data_fold(Conn, UnencDb, Acc, Counter);
-get_db_disk_and_data_fold(Conn, UnencDb, {Acc, Counter}, _ChunkSize) ->
-    do_get_db_disk_and_data_fold(Conn, UnencDb, Acc, Counter).
+    do_get_db_disk_and_data_fold(Conn, UnencDb, State);
+get_db_disk_and_data_fold(Conn, UnencDb, State, _ChunkSize) ->
+    do_get_db_disk_and_data_fold(Conn, UnencDb, State).
 
 -spec do_get_db_disk_and_data_fold(#server{}
                                   ,kz_term:ne_binary()
-                                  ,[kt_compactor_worker:db_disk_and_data()]
-                                  ,non_neg_integer()
-                                  ) -> {[kt_compactor_worker:db_disk_and_data()], pos_integer()}.
-do_get_db_disk_and_data_fold(Conn, UnencDb, Acc, Counter) ->
+                                  ,{[db_disk_and_data()]
+                                   ,non_neg_integer()
+                                   ,non_neg_integer()
+                                   ,non_neg_integer()
+                                   }
+                                  ) -> {[db_disk_and_data()]
+                                       ,pos_integer()
+                                       ,pos_integer()
+                                       ,pos_integer()
+                                       }.
+do_get_db_disk_and_data_fold(Conn, UnencDb, {Acc, DiskStart, DataStart, Counter}) ->
     EncDb = kz_util:uri_encode(UnencDb),
-    {[{UnencDb, kt_compactor_worker:get_db_disk_and_data(Conn, EncDb)} | Acc], Counter + 1}.
+    DiskAndData = kt_compactor_worker:get_db_disk_and_data(Conn, EncDb),
+    {NewDisk, NewData} = case DiskAndData of
+                             {Disk, Data} -> {DiskStart+Disk, DataStart+Data};
+                             _ -> {DiskStart, DataStart} %% 'not_found' or 'undefined'
+                           end,
+    {[{UnencDb, DiskAndData} | Acc], NewDisk, NewData, Counter + 1}.
 
--spec sort_by_disk_size(kz_term:proplist()) -> kz_term:proplist().
+-spec sort_by_disk_size([db_disk_and_data()]) -> [db_disk_and_data()].
 sort_by_disk_size(DbsSizes) when is_list(DbsSizes) ->
     lists:sort(fun sort_by_disk_size/2, DbsSizes).
 
--spec sort_by_disk_size({kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
-                       ,{kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}
-                       ) -> boolean().
+-spec sort_by_disk_size(db_disk_and_data(), db_disk_and_data()) -> boolean().
 sort_by_disk_size({_UnencDb1, {DiskSize1, _}}, {_UnencDb2, {DiskSize2, _}}) ->
     DiskSize1 > DiskSize2;
 sort_by_disk_size({_UnencDb1, {_DiskSize1, _}}, {_UnencDb2, _Else}) -> %% Else = 'not_found' | 'undefined'
@@ -527,15 +609,33 @@ sort_by_disk_size({_UnencDb1, {_DiskSize1, _}}, {_UnencDb2, _Else}) -> %% Else =
 sort_by_disk_size({_UnencDb1, _Else}, {_UnencDb2, {_DiskSize2, _}}) -> %% Else = 'not_found' | 'undefined'
     'false'.
 
--spec save_compaction_job_info(auto_compaction()) -> 'ok'.
-save_compaction_job_info(State) ->
+-spec save_auto_compaction_job_info(auto_compaction()) -> 'ok'.
+save_auto_compaction_job_info(State) ->
+    Map = #{<<"_id">> => State#auto_compaction.id
+           ,<<"databases">> => #{<<"found">> => State#auto_compaction.found
+                                ,<<"compacted">> => State#auto_compaction.compacted
+                                ,<<"queued">> => State#auto_compaction.queued
+                                ,<<"failures">> => State#auto_compaction.failures
+                                }
+           ,<<"storage">> => #{<<"disk">> =>
+                                 #{<<"start">> => State#auto_compaction.disk_start
+                                  ,<<"end">> => State#auto_compaction.disk_end
+                                  }
+                              ,<<"data">> =>
+                                 #{<<"start">> => State#auto_compaction.data_start
+                                  ,<<"end">> => State#auto_compaction.data_end
+                                  }
+                              }
+           ,<<"worker">> => #{<<"pid">> => kz_term:to_binary(State#auto_compaction.pid)
+                             ,<<"node">> => kz_term:to_binary(State#auto_compaction.node)
+                             ,<<"started">> => State#auto_compaction.started
+                             ,<<"finished">> => State#auto_compaction.finished
+                             }
+           ,<<"pvt_type">> => <<"auto_compaction">>
+           ,<<"pvt_created">> => kz_time:now_s()
+           },
     {'ok', AccountId} = kapps_util:get_master_account_id(),
-    EncMODB = kz_util:format_account_modb(kz_util:format_account_mod_id(AccountId), 'encoded'),
-    JObj = kz_json:from_list(?RECORD_TO_PROPLIST('auto_compaction', State)),
-    NewJObj = kz_json:set_values([{<<"pvt_type">>, <<"auto_compaction">>}
-                                 ,{<<"pvt_created">>, kz_time:now_s()}
-                                 ], JObj),
-    {'ok', Doc} = kz_datamgr:save_doc(EncMODB, NewJObj),
+    {'ok', Doc} = kazoo_modb:save_doc(AccountId, kz_json:from_map(Map)),
     lager:debug("Created Doc after automatic compaction finished: ~p", [Doc]),
     'ok'.
 
