@@ -10,7 +10,7 @@
 -export([start_link/0]).
 -export([status/0]).
 %% Handlers for automatic compaction SUP commands
--export([auto_compaction/1, auto_compaction/2]).
+-export([auto_compaction/1, auto_compaction/2, notify_skipped_db/1]).
 -export([browse_dbs_for_triggers/1]).
 
 %%% gen_server callbacks
@@ -44,6 +44,7 @@
                            ,'compacted' = 0 :: non_neg_integer() %% Number of dbs compacted so far
                            ,'queued' = 0 :: non_neg_integer() %% remaining dbs to be compacted
                            ,'failures' = 0 :: non_neg_integer() %% Number of 'not_found' and 'undefined' got when asking for disk and data size
+                           ,'skipped' = 0 :: non_neg_integer() %% dbs skipped because not data_size nor disk-data's ratio thresholds are met.
                            ,'current_db' = 'undefined' :: kz_term:ne_binary()
                            %% Storage
                            ,'disk_start' = 0 :: non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history sup command)
@@ -52,8 +53,8 @@
                            ,'data_end' = 0 :: non_neg_integer() %% data_size sum of all dbs in bytes after compaction (for history sup command)
                            ,'recovered_disk' = 0 :: non_neg_integer() %% bytes recovered so far (auto_compaction status command)
                            %% Worker
-                           ,'pid' = 'undefined' :: pid() %% worker's pid
-                           ,'node' = 'undefined' :: node() %% node where the worker is running
+                           ,'pid' = self() :: pid() %% worker's pid
+                           ,'node' = node() :: node() %% node where the worker is running
                            ,'started' = kz_time:now_s() :: kz_time:gregorian_seconds() %% datetime (in seconds) when the compaction started
                            ,'finished' = 'undefined' :: kz_time:gregorian_seconds() %% datetime (in seconds) when the compaction ended
                            }).
@@ -79,6 +80,14 @@ status() ->
     gen_server:call(?SERVER, 'status').
 
 %%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+-spec notify_skipped_db(kz_term:ne_binary()) -> 'ok'.
+notify_skipped_db(Db) when is_binary(Db) ->
+    gen_server:cast(?SERVER, {'notify_skipped_db', Db}).
+
+%%------------------------------------------------------------------------------
 %% @doc Handler for automatic compaction SUP command
 %% @end
 %%------------------------------------------------------------------------------
@@ -96,7 +105,7 @@ auto_compaction(Else) ->
     io:format("Invalid command: ~p~n", [Else]).
 
 %%------------------------------------------------------------------------------
-%% @doc Handler for automatic compaction SUP command. Accepts <<"YYYYMM">> or <<"YYYYM">>
+%% @doc Handler for automatic compaction SUP command. Accepts "YYYYMM" or "YYYYM"
 %% as param to requests auto_compaction history for the given Year and Month.
 %% @end
 %%------------------------------------------------------------------------------
@@ -173,6 +182,10 @@ handle_cast({'cleanup_finished', Ref}, #state{browse_dbs_ref = Ref}=State) ->
 
 handle_cast({'set_auto_compaction_pid', Pid}, State) ->
     {'noreply', State#state{'auto_compaction_pid' = Pid}};
+
+handle_cast({'notify_skipped_db', Db}, State) ->
+    'ok' = do_notify_skipped_db(State#state.auto_compaction_pid, Db),
+    {'noreply', State};
 
 handle_cast(_Msg, State) ->
     lager:debug("unhandled cast ~p", [_Msg]),
@@ -299,15 +312,17 @@ auto_compaction_history(Year, Month) ->
             Header = ["id"
                      ,"found"
                      ,"compacted"
+                     ,"skipped"
+                     ,"failed"
                      ,"recovered"
                      ,"started_at"
                      ,"finished_at"
                      ,"exec_time"
                      ],
-            %% Last 8 is because the count of | (pipe) chars within `FStr' string.
-            HLine = lists:flatten(lists:duplicate(21+6+9+15+19+19+12+8, "-")),
+            %% Last # is because the count of | (pipe) chars within `FStr' string.
+            HLine = lists:flatten(lists:duplicate(21+6+9+6+6+15+19+19+12+10, "-")),
             %% Format string for printing header and values of the table including "columns".
-            FStr = "|~.21s|~.6s|~.9s|~.15s|~.19s|~.19s|~.12s|~n",
+            FStr = "|~.21s|~.6s|~.9s|~.6s|~.6s|~.15s|~.19s|~.19s|~.12s|~n",
             %% Print top line of table, then prints the header and then another line below.
             io:format("~s~n" ++ FStr ++ "~s~n", [HLine] ++ Header ++ [HLine]),
             lists:foreach(fun(Obj) -> print_auto_compaction_result(Obj, FStr) end, JObjs),
@@ -324,6 +339,8 @@ print_auto_compaction_result(JObj, FStr) ->
     Row = [Str(<<"_id">>, Doc)
           ,Str([<<"databases">>, <<"found">>], Doc)
           ,Str([<<"databases">>, <<"compacted">>], Doc)
+          ,Str([<<"databases">>, <<"skipped">>], Doc)
+          ,Str([<<"databases">>, <<"failures">>], Doc)
           ,kz_util:pretty_print_bytes(Int([<<"storage">>, <<"disk">>, <<"start">>], Doc) -
                                       Int([<<"storage">>, <<"disk">>, <<"end">>], Doc))
           ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
@@ -350,8 +367,19 @@ auto_compaction_status(Pid) ->
         {Pid, Status} ->
             Status
     after 5000 ->
-        lager:debug("timeout retrieving automatic compaction status")
+            lager:debug("timeout retrieving automatic compaction status")
     end.
+
+%%------------------------------------------------------------------------------
+%% @doc Notifies when a database has been skipped by the compactor worker. This happens
+%% when not data_size nor disk-data's ratio thresholds are met.
+%% @end
+%%------------------------------------------------------------------------------
+-spec do_notify_skipped_db(pid() | 'undefined', kz_term:ne_binary()) -> 'ok'.
+do_notify_skipped_db('undefined', _) -> 'ok';
+do_notify_skipped_db(Pid, Db) ->
+    Pid ! {'skipped_db', Db},
+    'ok'.
 
 %%------------------------------------------------------------------------------
 %% @doc Entry point for starting the automatic compaction job.
@@ -408,8 +436,6 @@ cleanup() ->
                             ,'queued' = TotalSorted
                             ,'disk_start' = DiskStart
                             ,'data_start' = DataStart
-                            ,'pid' = self()
-                            ,'node' = node()
                             },
     NewState = loop(kz_util:spawn_monitor(fun cleanup/3, [self(), Sorted, Conn]), State),
     save_auto_compaction_job_info(NewState).
@@ -464,7 +490,7 @@ loop(PidRef, State) ->
         Event -> process_event(Event, PidRef, State)
     end.
 
--spec process_event( {'current_db' | 'failure_db', kz_term:ne_binary()}
+-spec process_event( {'current_db' | 'failure_db' | 'db_skipped', kz_term:ne_binary()}
                     |{'finished_db'
                      ,kz_term:ne_binary()
                      ,non_neg_integer()
@@ -500,13 +526,17 @@ process_event({'finished_db', Db, OldDisk, _OldData, NewDisk, NewData}, PidRef, 
                               });
 process_event({'failure_db', _}, PidRef, #auto_compaction{'failures' = Fails} = State) ->
     %% Db without disk and data sizes (was not possible to get these sizes when auto compaction started).
-    loop(PidRef, State#auto_compaction{failures = Fails + 1});
+    loop(PidRef, State#auto_compaction{'failures' = Fails + 1});
+process_event({'skipped_db', Db}, PidRef, #auto_compaction{'skipped' = Skipped} = State) ->
+    lager:debug("~p db does not need compaction, skipped", [Db]),
+    loop(PidRef, State#auto_compaction{'skipped' = Skipped + 1});
 process_event({'compaction_status', From}, PidRef, State) ->
     Ret = [{<<"id">>, kz_term:to_binary(State#auto_compaction.id)}
           ,{<<"found">>, kz_term:to_binary(State#auto_compaction.found)}
           ,{<<"compacted">>, kz_term:to_binary(State#auto_compaction.compacted)}
           ,{<<"queued">>, kz_term:to_binary(State#auto_compaction.queued)}
           ,{<<"failures">>, kz_term:to_binary(State#auto_compaction.failures)}
+          ,{<<"skipped">>, kz_term:to_binary(State#auto_compaction.skipped)}
           ,{<<"current_db">>, kz_term:to_binary(State#auto_compaction.current_db)}
           ,{<<"recovered_disk">>, kz_term:to_binary(State#auto_compaction.recovered_disk)}
           ,{<<"pid">>, kz_term:to_binary(State#auto_compaction.pid)}
@@ -594,7 +624,7 @@ do_get_db_disk_and_data_fold(Conn, UnencDb, {Acc, DiskStart, DataStart, Counter}
     {NewDisk, NewData} = case DiskAndData of
                              {Disk, Data} -> {DiskStart+Disk, DataStart+Data};
                              _ -> {DiskStart, DataStart} %% 'not_found' or 'undefined'
-                           end,
+                         end,
     {[{UnencDb, DiskAndData} | Acc], NewDisk, NewData, Counter + 1}.
 
 -spec sort_by_disk_size([db_disk_and_data()]) -> [db_disk_and_data()].
@@ -611,11 +641,16 @@ sort_by_disk_size({_UnencDb1, _Else}, {_UnencDb2, {_DiskSize2, _}}) -> %% Else =
 
 -spec save_auto_compaction_job_info(auto_compaction()) -> 'ok'.
 save_auto_compaction_job_info(State) ->
+    Found = State#auto_compaction.found,
+    Failures = State#auto_compaction.failures,
+    Skipped = State#auto_compaction.skipped,
+    Compacted = Found - Failures - Skipped,
     Map = #{<<"_id">> => State#auto_compaction.id
-           ,<<"databases">> => #{<<"found">> => State#auto_compaction.found
-                                ,<<"compacted">> => State#auto_compaction.compacted
+           ,<<"databases">> => #{<<"found">> => Found
+                                ,<<"compacted">> => Compacted
                                 ,<<"queued">> => State#auto_compaction.queued
-                                ,<<"failures">> => State#auto_compaction.failures
+                                ,<<"failures">> => Failures
+                                ,<<"skipped">> => Skipped
                                 }
            ,<<"storage">> => #{<<"disk">> =>
                                  #{<<"start">> => State#auto_compaction.disk_start
@@ -634,9 +669,10 @@ save_auto_compaction_job_info(State) ->
            ,<<"pvt_type">> => <<"auto_compaction">>
            ,<<"pvt_created">> => kz_time:now_s()
            },
+    lager:debug("Saving stats after automatic compaction completion: ~p", [Map]),
     {'ok', AccountId} = kapps_util:get_master_account_id(),
     {'ok', Doc} = kazoo_modb:save_doc(AccountId, kz_json:from_map(Map)),
-    lager:debug("Created Doc after automatic compaction finished: ~p", [Doc]),
+    lager:debug("Created doc after automatic compaction completion: ~p", [Doc]),
     'ok'.
 
 %% =======================================================================================

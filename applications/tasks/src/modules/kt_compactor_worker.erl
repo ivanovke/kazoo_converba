@@ -53,7 +53,8 @@
 -spec run_compactor(compactor()) -> 'ok'.
 run_compactor(Compactor) ->
     case should_compact(Compactor) of
-        'false' -> 'ok';
+        'false' ->
+            kz_tasks_trigger:notify_skipped_db(compactor_database(Compactor));
         'true' ->
             lager:info("compacting db '~s' on node '~s'"
                       ,[compactor_database(Compactor), compactor_node(Compactor)]
@@ -295,12 +296,13 @@ min_data_met(_Data, _Min) ->
 
 -spec min_ratio_met(integer(), integer(), float()) -> boolean().
 min_ratio_met(Disk, Data, MinRatio) ->
-    case Disk / Data of
+    case (Disk - Data) / Disk * 100 of
         R when R > MinRatio ->
-            lager:debug("ratio ~p is greater than min ratio: ~p", [R, MinRatio]),
+            lager:debug("ratio ~.2f% is greater than min ratio: ~p%", [R, MinRatio]),
             'true';
         _R ->
-            lager:debug("ratio ~p (~p/~p) is under min threshold ~p", [_R, Disk, Data, MinRatio]),
+            lager:debug("ratio ~.2f% ((~p-~p) / ~p * 100) is under min threshold ~p%",
+                        [_R, Disk, Data, Disk, MinRatio]),
             'false'
     end.
 
