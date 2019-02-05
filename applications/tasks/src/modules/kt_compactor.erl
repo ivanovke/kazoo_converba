@@ -8,7 +8,7 @@
 
 %% behaviour: tasks_provider
 
--export([init/0]).
+-export([init/0, get_all_dbs_and_sort_by_disk/0]).
 
 -export([compact_all/2
         ,compact_node/3
@@ -22,6 +22,11 @@
 -export([help/1, help/2, help/3
         ,output_header/1
         ]).
+
+-ifdef(TEST).
+-export([sort_by_disk_size/1
+        ]).
+-endif.
 
 -include("tasks.hrl").
 -include("src/modules/kt_compactor.hrl").
@@ -37,6 +42,11 @@
        ).
 
 -type rows() :: [kz_csv:row()] | [].
+-type db_and_sizes() :: {kz_term:ne_binary(), kt_compactor_worker:db_disk_and_data()}.
+
+-export_type([rows/0
+             ,db_and_sizes/0
+             ]).
 
 %%%=============================================================================
 %%% API
@@ -48,8 +58,9 @@
 %%------------------------------------------------------------------------------
 -spec init() -> 'ok'.
 init() ->
-    kapps_maintenance:refresh(kazoo_couch:get_admin_nodes()),
-    set_node_defaults(),
+    AdminNodes = kazoo_couch:get_admin_nodes(),
+    kapps_maintenance:refresh(AdminNodes),
+    set_node_defaults(AdminNodes),
 
     case ?COMPACT_AUTOMATICALLY of
         'false' -> lager:info("node ~s not configured to compact automatically", [node()]);
@@ -62,12 +73,11 @@ init() ->
     _ = tasks_bindings:bind(<<"tasks."?CATEGORY".output_header">>, ?MODULE, 'output_header'),
     tasks_bindings:bind_actions(<<"tasks."?CATEGORY>>, ?MODULE, ?ACTIONS).
 
--spec set_node_defaults() -> 'ok'.
-set_node_defaults() ->
-    {'ok', Nodes} = kz_datamgr:all_docs(kazoo_couch:get_admin_nodes()),
-    lists:foreach(fun set_node_defaults/1, Nodes).
+-spec set_node_defaults(kz_term:ne_binary() | kz_json:object()) -> 'ok'.
+set_node_defaults(AdminNodes) when is_binary(AdminNodes) ->
+    {'ok', Nodes} = kz_datamgr:all_docs(AdminNodes),
+    lists:foreach(fun set_node_defaults/1, Nodes);
 
--spec set_node_defaults(kz_json:object()) -> 'ok'.
 set_node_defaults(NodeJObj) ->
     Node = kz_doc:id(NodeJObj),
     set_node_api_port(Node),
@@ -157,7 +167,10 @@ compact_db(_Extra, 'true', #{<<"database">> := Database}=Row) ->
 
 -spec compact_db(kz_term:ne_binary()) -> 'ok'.
 compact_db(Database) ->
+    CallId = kz_util:get_callid(),
+    kt_compaction_reporter:current_db(CallId, Database),
     Rows = do_compact_db(Database, ?HEUR_RATIO),
+    kt_compaction_reporter:finished_db(CallId, Database, Rows),
     print_csv(Rows).
 
 -spec print_csv(iolist()) -> 'ok'.
@@ -225,6 +238,7 @@ do_compact_node(Node, Heuristic, APIConn, AdminConn) ->
         {'error', _E} -> lager:warning("error getting databases on node ~s: ~p", [Node, _E]), [];
         {'ok', ViewResults} ->
             NodeDBs = [kz_doc:id(ViewResult) || ViewResult <- ViewResults],
+            %Sorted = sort_by_disk_size(get_dbs_sizes(NodeDBs)),
             do_compact_node(Node, Heuristic, APIConn, AdminConn, NodeDBs)
     end.
 
@@ -363,3 +377,54 @@ get_node_connections(Node, #server{options=Options}) ->
             lager:warning("failed to connect to ~s: ~s: ~p", [Host, _E, _R]),
             {'error', 'no_connection'}
     end.
+
+-spec get_all_dbs_and_sort_by_disk() -> [db_and_sizes()].
+get_all_dbs_and_sort_by_disk() ->
+    sort_by_disk_size(get_dbs_and_sizes()).
+
+-spec get_dbs_and_sizes() -> [db_and_sizes()].
+get_dbs_and_sizes() ->
+    {'ok', Dbs} = kz_datamgr:db_info(),
+    get_dbs_sizes(Dbs).
+
+-spec get_dbs_sizes(kz_term:ne_binaries()) -> [db_and_sizes()].
+get_dbs_sizes(Dbs) ->
+    #{'server' := {_App, #server{}=Conn}} = kzs_plan:plan(),
+    F = fun(Db, State) -> get_db_disk_and_data_fold(Conn, Db, State, 20) end,
+    {DbsAndSizes, _} = lists:foldl(F, {[], 0}, Dbs),
+    DbsAndSizes.
+
+-spec get_db_disk_and_data_fold(#server{}
+                               ,kz_term:ne_binary()
+                               ,{[db_and_sizes()], non_neg_integer()}
+                               , pos_integer()
+                               ) -> {[db_and_sizes()], pos_integer()}.
+get_db_disk_and_data_fold(Conn, UnencDb, {_, Counter} = State, ChunkSize)
+  when Counter rem ChunkSize =:= 0 ->
+    %% Every `ChunkSize' handled requests, sleep 100ms (give the db a rest).
+    timer:sleep(100),
+    do_get_db_disk_and_data_fold(Conn, UnencDb, State);
+get_db_disk_and_data_fold(Conn, UnencDb, State, _ChunkSize) ->
+    do_get_db_disk_and_data_fold(Conn, UnencDb, State).
+
+-spec do_get_db_disk_and_data_fold(#server{}
+                                  ,kz_term:ne_binary()
+                                  ,{[db_and_sizes()], non_neg_integer()}
+                                  ) -> {[db_and_sizes()], pos_integer()}.
+do_get_db_disk_and_data_fold(Conn, UnencDb, {Acc, Counter}) ->
+    EncDb = kz_util:uri_encode(UnencDb),
+    {[{UnencDb, kt_compactor_worker:get_db_disk_and_data(Conn, EncDb)} | Acc]
+    ,Counter + 1
+    }.
+
+-spec sort_by_disk_size([db_and_sizes()]) -> [db_and_sizes()].
+sort_by_disk_size(DbsSizes) when is_list(DbsSizes) ->
+    lists:sort(fun sort_by_disk_size/2, DbsSizes).
+
+-spec sort_by_disk_size(db_and_sizes(), db_and_sizes()) -> boolean().
+sort_by_disk_size({_UnencDb1, {DiskSize1, _}}, {_UnencDb2, {DiskSize2, _}}) ->
+    DiskSize1 > DiskSize2;
+sort_by_disk_size({_UnencDb1, {_DiskSize1, _}}, {_UnencDb2, _Else}) -> %% Else = 'not_found' | 'undefined'
+    'true';
+sort_by_disk_size({_UnencDb1, _Else}, {_UnencDb2, {_DiskSize2, _}}) -> %% Else = 'not_found' | 'undefined'
+    'false'.

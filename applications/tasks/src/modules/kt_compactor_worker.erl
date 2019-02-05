@@ -54,7 +54,7 @@
 run_compactor(Compactor) ->
     case should_compact(Compactor) of
         'false' ->
-            kz_tasks_trigger:notify_skipped_db(compactor_database(Compactor));
+            kt_compaction_reporter:skipped_db(kz_util:get_callid(), compactor_database(Compactor));
         'true' ->
             lager:info("compacting db '~s' on node '~s'"
                       ,[compactor_database(Compactor), compactor_node(Compactor)]

@@ -1,9 +1,9 @@
--module(kz_tasks_trigger_tests).
+-module(kt_compactor_tests).
 
 -include_lib("eunit/include/eunit.hrl").
 
 sort_by_disk_size_test_() ->
-    TestF = fun kz_tasks_trigger:sort_by_disk_size/1,
+    TestF = fun kt_compactor:sort_by_disk_size/1,
 
     Db1 = new_db_disk_and_data(11111, 55555),
     Db2 = new_db_disk_and_data(22222, 44444),

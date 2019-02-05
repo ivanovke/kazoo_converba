@@ -231,13 +231,46 @@ ref_to_id(Ref) ->
 %%------------------------------------------------------------------------------
 -spec browse_dbs_for_triggers(atom() | reference()) -> 'ok'.
 browse_dbs_for_triggers(Ref) ->
-    Pid = kt_auto_compactor_worker:start_link(),
-    CompactRef = monitor('process', Pid),
-    %% Wait for auto compactor worker to finish.
-    'ok' = receive {'DOWN', CompactRef, 'process', Pid, _Info} -> 'ok' end,
+    CallId = <<"cleanup_pass_", (kz_binary:rand_hex(4))/binary>>,
+    kz_util:put_callid(CallId),
+    lager:debug("starting cleanup pass of databases"),
+    Sorted = kt_compactor:get_all_dbs_and_sort_by_disk(),
+    TotalSorted = length(Sorted),
+    'ok' = kt_compaction_reporter:start_tracking_job(self(), node(), CallId, Sorted),
+    F = fun({Db, _Sizes}, Ctr) ->
+                lager:debug("Compacting ~p out of ~p dbs (~p remaining)",
+                            [Ctr, TotalSorted, (TotalSorted - Ctr)]),
+                cleanup(Db),
+                Ctr + 1
+        end,
+    _Counter = lists:foldl(F, 1, Sorted),
+    'ok' = kt_compaction_reporter:end_tracking_job(CallId),
     lager:debug("pass completed for ~p", [Ref]),
     gen_server:cast(?SERVER, {'cleanup_finished', Ref}).
 
+-spec cleanup(kz_term:ne_binary()) -> boolean().
+cleanup(Db) ->
+    _ = tasks_bindings:map(db_to_trigger(Db), Db),
+    erlang:garbage_collect(self()).
+
+-spec db_to_trigger(kz_term:ne_binary()) -> kz_term:ne_binary().
+db_to_trigger(Db) ->
+    Classifiers = [{fun kapps_util:is_account_db/1, ?TRIGGER_ACCOUNT}
+                  ,{fun kapps_util:is_account_mod/1, ?TRIGGER_ACCOUNT_MOD}
+                  ,{fun is_system_db/1, ?TRIGGER_SYSTEM}
+                  ],
+    db_to_trigger(Db, Classifiers).
+
+db_to_trigger(_Db, []) -> ?TRIGGER_OTHER;
+db_to_trigger(Db, [{Classifier, Trigger} | Classifiers]) ->
+    case Classifier(Db) of
+        'true' -> Trigger;
+        'false' -> db_to_trigger(Db, Classifiers)
+    end.
+
+-spec is_system_db(kz_term:ne_binary()) -> boolean().
+is_system_db(Db) ->
+    lists:member(Db, ?KZ_SYSTEM_DBS).
 %% =======================================================================================
 %% End - Automatic Compaction Section
 %% =======================================================================================
