@@ -244,7 +244,7 @@ browse_dbs_for_triggers(Ref) ->
                 Ctr + 1
         end,
     _Counter = lists:foldl(F, 1, Sorted),
-    'ok' = kt_compaction_reporter:end_tracking_job(CallId),
+    'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
     lager:debug("pass completed for ~p", [Ref]),
     gen_server:cast(?SERVER, {'cleanup_finished', Ref}).
 

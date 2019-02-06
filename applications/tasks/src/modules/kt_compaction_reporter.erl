@@ -3,8 +3,10 @@
 
 %% API
 -export([start_link/0]).
--export([start_tracking_job/4
-        ,end_tracking_job/1
+-export([start_tracking_job/3
+        ,start_tracking_job/4
+        ,stop_tracking_job/1
+        ,set_job_dbs/2
         ,current_db/2
         ,finished_db/3
         ,skipped_db/2
@@ -31,7 +33,6 @@
                              ,'queued' => non_neg_integer() %% remaining dbs to be compacted
                              ,'skipped' => non_neg_integer() %% dbs skipped because not data_size nor disk-data's ratio thresholds are met.
                              ,'current_db' => 'undefined' | kz_term:ne_binary()
-                             ,'dbs_and_sizes' => [kt_compactor:db_and_sizes()] %% List of dbs and their disk and data sizes (sorted by disk_size desc).
                              %% Storage
                              ,'disk_start' => non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history sup command)
                              ,'disk_end' => non_neg_integer() %% disk_size sum of all dbs in bytes after compaction (for history sup command)
@@ -68,6 +69,14 @@ start_link() ->
 %% @doc Start tracking a compaction job
 %% @end
 %%------------------------------------------------------------------------------
+-spec start_tracking_job(pid(), node(), kz_term:ne_binary()) -> 'ok'.
+start_tracking_job(Pid, Node, CallId) ->
+    gen_server:cast(?SERVER, {'new_job', Pid, Node, CallId, []}).
+
+%%------------------------------------------------------------------------------
+%% @doc Start tracking a compaction job
+%% @end
+%%------------------------------------------------------------------------------
 -spec start_tracking_job(pid(), node(), kz_term:ne_binary(), [kt_compactor:db_and_sizes()]) -> 'ok'.
 start_tracking_job(Pid, Node, CallId, DbsAndSizes) ->
     gen_server:cast(?SERVER, {'new_job', Pid, Node, CallId, DbsAndSizes}).
@@ -76,9 +85,19 @@ start_tracking_job(Pid, Node, CallId, DbsAndSizes) ->
 %% @doc Stop tracking compaction job, save current state on db.
 %% @end
 %%------------------------------------------------------------------------------
--spec end_tracking_job(kz_term:ne_binary()) -> 'ok'.
-end_tracking_job(CallId) ->
-    gen_server:cast(?SERVER, {'end_job', CallId}).
+-spec stop_tracking_job(kz_term:ne_binary()) -> 'ok'.
+stop_tracking_job(CallId) ->
+    gen_server:cast(?SERVER, {'stop_job', CallId}).
+
+%%------------------------------------------------------------------------------
+%% @doc Some jobs like `compact_all' and `compact_node' doesn't know the list of dbs to
+%% be compacted at the beginning of the job, so we wait for that job to report the dbs
+%% once it has the list of dbs to be compacted prior to start compacting them.
+%% @end
+%%------------------------------------------------------------------------------
+-spec set_job_dbs(kz_term:ne_binary(), kt_compactor:dbs_and_sizes()) -> 'ok'.
+set_job_dbs(CallId, DbsAndSizes) ->
+    gen_server:cast(?SERVER, {'set_job_dbs', CallId, DbsAndSizes}).
 
 %%------------------------------------------------------------------------------
 %% @doc Set current db being compacted for the given job id.
@@ -111,14 +130,19 @@ skipped_db(CallId, Db) when is_binary(Db) ->
 %%------------------------------------------------------------------------------
 -spec status() -> 'ok'.
 status() ->
-    %% `StatsRows' is a list of proplists or an empty list.
-    StatsRows = gen_server:call(?SERVER, 'status'),
-    lists:foreach(
-      fun(Stats) ->
-              lists:foreach(fun({K, V}) -> io:format("~s: ~s~n", [K, V]) end, Stats),
-              io:format("~n")
-      end,
-      StatsRows).
+    %% Result is a list of proplists or an empty list.
+    case gen_server:call(?SERVER, 'status') of
+        [] ->
+            io:format("not running~n");
+        StatsRows ->
+            lists:foreach(
+              fun(Stats) ->
+                      lists:foreach(fun({K, V}) -> io:format("~s: ~s~n", [K, V]) end,
+                                    Stats),
+                      io:format("~n")
+              end,
+              StatsRows)
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc SUP command handler. Returns history for the current Year and Month.
@@ -173,19 +197,13 @@ handle_call(_Request, _From, State) ->
 %%------------------------------------------------------------------------------
 -spec handle_cast(any(), state()) -> kz_types:handle_cast_ret_state(state()).
 handle_cast({'new_job', Pid, Node, CallId, DbsAndSizes}, State) ->
-    F = fun({_Db, {Disk, Data}}, {DiskAcc, DataAcc, Counter}) ->
-                {DiskAcc + Disk, DataAcc + Data, Counter + 1};
-           ({_Db, _}, {DiAcc, DaAcc, Counter}) -> % 'not_found' | 'undefined' sizes
-                {DiAcc, DaAcc, Counter + 1}
-        end,
-    {DiskStart, DataStart, TotalDbs} = lists:foldl(F, {0, 0, 0}, DbsAndSizes),
+    {DiskStart, DataStart, TotalDbs} = start_sizes_and_total_dbs(DbsAndSizes),
     Stats = #{'id' => CallId
              ,'found' => TotalDbs
              ,'compacted' => 0
              ,'queued' => TotalDbs
              ,'skipped' => 0
              ,'current_db' => 'undefined'
-             ,'dbs_and_sizes' => DbsAndSizes
              ,'disk_start' => DiskStart
              ,'disk_end' => 0
              ,'data_start' => DataStart
@@ -198,11 +216,11 @@ handle_cast({'new_job', Pid, Node, CallId, DbsAndSizes}, State) ->
              },
     {'noreply', State#{CallId => Stats}};
 
-handle_cast({'end_job', CallId}, State) ->
+handle_cast({'stop_job', CallId}, State) ->
     NewState =
         case maps:take(CallId, State) of
             'error' ->
-                lager:debug("Invalid id provided for ending job tracking: ~p", [CallId]),
+                lager:debug("Invalid id provided for stopping job tracking: ~p", [CallId]),
                 State;
             {Stats, State1} ->
                 'ok' = save_compaction_stats(Stats#{'finished' => kz_time:now_s()}),
@@ -210,22 +228,37 @@ handle_cast({'end_job', CallId}, State) ->
         end,
     {'noreply', NewState};
 
+handle_cast({'set_job_dbs', CallId, DbsAndSizes}, State) ->
+    NewState =
+        case maps:get(CallId, State, 'undefined') of
+            'undefined' ->
+                State;
+            Stats ->
+                {DiskStart, DataStart, TotalDbs} = start_sizes_and_total_dbs(DbsAndSizes),
+                State#{CallId => Stats#{'found' => TotalDbs
+                                       ,'queued' => TotalDbs
+                                       ,'disk_start' => DiskStart
+                                       ,'data_start' => DataStart
+                                       }}
+        end,
+    {'noreply', NewState};
+
 handle_cast({'current_db', CallId, Db}, State) ->
     NewState =
-        case maps:is_key(CallId, State) of
-            'true' ->
-                Stats = maps:get(CallId, State),
-                State#{CallId => Stats#{'current_db' => Db}};
-            'false' ->
-                State
+        case maps:get(CallId, State, 'undefined') of
+            'undefined' ->
+                State;
+            Stats ->
+                State#{CallId => Stats#{'current_db' => Db}}
         end,
     {'noreply', NewState};
 
 handle_cast({'finished_db', CallId, Db, [FRow | _]}, State) ->
     NewState =
-        case maps:is_key(CallId, State) of
-            'true' ->
-                Stats = maps:get(CallId, State),
+        case maps:get(CallId, State, 'undefined') of
+            'undefined' ->
+                State;
+            Stats ->
                 #{'recovered_disk' := CurrentRec
                  ,'disk_end' := DiskEnd
                  ,'data_end' := DataEnd
@@ -243,22 +276,19 @@ handle_cast({'finished_db', CallId, Db, [FRow | _]}, State) ->
                                        ,'compacted' => Found - NewQueued - Skipped
                                        ,'queued' => NewQueued
                                        ,'current_db' => 'undefined'
-                                       }};
-            'false' ->
-                State
+                                       }}
         end,
     {'noreply', NewState};
 
 handle_cast({'skipped_db', CallId, Db}, State) ->
     NewState =
-        case maps:is_key(CallId, State) of
-            'true' ->
+        case maps:get(CallId, State, 'undefined') of
+            'undefined' ->
+                State;
+            Stats ->
                  lager:debug("~p db does not need compaction, skipped", [Db]),
-                 Stats = maps:get(CallId, State),
                  Skipped = maps:get('skipped', Stats),
-                 State#{CallId => Stats#{'skipped' => Skipped + 1}};
-            'false' ->
-                State
+                 State#{CallId => Stats#{'skipped' => Skipped + 1}}
         end,
     {'noreply', NewState};
 
@@ -297,6 +327,28 @@ code_change(_OldVsn, State, _Extra) ->
 %%%=============================================================================
 %%% Internal functions
 %%%=============================================================================
+
+-spec start_sizes_and_total_dbs(kt_compactor:dbs_and_sizes()) -> {non_neg_integer()
+                                                                 ,non_neg_integer()
+                                                                 ,non_neg_integer()
+                                                                 }.
+start_sizes_and_total_dbs(DbsAndSizes) ->
+    lists:foldl(fun start_sizes_and_total_dbs_fold/2, {0, 0, 0}, DbsAndSizes).
+
+-spec start_sizes_and_total_dbs_fold(kt_compactor:db_and_sizes()
+                                    ,{non_neg_integer()
+                                     ,non_neg_integer()
+                                     ,non_neg_integer()
+                                     }
+                                    ) -> {non_neg_integer()
+                                         ,non_neg_integer()
+                                         ,non_neg_integer()
+                                         }.
+start_sizes_and_total_dbs_fold({_Db, {Disk, Data}}, {DiskAcc, DataAcc, Counter}) ->
+    {DiskAcc + Disk, DataAcc + Data, Counter + 1};
+start_sizes_and_total_dbs_fold({_Db, _}, {DiAcc, DaAcc, Counter}) ->
+    %% 'not_found' | 'undefined' sizes
+    {DiAcc, DaAcc, Counter + 1}.
 
 -spec stats_to_status_fold(kz_term:ne_binary(), compaction_stats(), [kz_term:proplist()]) ->
                                   [kz_term:proplist()].
@@ -397,15 +449,11 @@ save_compaction_stats(Stats) ->
                              ,<<"started">> => Started
                              ,<<"finished">> => Finished
                              }
-           ,<<"pvt_type">> => type_from_id(Id)
+           ,<<"pvt_type">> => <<"compaction_job">>
            ,<<"pvt_created">> => kz_time:now_s()
            },
-    lager:debug("Saving stats after automatic compaction completion: ~p", [Map]),
+    lager:debug("Saving stats after compaction job completion: ~p", [Map]),
     {'ok', AccountId} = kapps_util:get_master_account_id(),
     {'ok', Doc} = kazoo_modb:save_doc(AccountId, kz_json:from_map(Map)),
-    lager:debug("Created doc after automatic compaction completion: ~p", [Doc]),
+    lager:debug("Created doc after compaction job completion: ~p", [Doc]),
     'ok'.
-
--spec type_from_id(kz_term:ne_binary()) -> kz_term:ne_binary().
-type_from_id(<<"cleanup_pass", _/binary>>) -> <<"auto_compaction">>;
-type_from_id(_) -> <<"unclassified_compaction_type">>.
