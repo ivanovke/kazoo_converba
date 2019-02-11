@@ -1,3 +1,8 @@
+%%%-----------------------------------------------------------------------------
+%%% @copyright (C) 2019-, 2600Hz
+%%% @doc
+%%% @end
+%%%-----------------------------------------------------------------------------
 -module(kt_compaction_reporter).
 -behaviour(gen_server).
 
@@ -332,6 +337,12 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%=============================================================================
 
+%%------------------------------------------------------------------------------
+%% @doc Sum every db's disk_size and data_size in separate variables and then return
+%% those as the values for {disk_start, disk_data} and also return the number of dbs
+%% within the same tuple, e.g.: {disk_start, disk_data, total_dbs}
+%% @end
+%%------------------------------------------------------------------------------
 -spec start_sizes_and_total_dbs(kt_compactor:dbs_and_sizes()) -> {non_neg_integer()
                                                                  ,non_neg_integer()
                                                                  ,non_neg_integer()
