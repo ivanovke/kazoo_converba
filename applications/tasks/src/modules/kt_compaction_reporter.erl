@@ -222,8 +222,12 @@ handle_cast({'stop_job', CallId}, State) ->
             'error' ->
                 lager:debug("Invalid id provided for stopping job tracking: ~p", [CallId]),
                 State;
-            {Stats, State1} ->
-                'ok' = save_compaction_stats(Stats#{'finished' => kz_time:now_s()}),
+            {Stats = #{'started' := Started}, State1} ->
+                Finished = kz_time:now_s(),
+                Elapsed = Finished - Started,
+                lager:debug("~s finished, took ~s (~ps)",
+                            [CallId, kz_time:pretty_print_elapsed_s(Elapsed), Elapsed]),
+                'ok' = save_compaction_stats(Stats#{'finished' => Finished}),
                 State1
         end,
     {'noreply', NewState};

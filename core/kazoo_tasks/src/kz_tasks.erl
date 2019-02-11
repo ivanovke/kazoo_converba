@@ -434,6 +434,21 @@ status(#{finished := Finished
   when Finished /= 'undefined',
        is_integer(TotalRows), TotalRows > 0 ->
     ?STATUS_SUCCESS;
+%% Jobs like `compact_node' return a different number of rows compared to the number
+%% of succeeded rows.
+%% total_rows = number of nodes that were provided within the input csv file.
+%% total_rows_succeeded = number of dbs compacted on all the nodes provided within the input csv file.
+status(#{finished := Finished
+        ,total_rows := TotalRows
+        ,total_rows_failed := 0
+        ,total_rows_succeeded := TotalRowsSucceeded
+        })
+  when Finished /= 'undefined',
+       is_integer(TotalRows),
+       is_integer(TotalRowsSucceeded),
+       TotalRows > 0,
+       TotalRowsSucceeded >= TotalRows ->
+    ?STATUS_SUCCESS;
 status(#{finished := Finished
         ,total_rows := TotalRows
         ,total_rows_failed := TotalRows

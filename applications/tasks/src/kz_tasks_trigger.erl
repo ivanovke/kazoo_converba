@@ -221,12 +221,6 @@ ref_to_id(Ref) ->
 %%
 %% This functions gets triggered by the `browse_dbs_ref' based on `browse_dbs_timer'
 %% function. By default it triggers the action 1 day after the timer starts.
-%%
-%% This function spawns a process (`cleanup/0') in charge of triggering dbs compaction.
-%% After starting the process it gets the process id (pid) and stores it within gen_server's
-%% state, that way when the user asks for current status of the compaction job via SUP
-%% command the gen_server knows who to ask about the status. Then it waits for the spawned
-%% process to finish in order to mark the cleanup process as completed.
 %% @end
 %%------------------------------------------------------------------------------
 -spec browse_dbs_for_triggers(atom() | reference()) -> 'ok'.
@@ -245,6 +239,7 @@ browse_dbs_for_triggers(Ref) ->
         end,
     _Counter = lists:foldl(F, 1, Sorted),
     'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
+    kz_util:put_callid('undefined'), % Reset callid
     lager:debug("pass completed for ~p", [Ref]),
     gen_server:cast(?SERVER, {'cleanup_finished', Ref}).
 

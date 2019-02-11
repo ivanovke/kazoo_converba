@@ -152,6 +152,7 @@ compact_all(_Extra, 'true') ->
     'ok' = kt_compaction_reporter:start_tracking_job(self(), node(), CallId),
     Rows = do_compact_all(),
     'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
+    kz_util:put_callid('undefined'), % Reset callid
     {Rows, 'stop'};
 compact_all(_Extra, 'false') ->
     {<<"compaction is only allowed by system administrators">>, 'stop'}.
@@ -167,6 +168,7 @@ compact_node(_Extra, 'true', #{<<"node">> := Node}=Row) ->
     'ok' = kt_compaction_reporter:start_tracking_job(self(), node(), CallId),
     Rows = do_compact_node(Node, heuristic_from_flag(maps:get(<<"force">>, Row))),
     'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
+    kz_util:put_callid('undefined'), % Reset callid
     {Rows, 'true'}.
 
 -spec compact_db(kz_tasks:extra_args(), kz_tasks:iterator(), kz_tasks:args()) -> kz_tasks:iterator().
@@ -175,17 +177,42 @@ compact_db(Extra, 'init', Args) ->
 compact_db(_Extra, 'false', _Args) ->
     {<<"compaction is only allowed by system administrators">>, 'stop'};
 compact_db(_Extra, 'true', #{<<"database">> := Database}=Row) ->
-    CallId = <<"compact_node_", (kz_binary:rand_hex(4))/binary>>,
+    CallId = <<"compact_db_", (kz_binary:rand_hex(4))/binary>>,
     kz_util:put_callid(CallId),
-    DbAndSizes = get_dbs_sizes([Database]),
-    'ok' = kt_compaction_reporter:start_tracking_job(self(), node(), CallId, DbAndSizes),
+    'ok' = kt_compaction_reporter:start_tracking_job(self(),
+                                                     node(),
+                                                     CallId,
+                                                     get_dbs_sizes([Database])),
     Rows = do_compact_db(Database, heuristic_from_flag(maps:get(<<"force">>, Row))),
     'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
+    kz_util:put_callid('undefined'), % Reset callid
     {Rows, 'true'}.
 
 -spec compact_db(kz_term:ne_binary()) -> 'ok'.
 compact_db(Database) ->
-    Rows = do_compact_db(Database, ?HEUR_RATIO),
+    Heuristic = ?HEUR_RATIO,
+    Rows =
+        case kz_util:get_callid() of
+            'undefined' ->
+                %% If not callid defined yet, then this function was call directly with a db name
+                %% so it creates a new callid to track this db-only compaction job.
+                CallId = <<"compact_db_", (kz_binary:rand_hex(4))/binary>>,
+                kz_util:put_callid(CallId),
+                'ok' = kt_compaction_reporter:start_tracking_job(self(),
+                                                                 node(),
+                                                                 CallId,
+                                                                 get_dbs_sizes([Database])),
+                Results = do_compact_db(Database, Heuristic),
+                'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
+                kz_util:put_callid('undefined'), % Reset callid
+                Results;
+            _CallId ->
+                %% If there is already a callid defined it may be because this function was
+                %% triggered by kz_tasks_trigger:cleanup/1 as part of the auto compaction or maybe
+                %% another process issued a db event that matched the one this module is listening
+                %% to.
+                do_compact_db(Database, Heuristic)
+        end,
     print_csv(Rows).
 
 -spec print_csv(iolist()) -> 'ok'.
@@ -225,7 +252,22 @@ do_compact_all() ->
 
 -spec compact_node(kz_term:ne_binary()) -> 'ok'.
 compact_node(Node) ->
-    Rows = do_compact_node(Node, ?HEUR_NONE),
+    %% Same as compact_db/1 but for nodes instead of dbs.
+    Heuristic = ?HEUR_NONE,
+    Rows =
+        case kz_util:get_callid() of
+            'undefined' ->
+                CallId = <<"compact_node_", (kz_binary:rand_hex(4))/binary>>,
+                kz_util:put_callid(CallId),
+                %% Dbs to be compacted will be set at `do_compact_node/4'
+                'ok' = kt_compaction_reporter:start_tracking_job(self(), node(), CallId),
+                Results = do_compact_node(Node, Heuristic),
+                'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
+                kz_util:put_callid('undefined'), % Reset callid
+                Results;
+            _CallId ->
+                do_compact_node(Node, Heuristic)
+        end,
     print_csv(Rows).
 
 -spec do_compact_node(kz_term:ne_binary(), heuristic()) ->
