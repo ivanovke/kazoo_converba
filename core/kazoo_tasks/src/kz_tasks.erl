@@ -422,7 +422,7 @@ status(#{started := 'undefined'}) ->
 status(#{started := Started
         ,finished := 'undefined'
         })
-  when Started /= 'undefined' ->
+  when Started =/= 'undefined' ->
     ?STATUS_EXECUTING;
 
 %% For tasks with CSV input
@@ -431,7 +431,7 @@ status(#{finished := Finished
         ,total_rows_failed := 0
         ,total_rows_succeeded := TotalRows
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalRows), TotalRows > 0 ->
     ?STATUS_SUCCESS;
 %% Jobs like `compact_node' return a different number of rows compared to the number
@@ -443,7 +443,7 @@ status(#{finished := Finished
         ,total_rows_failed := 0
         ,total_rows_succeeded := TotalRowsSucceeded
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalRows),
        is_integer(TotalRowsSucceeded),
        TotalRows > 0,
@@ -454,7 +454,7 @@ status(#{finished := Finished
         ,total_rows_failed := TotalRows
         ,total_rows_succeeded := 0
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalRows), TotalRows > 0 ->
     ?STATUS_FAILURE;
 status(#{finished := Finished
@@ -462,7 +462,7 @@ status(#{finished := Finished
         ,total_rows_failed := TotalFailed
         ,total_rows_succeeded := TotalSucceeded
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalRows), is_integer(TotalFailed), is_integer(TotalSucceeded),
        TotalRows > TotalFailed, TotalRows > TotalSucceeded ->
     ?STATUS_PARTIAL;
@@ -473,14 +473,14 @@ status(#{finished := Finished
         ,total_rows_failed := 0
         ,total_rows_succeeded := 0
         })
-  when Finished /= 'undefined' ->
+  when Finished =/= 'undefined' ->
     ?STATUS_SUCCESS;
 status(#{finished := Finished
         ,total_rows := 'undefined'
         ,total_rows_failed := 0
         ,total_rows_succeeded := TotalSucceeded
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalSucceeded), TotalSucceeded > 0 ->
     ?STATUS_SUCCESS;
 status(#{finished := Finished
@@ -488,7 +488,7 @@ status(#{finished := Finished
         ,total_rows_failed := TotalFailed
         ,total_rows_succeeded := 0
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalFailed), TotalFailed > 0 ->
     ?STATUS_FAILURE;
 status(#{finished := Finished
@@ -496,7 +496,7 @@ status(#{finished := Finished
         ,total_rows_failed := TotalFailed
         ,total_rows_succeeded := TotalSucceeded
         })
-  when Finished /= 'undefined',
+  when Finished =/= 'undefined',
        is_integer(TotalFailed), is_integer(TotalSucceeded) ->
     ?STATUS_PARTIAL;
 

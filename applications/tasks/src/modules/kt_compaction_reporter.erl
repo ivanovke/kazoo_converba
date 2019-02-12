@@ -76,7 +76,7 @@ start_link() ->
 %%------------------------------------------------------------------------------
 -spec start_tracking_job(pid(), node(), kz_term:ne_binary()) -> 'ok'.
 start_tracking_job(Pid, Node, CallId) ->
-    gen_server:cast(?SERVER, {'new_job', Pid, Node, CallId, []}).
+    start_tracking_job(Pid, Node, CallId, []).
 
 %%------------------------------------------------------------------------------
 %% @doc Start tracking a compaction job
@@ -384,7 +384,7 @@ history(Year, Month) ->
     Opts = [{'year', Year}, {'month', Month}, 'include_docs'],
     case kazoo_modb:get_results(AccountId, ?AUTO_COMPACTION_VIEW, Opts) of
         {'ok', []} ->
-            io:format("Not history found for ~p-~p (year-month)~n", [Year, Month]);
+            io:format("no history found for ~p-~p (year-month)~n", [Year, Month]);
         {'ok', JObjs} ->
             Header = ["id"
                      ,"found"
@@ -405,7 +405,7 @@ history(Year, Month) ->
             io:format("~s~n", [HLine])
     end.
 
--spec print_history_row(kz_json:object(), string()) -> string().
+-spec print_history_row(kz_json:object(), string()) -> 'ok'.
 print_history_row(JObj, FStr) ->
     Doc = kz_json:get_json_value(<<"doc">>, JObj),
     Str = fun(K, From) -> kz_json:get_string_value(K, From) end,
@@ -417,7 +417,8 @@ print_history_row(JObj, FStr) ->
           ,Str([<<"databases">>, <<"compacted">>], Doc)
           ,Str([<<"databases">>, <<"skipped">>], Doc)
           ,kz_util:pretty_print_bytes(Int([<<"storage">>, <<"disk">>, <<"start">>], Doc) -
-                                      Int([<<"storage">>, <<"disk">>, <<"end">>], Doc))
+                                      Int([<<"storage">>, <<"disk">>, <<"end">>], Doc)
+                                     )
           ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
           ,kz_term:to_list(kz_time:pretty_print_datetime(EndInt))
           ,kz_term:to_list(kz_time:pretty_print_elapsed_s(EndInt - StartInt))
@@ -429,21 +430,20 @@ print_history_row(JObj, FStr) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec save_compaction_stats(compaction_stats()) -> 'ok'.
-save_compaction_stats(Stats) ->
-    #{'id' := Id
-     ,'found' := Found
-     ,'compacted' := Compacted
-     ,'queued' := Queued
-     ,'skipped' := Skipped
-     ,'disk_start' := DiskStart
-     ,'disk_end' := DiskEnd
-     ,'data_start' := DataStart
-     ,'data_end' := DataEnd
-     ,'pid' := Pid
-     ,'node' := Node
-     ,'started' := Started
-     ,'finished' := Finished
-     } = Stats,
+save_compaction_stats(#{'id' := Id
+                       ,'found' := Found
+                       ,'compacted' := Compacted
+                       ,'queued' := Queued
+                       ,'skipped' := Skipped
+                       ,'disk_start' := DiskStart
+                       ,'disk_end' := DiskEnd
+                       ,'data_start' := DataStart
+                       ,'data_end' := DataEnd
+                       ,'pid' := Pid
+                       ,'node' := Node
+                       ,'started' := Started
+                       ,'finished' := Finished
+                       } = Stats) ->
     Map = #{<<"_id">> => Id
            ,<<"databases">> => #{<<"found">> => Found
                                 ,<<"compacted">> => Compacted
@@ -467,7 +467,7 @@ save_compaction_stats(Stats) ->
            ,<<"pvt_type">> => <<"compaction_job">>
            ,<<"pvt_created">> => kz_time:now_s()
            },
-    lager:debug("Saving stats after compaction job completion: ~p", [Map]),
+    lager:debug("Saving stats after compaction job completion: ~p", [Stats]),
     {'ok', AccountId} = kapps_util:get_master_account_id(),
     {'ok', Doc} = kazoo_modb:save_doc(AccountId, kz_json:from_map(Map)),
     lager:debug("Created doc after compaction job completion: ~p", [Doc]),

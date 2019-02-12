@@ -179,10 +179,11 @@ compact_db(_Extra, 'false', _Args) ->
 compact_db(_Extra, 'true', #{<<"database">> := Database}=Row) ->
     CallId = <<"compact_db_", (kz_binary:rand_hex(4))/binary>>,
     kz_util:put_callid(CallId),
-    'ok' = kt_compaction_reporter:start_tracking_job(self(),
-                                                     node(),
-                                                     CallId,
-                                                     get_dbs_sizes([Database])),
+    'ok' = kt_compaction_reporter:start_tracking_job(self()
+                                                    ,node()
+                                                    ,CallId
+                                                    ,get_dbs_sizes([Database])
+                                                    ),
     Rows = do_compact_db(Database, heuristic_from_flag(maps:get(<<"force">>, Row))),
     'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
     kz_util:put_callid('undefined'), % Reset callid
@@ -198,10 +199,11 @@ compact_db(Database) ->
                 %% so it creates a new callid to track this db-only compaction job.
                 CallId = <<"compact_db_", (kz_binary:rand_hex(4))/binary>>,
                 kz_util:put_callid(CallId),
-                'ok' = kt_compaction_reporter:start_tracking_job(self(),
-                                                                 node(),
-                                                                 CallId,
-                                                                 get_dbs_sizes([Database])),
+                'ok' = kt_compaction_reporter:start_tracking_job(self()
+                                                                ,node()
+                                                                ,CallId
+                                                                ,get_dbs_sizes([Database])
+                                                                ),
                 Results = do_compact_db(Database, Heuristic),
                 'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
                 kz_util:put_callid('undefined'), % Reset callid
