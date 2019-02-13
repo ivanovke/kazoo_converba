@@ -16,8 +16,8 @@
         ,finished_db/3
         ,skipped_db/2
         ]).
-%% Handlers for automatic compaction SUP commands
--export([status/0, history/0, history/1]).
+%% "Mirrors" for SUP commands
+-export([status/0, history/0, history/2]).
 
 %% gen_server's callbacks
 -export([init/1
@@ -29,7 +29,7 @@
         ]).
 
 -define(SERVER, ?MODULE).
--define(AUTO_COMPACTION_VIEW, <<"auto_compaction/crossbar_listing">>).
+-define(COMPACTION_VIEW, <<"compaction_jobs/crossbar_listing">>).
 
 -type compaction_stats() :: #{%% Databases
                               'id' => kz_term:ne_binary()
@@ -39,11 +39,11 @@
                              ,'skipped' => non_neg_integer() %% dbs skipped because not data_size nor disk-data's ratio thresholds are met.
                              ,'current_db' => 'undefined' | kz_term:ne_binary()
                               %% Storage
-                             ,'disk_start' => non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history sup command)
-                             ,'disk_end' => non_neg_integer() %% disk_size sum of all dbs in bytes after compaction (for history sup command)
-                             ,'data_start' => non_neg_integer() %% data_size sum of all dbs in bytes before compaction (for history sup command)
-                             ,'data_end' => non_neg_integer() %% data_size sum of all dbs in bytes after compaction (for history sup command)
-                             ,'recovered_disk' => non_neg_integer() %% bytes recovered so far (auto_compaction status command)
+                             ,'disk_start' => non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history command)
+                             ,'disk_end' => non_neg_integer() %% disk_size sum of all dbs in bytes after compaction (for history command)
+                             ,'data_start' => non_neg_integer() %% data_size sum of all dbs in bytes before compaction (for history command)
+                             ,'data_end' => non_neg_integer() %% data_size sum of all dbs in bytes after compaction (for history command)
+                             ,'recovered_disk' => non_neg_integer() %% bytes recovered so far (for status command)
                               %% Worker
                              ,'pid' => pid() %% worker's pid
                              ,'node' => node() %% node where the worker is running
@@ -130,46 +130,34 @@ skipped_db(CallId, Db) when is_binary(Db) ->
     gen_server:cast(?SERVER, {'skipped_db', CallId, Db}).
 
 %%------------------------------------------------------------------------------
-%% @doc SUP command handler
+%% @doc Return the status for every compaction job currently running.
 %% @end
 %%------------------------------------------------------------------------------
--spec status() -> 'ok'.
+-spec status() -> [kz_term:proplist()].
 status() ->
     %% Result is a list of proplists or an empty list.
-    case gen_server:call(?SERVER, 'status') of
-        [] ->
-            io:format("not running~n");
-        StatsRows ->
-            lists:foreach(
-              fun(Stats) ->
-                      lists:foreach(fun({K, V}) -> io:format("~s: ~s~n", [K, V]) end,
-                                    Stats),
-                      io:format("~n")
-              end,
-              StatsRows)
-    end.
+    gen_server:call(?SERVER, 'status').
 
 %%------------------------------------------------------------------------------
-%% @doc SUP command handler. Returns history for the current Year and Month.
+%% @doc Returns history for the current Year and Month.
 %% @end
 %%------------------------------------------------------------------------------
--spec history() -> 'ok'.
+-spec history() -> {'ok', kz_json:json_terms()} | {'error', atom()}.
 history() ->
     {Year, Month, _} = erlang:date(),
     history(Year, Month).
 
 %%------------------------------------------------------------------------------
-%% @doc SUP command handler. Accepts `YYYYMM' or `YYYYM' as param to request history
-%% for the given Year and Month.
+%% @doc Return compaction history for the given year and month (YYYY, MM).
 %% @end
 %%------------------------------------------------------------------------------
--spec history(kz_term:ne_binary()) -> 'ok'.
-history(<<Year:4/binary, Month:2/binary>>) ->
-    history(kz_term:to_integer(Year), kz_term:to_integer(Month));
-history(<<Year:4/binary, Month:1/binary>>) ->
-    history(kz_term:to_integer(Year), kz_term:to_integer(Month));
-history(Else) ->
-    io:format("Invalid argument *~p*~n", [Else]).
+-spec history(kz_time:year(), kz_time:month()) -> {'ok', kz_json:json_terms()} |
+                                                  {'error', atom()}.
+history(Year, Month) when is_integer(Year)
+                          andalso is_integer(Month) ->
+    {'ok', AccountId} = kapps_util:get_master_account_id(),
+    Opts = [{'year', Year}, {'month', Month}, 'include_docs'],
+    kazoo_modb:get_results(AccountId, ?COMPACTION_VIEW, Opts).
 
 %%%=============================================================================
 %%% gen_server callbacks
@@ -368,6 +356,10 @@ start_sizes_and_total_dbs_fold({_Db, _}, {DiAcc, DaAcc, Counter}) ->
     %% 'not_found' | 'undefined' sizes
     {DiAcc, DaAcc, Counter + 1}.
 
+%%------------------------------------------------------------------------------
+%% @doc Converts current state into a list of proplists including only some `Keys'.
+%% @end
+%%------------------------------------------------------------------------------
 -spec stats_to_status_fold(kz_term:ne_binary(), compaction_stats(), [kz_term:proplist()]) ->
                                   [kz_term:proplist()].
 stats_to_status_fold(_Key, Stats, Acc) ->
@@ -376,56 +368,6 @@ stats_to_status_fold(_Key, Stats, Acc) ->
     [[{kz_term:to_binary(Key), kz_term:to_binary(maps:get(Key, Stats))}
       || Key <- Keys
      ] | Acc].
-
-%%------------------------------------------------------------------------------
-%% @doc Print automatic compaction history according to user's input.
-%% @end
-%%------------------------------------------------------------------------------
--spec history(kz_time:year(), kz_time:month()) -> 'ok'.
-history(Year, Month) ->
-    {'ok', AccountId} = kapps_util:get_master_account_id(),
-    Opts = [{'year', Year}, {'month', Month}, 'include_docs'],
-    case kazoo_modb:get_results(AccountId, ?AUTO_COMPACTION_VIEW, Opts) of
-        {'ok', []} ->
-            io:format("no history found for ~p-~p (year-month)~n", [Year, Month]);
-        {'ok', JObjs} ->
-            Header = ["id"
-                     ,"found"
-                     ,"compacted"
-                     ,"skipped"
-                     ,"recovered"
-                     ,"started_at"
-                     ,"finished_at"
-                     ,"exec_time"
-                     ],
-            HLine = "+---------------------+------+---------+-------+---------------+-------------------+-------------------+------------+",
-            %% Format string for printing header and values of the table including "columns".
-            FStr = "|~.21s|~.6s|~.9s|~.7s|~.15s|~.19s|~.19s|~.12s|~n",
-            %% Print top line of table, then prints the header and then another line below.
-            io:format("~s~n" ++ FStr ++ "~s~n", [HLine] ++ Header ++ [HLine]),
-            lists:foreach(fun(Obj) -> print_history_row(Obj, FStr) end, JObjs),
-            io:format("~s~n", [HLine])
-    end.
-
--spec print_history_row(kz_json:object(), string()) -> 'ok'.
-print_history_row(JObj, FStr) ->
-    Doc = kz_json:get_json_value(<<"doc">>, JObj),
-    Str = fun(K, From) -> kz_json:get_string_value(K, From) end,
-    Int = fun(K, From) -> kz_json:get_integer_value(K, From) end,
-    StartInt = Int([<<"worker">>, <<"started">>], Doc),
-    EndInt = Int([<<"worker">>, <<"finished">>], Doc),
-    DiskStartInt = Int([<<"storage">>, <<"disk">>, <<"start">>], Doc),
-    DiskEndInt = Int([<<"storage">>, <<"disk">>, <<"end">>], Doc),
-    Row = [Str(<<"_id">>, Doc)
-          ,Str([<<"databases">>, <<"found">>], Doc)
-          ,Str([<<"databases">>, <<"compacted">>], Doc)
-          ,Str([<<"databases">>, <<"skipped">>], Doc)
-          ,kz_util:pretty_print_bytes(DiskStartInt - DiskEndInt)
-          ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
-          ,kz_term:to_list(kz_time:pretty_print_datetime(EndInt))
-          ,kz_term:to_list(kz_time:pretty_print_elapsed_s(EndInt - StartInt))
-          ],
-    io:format(FStr, Row).
 
 %%------------------------------------------------------------------------------
 %% @doc Save compaction job stats on db.
