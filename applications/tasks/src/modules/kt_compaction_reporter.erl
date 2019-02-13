@@ -32,19 +32,19 @@
 -define(AUTO_COMPACTION_VIEW, <<"auto_compaction/crossbar_listing">>).
 
 -type compaction_stats() :: #{%% Databases
-                             'id' => kz_term:ne_binary()
+                              'id' => kz_term:ne_binary()
                              ,'found' => pos_integer() %% Number of dbs found to be compacted
                              ,'compacted' => non_neg_integer() %% Number of dbs compacted so far
                              ,'queued' => non_neg_integer() %% remaining dbs to be compacted
                              ,'skipped' => non_neg_integer() %% dbs skipped because not data_size nor disk-data's ratio thresholds are met.
                              ,'current_db' => 'undefined' | kz_term:ne_binary()
-                             %% Storage
+                              %% Storage
                              ,'disk_start' => non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history sup command)
                              ,'disk_end' => non_neg_integer() %% disk_size sum of all dbs in bytes after compaction (for history sup command)
                              ,'data_start' => non_neg_integer() %% data_size sum of all dbs in bytes before compaction (for history sup command)
                              ,'data_end' => non_neg_integer() %% data_size sum of all dbs in bytes after compaction (for history sup command)
                              ,'recovered_disk' => non_neg_integer() %% bytes recovered so far (auto_compaction status command)
-                             %% Worker
+                              %% Worker
                              ,'pid' => pid() %% worker's pid
                              ,'node' => node() %% node where the worker is running
                              ,'started' => kz_time:gregorian_seconds() %% datetime (in seconds) when the compaction started
@@ -230,8 +230,9 @@ handle_cast({'stop_job', CallId}, State) ->
             {Stats = #{'started' := Started}, State1} ->
                 Finished = kz_time:now_s(),
                 Elapsed = Finished - Started,
-                lager:debug("~s finished, took ~s (~ps)",
-                            [CallId, kz_time:pretty_print_elapsed_s(Elapsed), Elapsed]),
+                lager:debug("~s finished, took ~s (~ps)"
+                           ,[CallId, kz_time:pretty_print_elapsed_s(Elapsed), Elapsed]
+                           ),
                 'ok' = save_compaction_stats(Stats#{'finished' => Finished}),
                 State1
         end,
@@ -295,9 +296,9 @@ handle_cast({'skipped_db', CallId, Db}, State) ->
             'undefined' ->
                 State;
             Stats ->
-                 lager:debug("~p db does not need compaction, skipped", [Db]),
-                 Skipped = maps:get('skipped', Stats),
-                 State#{CallId => Stats#{'skipped' => Skipped + 1}}
+                lager:debug("~p db does not need compaction, skipped", [Db]),
+                Skipped = maps:get('skipped', Stats),
+                State#{CallId => Stats#{'skipped' => Skipped + 1}}
         end,
     {'noreply', NewState};
 
@@ -323,7 +324,9 @@ handle_info(_Info, State) ->
 %%------------------------------------------------------------------------------
 -spec terminate(any(), state()) -> 'ok'.
 terminate(_Reason, _State) ->
-    lager:debug("~s terminating: ~p", [?MODULE, _Reason]).
+    lager:debug("~s terminating with reason: ~p~n when state was: ~p"
+               ,[?MODULE, _Reason, _State]
+               ).
 
 %%------------------------------------------------------------------------------
 %% @doc Convert process state when code is changed.
@@ -395,8 +398,7 @@ history(Year, Month) ->
                      ,"finished_at"
                      ,"exec_time"
                      ],
-            %% Last # is because the count of | (pipe) chars within `FStr' string.
-            HLine = lists:flatten(lists:duplicate(21+6+9+7+15+19+19+12+9, "-")),
+            HLine = "+---------------------+------+---------+-------+---------------+-------------------+-------------------+------------+",
             %% Format string for printing header and values of the table including "columns".
             FStr = "|~.21s|~.6s|~.9s|~.7s|~.15s|~.19s|~.19s|~.12s|~n",
             %% Print top line of table, then prints the header and then another line below.
@@ -412,13 +414,13 @@ print_history_row(JObj, FStr) ->
     Int = fun(K, From) -> kz_json:get_integer_value(K, From) end,
     StartInt = Int([<<"worker">>, <<"started">>], Doc),
     EndInt = Int([<<"worker">>, <<"finished">>], Doc),
+    DiskStartInt = Int([<<"storage">>, <<"disk">>, <<"start">>], Doc),
+    DiskEndInt = Int([<<"storage">>, <<"disk">>, <<"end">>], Doc),
     Row = [Str(<<"_id">>, Doc)
           ,Str([<<"databases">>, <<"found">>], Doc)
           ,Str([<<"databases">>, <<"compacted">>], Doc)
           ,Str([<<"databases">>, <<"skipped">>], Doc)
-          ,kz_util:pretty_print_bytes(Int([<<"storage">>, <<"disk">>, <<"start">>], Doc) -
-                                      Int([<<"storage">>, <<"disk">>, <<"end">>], Doc)
-                                     )
+          ,kz_util:pretty_print_bytes(DiskStartInt - DiskEndInt)
           ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
           ,kz_term:to_list(kz_time:pretty_print_datetime(EndInt))
           ,kz_term:to_list(kz_time:pretty_print_elapsed_s(EndInt - StartInt))
@@ -451,13 +453,13 @@ save_compaction_stats(#{'id' := Id
                                 ,<<"skipped">> => Skipped
                                 }
            ,<<"storage">> => #{<<"disk">> =>
-                                 #{<<"start">> => DiskStart
-                                  ,<<"end">> => DiskEnd
-                                  }
+                                   #{<<"start">> => DiskStart
+                                    ,<<"end">> => DiskEnd
+                                    }
                               ,<<"data">> =>
-                                 #{<<"start">> => DataStart
-                                  ,<<"end">> => DataEnd
-                                  }
+                                   #{<<"start">> => DataStart
+                                    ,<<"end">> => DataEnd
+                                    }
                               }
            ,<<"worker">> => #{<<"pid">> => kz_term:to_binary(Pid)
                              ,<<"node">> => kz_term:to_binary(Node)
