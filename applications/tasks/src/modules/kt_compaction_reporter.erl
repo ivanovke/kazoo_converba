@@ -225,7 +225,7 @@ handle_cast({'stop_job', CallId}, State) ->
     NewState =
         case maps:take(CallId, State) of
             'error' ->
-                lager:debug("Invalid id provided for stopping job tracking: ~p", [CallId]),
+                lager:debug("invalid id provided for stopping job tracking: ~p", [CallId]),
                 State;
             {Stats = #{'started' := Started}, State1} ->
                 Finished = kz_time:now_s(),
@@ -469,8 +469,8 @@ save_compaction_stats(#{'id' := Id
            ,<<"pvt_type">> => <<"compaction_job">>
            ,<<"pvt_created">> => kz_time:now_s()
            },
-    lager:debug("Saving stats after compaction job completion: ~p", [Stats]),
+    lager:debug("saving stats after compaction job completion: ~p", [Stats]),
     {'ok', AccountId} = kapps_util:get_master_account_id(),
     {'ok', Doc} = kazoo_modb:save_doc(AccountId, kz_json:from_map(Map)),
-    lager:debug("Created doc after compaction job completion: ~p", [Doc]),
+    lager:debug("created doc after compaction job completion: ~p", [Doc]),
     'ok'.

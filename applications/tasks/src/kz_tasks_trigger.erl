@@ -232,7 +232,7 @@ browse_dbs_for_triggers(Ref) ->
     TotalSorted = length(Sorted),
     'ok' = kt_compaction_reporter:start_tracking_job(self(), node(), CallId, Sorted),
     F = fun({Db, _Sizes}, Ctr) ->
-                lager:debug("Compacting ~p out of ~p dbs (~p remaining)",
+                lager:debug("compacting ~p out of ~p dbs (~p remaining)",
                             [Ctr, TotalSorted, (TotalSorted - Ctr)]),
                 cleanup_pass(Db),
                 Ctr + 1
