@@ -234,7 +234,7 @@ browse_dbs_for_triggers(Ref) ->
     F = fun({Db, _Sizes}, Ctr) ->
                 lager:debug("Compacting ~p out of ~p dbs (~p remaining)",
                             [Ctr, TotalSorted, (TotalSorted - Ctr)]),
-                cleanup(Db),
+                cleanup_pass(Db),
                 Ctr + 1
         end,
     _Counter = lists:foldl(F, 1, Sorted),
@@ -243,8 +243,8 @@ browse_dbs_for_triggers(Ref) ->
     lager:debug("pass completed for ~p", [Ref]),
     gen_server:cast(?SERVER, {'cleanup_finished', Ref}).
 
--spec cleanup(kz_term:ne_binary()) -> boolean().
-cleanup(Db) ->
+-spec cleanup_pass(kz_term:ne_binary()) -> boolean().
+cleanup_pass(Db) ->
     _ = tasks_bindings:map(db_to_trigger(Db), Db),
     erlang:garbage_collect(self()).
 
