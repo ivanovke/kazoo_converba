@@ -225,12 +225,12 @@ handle_new_task_error(JObj, _, _) ->
     print_json(kz_json:from_list([{<<"errors">>, JObj}])).
 
 -spec compaction_history(kz_term:ne_binary(), kz_term:ne_binary()) ->
-                                   {'ok', kz_json:json_terms()} | {'error', atom()}.
+                                {'ok', kz_json:json_terms()} | {'error', atom()}.
 compaction_history(Year, Month) ->
     kt_compaction_reporter:history(kz_term:to_integer(Year), kz_term:to_integer(Month)).
 
 -spec maybe_print_compaction_history({'ok', kz_json:json_terms()} | {'error', atom()}) ->
-                                   'no_return'.
+                                            'no_return'.
 maybe_print_compaction_history({'ok', []}) ->
     io:format("no history found~n"),
     'no_return';
