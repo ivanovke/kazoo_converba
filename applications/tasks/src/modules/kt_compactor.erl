@@ -399,8 +399,8 @@ get_node_connections(Node, #server{options=Options}) ->
     NodeAdminPort = ?NODE_ADMIN_PORT(Node),
 
     lager:debug("getting connection information for ~s, ~p and ~p", [Host, NodeAPIPort, NodeAdminPort]),
-    C1 = couchbeam:server_connection(Hostname, NodeAPIPort, "", Options),
-    C2 = couchbeam:server_connection(Hostname, NodeAdminPort, "", Options),
+    C1 = couchbeam:server_connection(Hostname, NodeAPIPort, <<"">>, Options),
+    C2 = couchbeam:server_connection(Hostname, NodeAdminPort, <<"">>, Options),
 
     try {kz_couch_util:connection_info(C1),
          kz_couch_util:connection_info(C2)
