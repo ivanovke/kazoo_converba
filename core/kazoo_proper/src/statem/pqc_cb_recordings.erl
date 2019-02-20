@@ -28,12 +28,7 @@
                              {'error', 'not_found'} |
                              {'ok', kz_json:objects()}.
 list_recordings(API, AccountId) ->
-    case pqc_cb_api:make_request(#{'response_codes' => [200]}
-                                ,fun kz_http:get/2
-                                ,recordings_url(AccountId)
-                                ,pqc_cb_api:request_headers(API)
-                                )
-    of
+    case pqc_api_recordings:list(API, AccountId) of
         {'error', _E} ->
             ?DEBUG("listing recordings errored: ~p", [_E]),
             {'error', 'not_found'};
@@ -46,12 +41,7 @@ list_recordings(API, AccountId) ->
                              {'ok', kz_json:object()} |
                              {'error', 'not_found'}.
 fetch_recording(API, AccountId, RecordingId) ->
-    case pqc_cb_api:make_request(#{'response_codes' => [200]}
-                                ,fun kz_http:get/2
-                                ,recordings_url(AccountId, RecordingId)
-                                ,pqc_cb_api:request_headers(API)
-                                )
-    of
+    case pqc_api_recordings:fetch(API, AccountId, RecordingId) of
         {'error', _E} ->
             ?DEBUG("fetching recording errored: ~p", [_E]),
             {'error', 'not_found'};
@@ -64,15 +54,7 @@ fetch_recording(API, AccountId, RecordingId) ->
                                     {'ok', kz_json:object()} |
                                     {'error', 'not_found'}.
 fetch_recording_binary(API, AccountId, RecordingId) ->
-    case pqc_cb_api:make_request(#{'response_codes' => [200]
-                                  ,'response_headers' =>
-                                       [{"content-type", "audio/mpeg"}]
-                                  }
-                                ,fun kz_http:get/2
-                                ,recordings_url(AccountId, RecordingId)
-                                ,pqc_cb_api:request_headers(API, [{<<"accept">>, "audio/mpeg"}])
-                                )
-    of
+    case pqc_api_recordings:fetch_binary(API, AccountId, RecordingId) of
         {'error', _E} ->
             ?DEBUG("fetching binary errored: ~p", [_E]),
             {'error', 'not_found'};
@@ -84,15 +66,7 @@ fetch_recording_binary(API, AccountId, RecordingId) ->
                                       {'ok', kz_json:object()} |
                                       {'error', 'not_found'}.
 fetch_recording_tunneled(API, AccountId, RecordingId) ->
-    case pqc_cb_api:make_request(#{'response_codes' => [200]
-                                  ,'response_headers' =>
-                                       [{"content-type", "audio/mpeg"}]
-                                  }
-                                ,fun kz_http:get/2
-                                ,recordings_url(AccountId, RecordingId) ++ "?accept=audio/mpeg"
-                                ,pqc_cb_api:request_headers(API)
-                                )
-    of
+    case pqc_api_recordings:fetch_tunneled(API, AccountId, RecordingId) of
         {'error', _E} ->
             ?DEBUG("fetching binary/tunneled errored: ~p", [_E]),
             {'error', 'not_found'};
@@ -134,12 +108,7 @@ create_attachment(MODB, DocId) ->
                               {'ok', kz_json:object()} |
                               {'error', 'not_found'}.
 delete_recording(API, AccountId, RecordingId) ->
-    case pqc_cb_api:make_request(#{'response_codes' => [200, 404]}
-                                ,fun kz_http:delete/2
-                                ,recordings_url(AccountId, RecordingId)
-                                ,pqc_cb_api:request_headers(API)
-                                )
-    of
+    case pqc_api_recordings:delete(API, AccountId, RecordingId) of
         {'error', _E} ->
             ?DEBUG("delete recording errored: ~p", [_E]),
             {'error', 'not_found'};
@@ -150,12 +119,6 @@ delete_recording(API, AccountId, RecordingId) ->
                 _Code -> {'ok', kz_json:get_json_value(<<"data">>, JObj)}
             end
     end.
-
-recordings_url(AccountId) ->
-    string:join([pqc_api_accounts:account_url(AccountId), "recordings"], "/").
-
-recordings_url(AccountId, RecordingId) ->
-    string:join([recordings_url(AccountId), kz_term:to_list(RecordingId)], "/").
 
 -spec seq() -> 'ok'.
 seq() ->
