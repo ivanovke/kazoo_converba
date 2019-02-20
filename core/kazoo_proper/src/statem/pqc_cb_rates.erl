@@ -106,8 +106,7 @@ rate_account_did(_API, 'undefined', _DID) ->
     ?FAILED_RESPONSE;
 rate_account_did(API, AccountId, DID) ->
     ?INFO("rating DID ~p against account ~p", [DID, AccountId]),
-    URL = string:join([pqc_api_accounts:account_url(AccountId), "rates", "number", kz_term:to_list(DID)], "/"),
-    make_rating_request(API, URL).
+    process_rate_resp(pqc_api_rates:rate_account(API, AccountId, DID)).
 
 -spec ratedeck_service_plan(kz_term:ne_binary() | kzd_rates:doc()) -> kzd_service_plan:doc().
 ratedeck_service_plan(<<_/binary>> = RatedeckId) ->
@@ -167,13 +166,7 @@ delete_rate(API, RateDoc) ->
 -spec delete_rate(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binary()) -> pqc_cb_api:response().
 delete_rate(API, ID, <<_/binary>>=RatedeckId) ->
     ?INFO("deleting rate ~s from ~s", [ID, RatedeckId]),
-
-    URL = rate_url(ID, RatedeckId),
-    pqc_cb_api:make_request([200, 404]
-                           ,fun kz_http:delete/2
-                           ,URL ++ "&should_soft_delete=false"
-                           ,pqc_cb_api:request_headers(API)
-                           ).
+    pqc_api_rates:delete(API, ID, RatedeckId).
 
 -spec get_rate(pqc_cb_api:state(), kzd_rates:doc()) -> pqc_cb_api:response().
 get_rate(API, RateDoc) ->
@@ -181,12 +174,7 @@ get_rate(API, RateDoc) ->
 
     ?INFO("getting rate info for ~s in ~s", [ID, kzd_rates:ratedeck_id(RateDoc)]),
 
-    URL = rate_url(ID, kzd_rates:ratedeck_id(RateDoc)),
-    pqc_cb_api:make_request([200, 404]
-                           ,fun kz_http:get/2
-                           ,URL
-                           ,pqc_cb_api:request_headers(API)
-                           ).
+    pqc_api_rates:fetch(API, ID, kzd_rates:ratedeck_id(RateDoc)).
 
 -spec get_rates(pqc_cb_api:state()) -> pqc_cb_api:response().
 get_rates(API) ->
@@ -195,28 +183,16 @@ get_rates(API) ->
 -spec get_rates(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
 get_rates(API, RatedeckId) ->
     ?INFO("getting rates for ratedeck ~s", [RatedeckId]),
-    pqc_cb_api:make_request([200]
-                           ,fun kz_http:get/2
-                           ,rates_url() ++ "?ratedeck_id=" ++ kz_term:to_list(RatedeckId)
-                           ,pqc_cb_api:request_headers(API)
-                           ).
+    pqc_api_rates:summary(API, RatedeckId).
 
 -spec rate_did(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binary()) -> kz_term:api_integer().
 rate_did(API, RatedeckId, DID) ->
     ?INFO("rating DID ~s using ~s", [DID, RatedeckId]),
-    URL = rate_number_url(RatedeckId, DID),
+    Resp = pqc_api_rates:rate(API, DID, RatedeckId),
 
-    make_rating_request(API, URL).
+    process_rate_resp(Resp).
 
--spec make_rating_request(pqc_cb_api:state(), string()) -> kz_term:api_number().
-make_rating_request(API, URL) ->
-    RequestHeaders = pqc_cb_api:request_headers(API),
-
-    Resp = pqc_cb_api:make_request([200, 500]
-                                  ,fun kz_http:get/2
-                                  ,URL
-                                  ,RequestHeaders
-                                  ),
+process_rate_resp(Resp) ->
     RespJObj = kz_json:decode(Resp),
     case kz_json:get_ne_binary_value(<<"status">>, RespJObj) of
         <<"error">> -> 'undefined';
@@ -225,19 +201,6 @@ make_rating_request(API, URL) ->
             ?INFO("rate cost: ~p: ~p", [Cost, RespJObj]),
             Cost
     end.
-
-rates_url() ->
-    string:join([pqc_cb_api:v2_base_url(), "rates"], "/").
-
-rate_number_url(RatedeckId, DID) ->
-    rate_did_url(pqc_cb_api:v2_base_url(), DID) ++ "?ratedeck_id=" ++ kz_term:to_list(RatedeckId).
-
-rate_url(ID, RatedeckId) ->
-    string:join([pqc_cb_api:v2_base_url(), "rates", kz_term:to_list(ID)], "/")
-        ++ "?ratedeck_id=" ++ kz_term:to_list(RatedeckId).
-
-rate_did_url(Base, DID) ->
-    string:join([Base, "rates", "number", kz_term:to_list(kz_http_util:urlencode(DID))], "/").
 
 -spec correct() -> any().
 correct() ->
