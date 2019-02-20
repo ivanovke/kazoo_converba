@@ -82,13 +82,13 @@ create_box(API, AccountId, BoxName) ->
                            ).
 
 boxes_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "vmboxes"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "vmboxes"], "/").
 
 messages_url(AccountId, BoxId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "vmboxes", kz_term:to_list(BoxId), "messages"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "vmboxes", kz_term:to_list(BoxId), "messages"], "/").
 
 message_url(AccountId, BoxId, MessageId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "vmboxes", kz_term:to_list(BoxId), "messages", kz_term:to_list(MessageId)], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "vmboxes", kz_term:to_list(BoxId), "messages", kz_term:to_list(MessageId)], "/").
 
 message_bin_url(AccountId, BoxId, MessageId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "vmboxes", kz_term:to_list(BoxId), "messages", kz_term:to_list(MessageId), "raw"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "vmboxes", kz_term:to_list(BoxId), "messages", kz_term:to_list(MessageId), "raw"], "/").

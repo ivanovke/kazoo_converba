@@ -106,7 +106,7 @@ rate_account_did(_API, 'undefined', _DID) ->
     ?FAILED_RESPONSE;
 rate_account_did(API, AccountId, DID) ->
     ?INFO("rating DID ~p against account ~p", [DID, AccountId]),
-    URL = string:join([pqc_cb_accounts:account_url(AccountId), "rates", "number", kz_term:to_list(DID)], "/"),
+    URL = string:join([pqc_api_accounts:account_url(AccountId), "rates", "number", kz_term:to_list(DID)], "/"),
     make_rating_request(API, URL).
 
 -spec ratedeck_service_plan(kz_term:ne_binary() | kzd_rates:doc()) -> kzd_service_plan:doc().

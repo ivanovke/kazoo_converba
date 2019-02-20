@@ -24,4 +24,4 @@ search_account_by_name(API, Name) ->
 
 -spec search_url(pqc_cb_api:state()) -> string().
 search_url(API) ->
-    string:join([pqc_cb_accounts:account_url(API), "search"], "/").
+    string:join([pqc_api_accounts:account_url(API), "search"], "/").

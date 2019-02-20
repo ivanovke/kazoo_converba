@@ -152,7 +152,7 @@ delete_recording(API, AccountId, RecordingId) ->
     end.
 
 recordings_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "recordings"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "recordings"], "/").
 
 recordings_url(AccountId, RecordingId) ->
     string:join([recordings_url(AccountId), kz_term:to_list(RecordingId)], "/").

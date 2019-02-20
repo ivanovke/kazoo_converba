@@ -4,6 +4,8 @@
         ,delete/2
         ]).
 
+-export([account_url/1]).
+
 -include("kazoo_proper.hrl").
 
 -spec create(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().

@@ -99,19 +99,19 @@ debit(API, ?NE_BINARY=AccountId, Ledger) ->
 
 -spec ledgers_url(kz_term:ne_binary()) -> string().
 ledgers_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "ledgers"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "ledgers"], "/").
 
 -spec ledgers_source_url(kz_term:ne_binary(), kz_term:ne_binary()) -> string().
 ledgers_source_url(AccountId, SourceType) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "ledgers", kz_term:to_list(SourceType)], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "ledgers", kz_term:to_list(SourceType)], "/").
 
 -spec ledgers_credit_url(kz_term:ne_binary()) -> string().
 ledgers_credit_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "ledgers", "credit"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "ledgers", "credit"], "/").
 
 -spec ledgers_debit_url(kz_term:ne_binary()) -> string().
 ledgers_debit_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "ledgers", "debit"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "ledgers", "debit"], "/").
 
 -spec initial_state() -> pqc_kazoo_model:model().
 initial_state() ->

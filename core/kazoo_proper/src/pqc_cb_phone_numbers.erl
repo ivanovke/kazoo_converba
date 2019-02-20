@@ -85,7 +85,7 @@ activate_number(API, AccountId, Number) ->
 
 -spec number_url(kz_term:ne_binary(), kz_term:ne_binary()) -> string().
 number_url(AccountId, Number) ->
-    string:join([pqc_cb_accounts:account_url(AccountId)
+    string:join([pqc_api_accounts:account_url(AccountId)
                 ,"phone_numbers", kz_term:to_list(kz_http_util:urlencode(Number))
                 ]
                ,"/"
@@ -93,7 +93,7 @@ number_url(AccountId, Number) ->
 
 -spec number_url(kz_term:ne_binary(), kz_term:ne_binary(), string()) -> string().
 number_url(AccountId, Number, PathToken) ->
-    string:join([pqc_cb_accounts:account_url(AccountId)
+    string:join([pqc_api_accounts:account_url(AccountId)
                 ,"phone_numbers", kz_term:to_list(kz_http_util:urlencode(Number))
                 ,PathToken
                 ]

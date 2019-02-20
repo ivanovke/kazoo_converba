@@ -56,7 +56,7 @@ ips_url() ->
 
 -spec ips_url(pqc_cb_accounts:account_id()) -> string().
 ips_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "ips"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "ips"], "/").
 
 -spec ip_url(kz_term:text()) -> string().
 ip_url(IP) ->
@@ -64,7 +64,7 @@ ip_url(IP) ->
 
 -spec ip_url(pqc_cb_accounts:account_id(), kz_term:text()) -> string().
 ip_url(AccountId, IP) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "ips", kz_term:to_list(IP)], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "ips", kz_term:to_list(IP)], "/").
 
 -spec list_ips(pqc_cb_api:state()) ->
                       {'ok', kz_json:objects()} |

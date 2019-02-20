@@ -60,7 +60,7 @@ create(API, AccountId, StorageDoc, ValidateSettings) ->
 storage_url('undefined') ->
     string:join([pqc_cb_api:v2_base_url(), "storage"], "/");
 storage_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "storage"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "storage"], "/").
 
 storage_url(AccountId, 'false') ->
     storage_url(AccountId) ++ "?validate_settings=false";

@@ -62,7 +62,7 @@ available_service_plans(API, AccountId) ->
 
 -spec account_service_plan_url(kz_term:ne_binary()) -> string().
 account_service_plan_url(AccountId) ->
-    string:join([pqc_cb_accounts:account_url(AccountId), "services"], "/").
+    string:join([pqc_api_accounts:account_url(AccountId), "services"], "/").
 
 -spec cleanup() -> 'ok'.
 cleanup() ->
