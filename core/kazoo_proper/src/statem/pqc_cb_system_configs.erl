@@ -53,101 +53,41 @@
                           ])
        ).
 
--spec configs_url() -> string().
-configs_url() ->
-    string:join([pqc_cb_api:v2_base_url(), "system_configs"], "/").
-
--spec config_url(kz_term:ne_binary()) -> string().
-config_url(Id) ->
-    string:join([pqc_cb_api:v2_base_url(), "system_configs", kz_term:to_list(Id)], "/").
-
--spec config_url(kz_term:ne_binary(), kz_term:ne_binary()) -> string().
-config_url(Id, NodeId) ->
-    string:join([pqc_cb_api:v2_base_url()
-                ,"system_configs"
-                ,kz_term:to_list(Id)
-                ,kz_term:to_list(NodeId)
-                ]
-               ,"/"
-               ).
-
 -spec list_configs(pqc_cb_api:api()) -> kz_term:ne_binaries().
 list_configs(API) ->
-    URL = configs_url(),
-    Resp = pqc_cb_api:make_request([200]
-                                  ,fun kz_http:get/2
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ),
+    Resp = pqc_api_system_configs:list(API),
     pqc_cb_response:data(Resp).
 
 -spec get_config(pqc_cb_api:api(), kz_term:ne_binary()) -> kzd_system_configs:doc().
 get_config(API, Id) ->
-    URL = config_url(Id),
-    Resp = pqc_cb_api:make_request([200, 404]
-                                  ,fun kz_http:get/2
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ),
+    Resp = pqc_api_system_configs:get(API, Id),
     pqc_cb_response:data(Resp).
 
 -spec get_default_config(pqc_cb_api:api(), kz_term:ne_binary()) -> kzd_system_configs:doc().
 get_default_config(API, Id) ->
-    URL = config_url(Id) ++ "?with_defaults=true",
-    Resp = pqc_cb_api:make_request([200, 404]
-                                  ,fun kz_http:get/2
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ),
+    Resp = pqc_api_system_configs:get_default(API, Id),
     pqc_cb_response:data(Resp).
 
 -spec get_node_config(pqc_cb_api:api(), kz_term:ne_binary(), kz_term:ne_binary()) -> kzd_system_configs:doc().
 get_node_config(API, Id, NodeId) ->
-    URL = config_url(Id, NodeId) ++ "?with_defaults=true",
-    Resp = pqc_cb_api:make_request([200, 404]
-                                  ,fun kz_http:get/2
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ),
+    Resp = pqc_api_system_configs:get_node(API, Id, NodeId),
     pqc_cb_response:data(Resp).
-
 
 -spec set_default_config(pqc_cb_api:api(), kz_json:object()) -> kzd_system_configs:doc().
 set_default_config(API, Config) ->
     ?INFO("setting default config for ~p", [Config]),
-    URL = config_url(kz_doc:id(Config)),
-    Data = pqc_cb_api:create_envelope(Config),
-
-    Resp = pqc_cb_api:make_request([200]
-                                  ,fun kz_http:post/3
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ,kz_json:encode(Data)
-                                  ),
+    Resp = pqc_api_system_configs:set_default(API, Config),
     pqc_cb_response:data(Resp).
 
 -spec patch_default_config(pqc_cb_api:api(), kz_tern:ne_binary(), kz_json:object()) -> kzd_system_configs:doc().
 patch_default_config(API, Id, Config) ->
     ?INFO("patching default config for ~p", [Config]),
-    URL = config_url(Id),
-    Data = pqc_cb_api:create_envelope(Config),
-
-    Resp = pqc_cb_api:make_request([200]
-                                  ,fun kz_http:patch/3
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ,kz_json:encode(Data)
-                                  ),
+    Resp = pqc_api_system_configs:patch_default(API, Id, Config),
     pqc_cb_response:data(Resp).
 
 -spec delete_config(pqc_cb_api:api(), kz_term:ne_binary()) -> kz_json:object().
 delete_config(API, Id) ->
-    URL = config_url(Id),
-    Resp = pqc_cb_api:make_request([200, 404]
-                                  ,fun kz_http:delete/2
-                                  ,URL
-                                  ,pqc_cb_api:request_headers(API)
-                                  ),
+    Resp = pqc_api_system_configs:delete(API, Id),
     pqc_cb_response:data(Resp).
 
 init() ->
