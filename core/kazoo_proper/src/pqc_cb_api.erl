@@ -29,15 +29,18 @@
         ]
        ).
 
--type expected_code() :: 200..600.
+-type expected_code() :: integer().
 -type expected_codes() :: [expected_code()].
 -type expected_headers() :: [{string(), string()}].
--type expectation() :: #{'response_codes' := expected_codes()
-                        ,'response_headers' => expected_headers()
-                        }.
+
+-record(exp, {codes   = [] :: expected_codes()
+             ,headers = [] :: expected_headers()
+             }).
+
+-type expectation() :: #exp{}.
 -type expectations() :: [expectations()].
 
--type response_code() :: 200..600.
+-type response_code() :: integer().
 -type response_headers() :: [{string(), string()}].
 
 -type response() :: binary() |
@@ -85,7 +88,7 @@ authenticate() ->
 
     {'ok', Trace} = start_trace(),
 
-    Resp = make_request([201]
+    Resp = make_request(code_to_expectations(201)
                        ,fun kz_http:put/3
                        ,URL
                        ,default_request_headers(kz_util:get_callid())
@@ -173,28 +176,34 @@ default_request_headers(RequestId) ->
 -spec make_request(expectations() | expectation() | expected_code() | expected_codes(), fun_2(), string(), kz_term:proplist()) ->
                           response().
 make_request(Code, HTTP, URL, RequestHeaders) when is_integer(Code) ->
-    make_request([#{'response_codes' => [Code]}], HTTP, URL, RequestHeaders);
+    make_request(code_to_expectations(Code), HTTP, URL, RequestHeaders);
 make_request([Code|_]=Codes, HTTP, URL, RequestHeaders) when is_integer(Code) ->
-    make_request([#{'response_codes' => Codes}], HTTP, URL, RequestHeaders);
+    make_request(codes_to_expectations(Codes), HTTP, URL, RequestHeaders);
 make_request(#{'response_codes' := _}=Expectation, HTTP, URL, RequestHeaders) ->
     make_request([Expectation], HTTP, URL, RequestHeaders);
 make_request([#{}|_]=Expectations, HTTP, URL, RequestHeaders) ->
+    make_request(maps_to_expectations(Expectations), HTTP, URL, RequestHeaders);
+make_request([#exp{}|_]=Expectations, HTTP, URL, RequestHeaders) ->
     ?INFO("~p(~p, ~p)", [HTTP, URL, RequestHeaders]),
     handle_response(Expectations, HTTP(URL, RequestHeaders)).
 
 -spec make_request(expectations() | expectation() | expected_code() | expected_codes(), fun_3(), string(), kz_term:proplist(), iodata()) ->
                           response().
 make_request(Code, HTTP, URL, RequestHeaders, RequestBody) when is_integer(Code) ->
-    make_request([#{'response_codes' => [Code]}], HTTP, URL, RequestHeaders, RequestBody);
+    make_request(code_to_expectations(Code), HTTP, URL, RequestHeaders, RequestBody);
 make_request([Code|_]=Codes, HTTP, URL, RequestHeaders, RequestBody) when is_integer(Code) ->
-    make_request([#{'response_codes' => Codes}], HTTP, URL, RequestHeaders, RequestBody);
+    make_request(codes_to_expectations(Codes), HTTP, URL, RequestHeaders, RequestBody);
 make_request(#{'response_codes' := _}=Expectation, HTTP, URL, RequestHeaders, RequestBody) ->
-    make_request([Expectation], HTTP, URL, RequestHeaders, RequestBody);
+    make_request([map_to_expectation(Expectation)], HTTP, URL, RequestHeaders, RequestBody);
 make_request([#{}|_]=Expectations, HTTP, URL, RequestHeaders, RequestBody) ->
+    make_request(maps_to_expectations(Expectations), HTTP, URL, RequestHeaders, RequestBody);
+make_request([#exp{}|_]=Expectations, HTTP, URL, RequestHeaders, RequestBody) ->
     ?INFO("~p: ~s", [HTTP, URL]),
     ?DEBUG("headers: ~p", [RequestHeaders]),
     ?DEBUG("body: ~s", [RequestBody]),
-    handle_response(Expectations, HTTP(URL, RequestHeaders, iolist_to_binary(RequestBody))).
+    handle_response(Expectations
+                   ,HTTP(URL, RequestHeaders, iolist_to_binary(RequestBody))
+                   ).
 
 -spec create_envelope(kz_json:json_term()) ->
                              kz_json:object().
@@ -207,7 +216,7 @@ create_envelope(Data, Envelope) ->
     kz_json:set_value(<<"data">>, Data, Envelope).
 
 -spec handle_response(expectations(), kz_http:ret()) -> response().
-handle_response([#{}|_]=Expectations, {'ok', ActualCode, RespHeaders, RespBody}) ->
+handle_response(Expectations, {'ok', ActualCode, RespHeaders, RespBody}) ->
     case expectations_met(Expectations, ActualCode, RespHeaders) of
         'true' -> RespBody;
         'false' ->
@@ -218,7 +227,7 @@ handle_response([#{}|_]=Expectations, {'ok', ActualCode, RespHeaders, RespBody})
 handle_response(_Expectations, {'error','socket_closed_remotely'}=E) ->
     lager:error("~nwe broke crossbar!"),
     throw(E);
-handle_response(_ExpectedCode, {'error', _}=E) ->
+handle_response(_Expectations, {'error', _}=E) ->
     lager:error("broken req: ~p", [E]),
     E.
 
@@ -230,12 +239,13 @@ expectations_met(Expectations, RespCode, RespHeaders) ->
              ).
 
 -spec expectation_met(expectation(), response_code(), response_headers()) -> boolean().
-expectation_met(#{}=Expectation, RespCode, RespHeaders) ->
+expectation_met(#exp{}=Expectation, RespCode, RespHeaders) ->
     response_code_matches(Expectation, RespCode)
         andalso response_headers_match(Expectation, RespHeaders).
 
 -spec response_code_matches(expectation(), response_code()) -> boolean().
-response_code_matches(#{'response_codes' := ExpectedCodes}, ResponseCode) ->
+response_code_matches(#exp{codes=[]}, _ResponseCode) -> 'true';
+response_code_matches(#exp{codes=ExpectedCodes}, ResponseCode) ->
     case lists:member(ResponseCode, ExpectedCodes) of
         'true' -> 'true';
         'false' ->
@@ -243,15 +253,13 @@ response_code_matches(#{'response_codes' := ExpectedCodes}, ResponseCode) ->
                       ,[ResponseCode, ExpectedCodes]
                       ),
             'false'
-    end;
-response_code_matches(_Expectation, _Code) -> 'true'.
+    end.
 
 -spec response_headers_match(expectation(), response_headers()) -> boolean().
-response_headers_match(#{'response_headers' := ExpectedHeaders}, RespHeaders) ->
+response_headers_match(#exp{headers=ExpectedHeaders}, RespHeaders) ->
     lists:all(fun(ExpectedHeader) -> response_header_matches(ExpectedHeader, RespHeaders) end
              ,ExpectedHeaders
-             );
-response_headers_match(_Expectation, _RespHeaders) -> 'true'.
+             ).
 
 -spec response_header_matches({string(), string()}, response_headers()) -> boolean().
 response_header_matches({ExpectedHeader, ExpectedValue}, RespHeaders) ->
@@ -298,3 +306,21 @@ get_log_level() ->
         'undefined' -> 'debug';
         LogLevel -> LogLevel
     end.
+
+-spec code_to_expectations(expected_code()) -> expectations().
+code_to_expectations(Code) when is_integer(Code) ->
+    [#exp{codes = [Code]}].
+
+-spec codes_to_expectations(expected_codes()) -> expectations().
+codes_to_expectations([Code | _]=Codes) when is_integer(Code) ->
+    [#exp{codes = Codes}].
+
+-spec map_to_expectation(map()) -> expectations().
+map_to_expectation(#{}=Map) ->
+    #exp{codes = maps:get('response_codes', Map, [])
+        ,headers = maps:get('response_headers', Map, [])
+        }.
+
+-spec maps_to_expectations([map()]) -> expectations().
+maps_to_expectations([#{}|_]=Maps) ->
+    [map_to_expectation(Map) || Map <- Maps].
