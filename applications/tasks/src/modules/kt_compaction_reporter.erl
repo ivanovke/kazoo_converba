@@ -17,6 +17,7 @@
         ,skipped_db/2
         ]).
 %% "Mirrors" for SUP commands
+%% TODO: add history command that accepts a Job id and return the full info for the job with that id if any.
 -export([status/0, history/0, history/2]).
 
 %% gen_server's callbacks

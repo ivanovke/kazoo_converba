@@ -68,6 +68,7 @@ init() ->
         'false' -> lager:info("node ~s not configured to compact automatically", [node()]);
         'true' ->
             lager:info("node ~s configured to compact automatically", [node()]),
+            %% TODO: change this binding to include the `?HEUR_RATIO' as the Heuristic to use
             _ = tasks_bindings:bind(?TRIGGER_ALL_DBS, ?MODULE, 'compact_db')
     end,
 
@@ -184,25 +185,27 @@ compact_db(_Extra, 'true', #{<<"database">> := Database}=Row) ->
 
 -spec compact_db(kz_term:ne_binary()) -> 'ok'.
 compact_db(Database) ->
-    Heuristic = ?HEUR_RATIO,
-    Rows =
-        case kz_util:get_callid() of
-            'undefined' ->
-                %% If not callid defined yet, then this function was call directly with a db name
-                %% so it creates a new callid to track this db-only compaction job.
-                track_job(<<"compact_db_", (kz_binary:rand_hex(4))/binary>>
-                         ,fun do_compact_db/2
-                         ,[Database, Heuristic]
-                         ,get_dbs_sizes([Database])
-                         );
-            _CallId ->
-                %% If there is already a callid defined it may be because this function was
-                %% triggered by kz_tasks_trigger:cleanup/1 as part of the auto compaction or maybe
-                %% another process issued a db event that matched the one this module is listening
-                %% to.
-                do_compact_db(Database, Heuristic)
-        end,
-    print_csv(Rows).
+    CallIdBin = kz_term:to_binary(kz_util:get_callid()),
+    print_csv(maybe_track_compact_db(Database, ?HEUR_NONE, CallIdBin)).
+
+-spec maybe_track_compact_db(kz_term:ne_binary(), heuristic(), kz_term:ne_binary()) -> rows().
+maybe_track_compact_db(Db, Heur, <<"undefined">>) ->
+    %% If not callid defined yet, then this function was call directly with a db name so
+    %% it creates a new callid to track this db-only compaction job.
+    CallId = <<"compact_db_", (kz_binary:rand_hex(4))/binary>>,
+    track_job(CallId, fun do_compact_db/2, [Db, Heur], get_dbs_sizes([Db]));
+maybe_track_compact_db(Db, Heur, <<"sup_", _/binary>> = SupId) ->
+    %% If callid starts with `sup_', then this function was called via a SUP command
+    %% so it creates a new callid (remove the `@' sign + anything at the right of it) to
+    %% track this db-only compaction job.
+    %% For example: SupId = <<"sup_0351@fqdn.hostname.com">>, CallId = <<"sup_0351">>.
+    CallId = hd(binary:split(SupId, <<"@">>)),
+    track_job(CallId, fun do_compact_db/2, [Db, Heur], get_dbs_sizes([Db]));
+maybe_track_compact_db(Db, Heur, _CallId) ->
+    %% If there is already a callid defined it may be because this function was triggered
+    %% by kz_tasks_trigger:cleanup/1 as part of the auto compaction or maybe another
+    %% process issued a db event that matched the one this module is listening to.
+    do_compact_db(Db, Heur).
 
 -spec print_csv(iolist()) -> 'ok'.
 print_csv(Rows) ->
