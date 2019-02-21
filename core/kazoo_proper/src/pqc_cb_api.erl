@@ -45,7 +45,7 @@
 
 -type response() :: binary() |
                     kz_http:ret() |
-                    {'error', binary()}.
+                    {'error', response_code(), binary()}.
 
 -type fun_2() :: fun((string(), kz_term:proplist()) -> kz_http:ret()).
 -type fun_3() :: fun((string(), kz_term:proplist(), iodata()) -> kz_http:ret()).
@@ -222,7 +222,7 @@ handle_response(Expectations, {'ok', ActualCode, RespHeaders, RespBody}) ->
         'false' ->
             lager:info("expectations not met: ~p", [Expectations]),
             lager:debug("~p: ~p", [ActualCode, RespHeaders]),
-            {'error', RespBody}
+            {'error', ActualCode, RespBody}
     end;
 handle_response(_Expectations, {'error','socket_closed_remotely'}=E) ->
     lager:error("~nwe broke crossbar!"),

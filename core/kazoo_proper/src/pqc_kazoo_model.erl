@@ -8,6 +8,7 @@
 
 -export([new/1
         ,pp/1 % pretty print kazoo model
+        ,printable/1
 
          %% Getters
         ,api/1
@@ -36,6 +37,7 @@
          %% Model manipulations
         ,add_service_plan/2, add_service_plan/3
         ,add_account/3
+        ,remove_account/2
         ,add_service_plan_to_account/3
         ,add_number_to_account/4
         ,add_rate_to_ratedeck/3, remove_rate_from_ratedeck/3
@@ -111,6 +113,13 @@ pp(#kazoo_model{accounts=Account
       ,{'dedicated_ips', IPs}
       ,{'api', API}
       ]).
+
+-spec printable(model()) -> iodata().
+printable(#kazoo_model{accounts=Accounts}) ->
+    io_lib:format("{accounts: ~s}"
+                 ,[kz_binary:join(maps:keys(Accounts), <<", ">>)]
+                 ).
+
 
 -spec api(model()) -> pqc_cb_api:state().
 api(#kazoo_model{'api'=API}) -> API.
@@ -278,11 +287,17 @@ is_ip_unassigned(Model, IP) ->
     'undefined' =:= maps:get('assigned_to', IPInfo, 'undefined').
 
 -spec add_account(model(), kz_term:ne_binary(), pqc_cb_api:response()) -> model().
-add_account(#kazoo_model{'accounts'=Accounts}=State, Name, APIResp) ->
+add_account(#kazoo_model{accounts=Accounts}=State, Name, APIResp) ->
     ID = {'call', 'pqc_cb_response', 'account_id', [APIResp]},
-    State#kazoo_model{'accounts' = Accounts#{Name => #{'id' => ID}
-                                            ,ID => new_account(Name)
-                                            }}.
+    State#kazoo_model{'accounts' = Accounts#{Name => new_account(Name, ID)}}.
+
+-spec remove_account(model(), kz_term:ne_binary()) -> model().
+remove_account(#kazoo_model{accounts=Accounts}=State, Name) ->
+    case maps:take(Name, Accounts) of
+        'error' -> State;
+        {_, NewAccounts} -> State#kazoo_model{accounts=NewAccounts}
+    end.
+
 
 -spec add_rate_to_ratedeck(model(), kz_term:ne_binary(), kzd_rates:doc()) -> model().
 add_rate_to_ratedeck(#kazoo_model{'ratedecks'=Ratedecks}=Model, RatedeckId, RateDoc) ->
@@ -377,8 +392,9 @@ number_data(#kazoo_model{'numbers'=Numbers}, Number) ->
 number_data(Numbers, Number) ->
     maps:get(Number, Numbers, 'undefined').
 
--spec new_account(kz_term:ne_binary()) -> account_data().
-new_account(Name) ->
+-spec new_account(kz_term:ne_binary(), pqc_cb_accounts:account_id()) -> account_data().
+new_account(Name, ID) ->
     #{'name' => Name
+     ,'id' => ID
      ,'service_plans' => []
      }.

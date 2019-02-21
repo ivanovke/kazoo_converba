@@ -93,13 +93,13 @@ setup_system() ->
 %%               )
 %%            ).
 
--spec initial_state() -> kazoo_model:model().
+-spec initial_state() -> pqc_kazoo_model:model().
 initial_state() ->
-    {'ok', MasterAccountId} = kapps_util:get_master_account_id(),
+    API = pqc_cb_api:authenticate(),
+    ?INFO("state initialized to ~p", [API]),
+    pqc_kazoo_model:new(API).
 
-    kazoo_model:new(MasterAccountId).
-
--spec command(kazoo_model:model()) -> proper_types:type().
+-spec command(pqc_kazoo_model:model()) -> proper_types:type().
 command(Model) ->
     oneof(lists:flatten([Module:api_calls(Model) || Module <- pqc_modules()])).
 
@@ -115,7 +115,7 @@ pqc_modules() ->
 is_pqc_module(<<"pqc_", _/binary>>) -> 'true';
 is_pqc_module(_) -> 'false'.
 
--spec precondition(kazoo_model:model(), api_call()) -> 'true'.
+-spec precondition(pqc_kazoo_model:model(), api_call()) -> 'true'.
 precondition(_Model, {'call', ?MODULE, _F, _A}) -> 'true';
 precondition(Model, {'call', Module, _F, _A}=Call) ->
     case kz_module:is_exported(Module, 'precondition', 2) of
@@ -123,15 +123,15 @@ precondition(Model, {'call', Module, _F, _A}=Call) ->
         'false' -> 'true'
     end.
 
--spec postcondition(kazoo_model:model(), api_call(), api_response()) ->
+-spec postcondition(pqc_kazoo_model:model(), api_call(), api_response()) ->
                            boolean().
 postcondition(_Model, {'call', ?MODULE, _F, _As}, Result) ->
     Result;
 postcondition(Model, {'call', Module, _F, _As}=Call, Result) ->
     Module:check_response(Model, Call, Result).
 
--spec next_state(kazoo_model:model(), api_response(), api_call()) ->
-                        kazoo_model:model().
+-spec next_state(pqc_kazoo_model:model(), api_response(), api_call()) ->
+                        pqc_kazoo_model:model().
 next_state(Model, _Result, {'call', ?MODULE, _F, _As}) -> Model;
 next_state(Model, Result, {'call', Module, _F, _As}=Call) ->
     Module:update_model(Model, Result, Call).
@@ -187,13 +187,14 @@ run_counterexample(Model, [Steps]) ->
 sort_steps({'set', Var1, _Call1}, {'set', Var2, _Call2}) ->
     Var1 < Var2.
 
--type run_acc() :: {non_neg_integer(), kazoo_model:model(), #{integer() => any()}}.
+-type run_acc() :: {non_neg_integer(), pqc_kazoo_model:model(), #{integer() => any()}}.
 -spec run_step(tuple(), run_acc() | 'ok') -> run_acc() | 'ok'.
 run_step(_, 'ok') -> 'ok';
 run_step({'set', Var, {'call', M, F, [_OldModel | As]}}, {Step, Model, QCVars}=Acc) ->
     Args = proper_symb:eval(QCVars, [Model | As]),
 
     lager:info("~p: ~p:~p(~s): ", [Step, M, F, printable_args(Args)]),
+    lager:info("~p", [Args]),
     try apply(M, F, Args) of
         SUTResponse ->
             eval_step(Var, M, F, Args, Acc, SUTResponse)
@@ -206,7 +207,7 @@ run_step({'set', Var, {'call', M, F, [_OldModel | As]}}, {Step, Model, QCVars}=A
     end.
 
 eval_step(Var, M, F, Args, {Step, Model, QCVars}, SUTResponse) ->
-    lager:info("~s~n", [printable_sut_response(SUTResponse)]),
+    lager:info("sut response: ~s~n", [printable_sut_response(SUTResponse)]),
 
     try postcondition(Model, {'call', M, F, Args}, SUTResponse) of
         'true' ->
@@ -225,7 +226,7 @@ printable_args([Model | Args]) ->
     kz_binary:join([printable_model(Model) | Args], <<", ">>).
 
 printable_model(Model) ->
-    kazoo_model:printable(Model).
+    pqc_kazoo_model:printable(Model).
 
 printable_sut_response({'ok', _}=Resp) ->
     io_lib:format("~p", [Resp]);

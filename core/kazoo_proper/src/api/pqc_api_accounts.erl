@@ -13,7 +13,7 @@ create(API, NewAccountName) ->
     RequestData = kz_json:from_list([{<<"name">>, NewAccountName}]),
     RequestEnvelope = pqc_cb_api:create_envelope(RequestData),
 
-    pqc_cb_api:make_request([201, 500]
+    pqc_cb_api:make_request([201]
                            ,fun kz_http:put/3
                            ,account_url(pqc_cb_api:auth_account_id(API))
                            ,pqc_cb_api:request_headers(API)

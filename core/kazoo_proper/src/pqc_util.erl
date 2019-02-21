@@ -25,7 +25,9 @@ transition_if(CurrentModel, Checks) ->
 transition_if_fold({_Fun, _Args}, {'false', _}=False) -> False;
 transition_if_fold({Fun, Args}, {'true', Model}) ->
     case apply(Fun, [Model | Args]) of
-        'false' -> {'false', Model};
+        'false' ->
+            ?INFO("transition failed: ~p(~p)", [Fun, Args]),
+            {'false', Model};
         'true' -> {'true', Model};
         {'true', _NewState}=True -> True;
         NewModel -> {'true', NewModel}
@@ -37,18 +39,17 @@ simple_counterexample() ->
 
 -spec simple_counterexample('undefined' | list()) -> [{module(), function(), list()}].
 simple_counterexample('undefined') ->
-    {error, no_counterexample};
+    {'error', 'no_counterexample'};
 simple_counterexample([Seq]) ->
     [{M, F, ['{API}'|cleanup_args(Args)]}
-     || {set, _Var, {call, M, F, [_|Args]}} <- Seq
+     || {'set', _Var, {'call', M, F, [_|Args]}} <- Seq
     ].
 
 cleanup_args(Args) ->
     [cleanup_arg(Arg) || Arg <- Args].
-cleanup_arg({call, M, F, Args}) ->
+cleanup_arg({'call', M, F, Args}) ->
     {M,F, length(Args)};
 cleanup_arg(Arg) -> Arg.
-
 
 -spec run_counterexample(module()) ->
                                 {kz_term:ne_binary(), 'postcondition_failed'} |
