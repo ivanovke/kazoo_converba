@@ -2,6 +2,8 @@
 -include_lib("kazoo_stdlib/include/kz_types.hrl").
 -include_lib("kazoo_stdlib/include/kz_databases.hrl").
 
+-define(APP, 'kazoo_proper').
+
 -define(FAILED_RESPONSE, <<"{}">>).
 
 -define(DEBUG(Fmt)
@@ -27,6 +29,11 @@
 -define(ERROR(Fmt, Args)
        ,_ = data:error(pqc_log:log_info(), Fmt, Args)
        ).
+
+-type api_call() :: {'call', module(), atom(), list()}.
+-type api_calls() :: [api_call()].
+
+-type api_response() :: pqc_cb_api:response().
 
 -define(KAZOO_PROPER_HRL, 'true').
 -endif.
