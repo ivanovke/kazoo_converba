@@ -65,11 +65,11 @@ upload_csv(API, CSV) ->
 -spec upload_csv(pqc_cb_api:state(), iodata(), kz_term:api_ne_binary()) ->
                         {'ok', kz_term:api_ne_binary()}.
 upload_csv(API, CSV, _RatedeckId) ->
-    CreateResp = pqc_cb_tasks:create(API, "category=rates&action=import", CSV),
+    CreateResp = pqc_api_tasks:create(API, "category=rates&action=import", CSV),
     TaskId = kz_json:get_ne_binary_value([<<"data">>, <<"_read_only">>, <<"id">>]
                                         ,kz_json:decode(CreateResp)
                                         ),
-    _ExecResp = pqc_cb_tasks:execute(API, TaskId),
+    _ExecResp = pqc_api_tasks:execute(API, TaskId),
 
     _DelResp = wait_for_task(API, TaskId),
 
@@ -130,7 +130,7 @@ service_plan_id(RatedeckId) ->
     <<"plan_ratedeck_", RatedeckId/binary>>.
 
 wait_for_task(API, TaskId) ->
-    GetResp = pqc_cb_tasks:fetch(API, TaskId),
+    GetResp = pqc_api_tasks:fetch(API, TaskId),
     GetJObj = kz_json:decode(GetResp),
 
     case kz_json:get_value([<<"data">>, <<"_read_only">>, <<"status">>]
@@ -141,7 +141,7 @@ wait_for_task(API, TaskId) ->
             %% fetch csv
             ?INFO("task fininshed: ~s", [GetResp]),
             get_csvs(API, TaskId, kz_json:get_list_value([<<"data">>, <<"_read_only">>, <<"csvs">>], GetJObj, [])),
-            pqc_cb_tasks:delete(API, TaskId);
+            pqc_api_tasks:delete(API, TaskId);
         _Status ->
             ?DEBUG("wrong status(~s) for task in ~s", [_Status, GetResp]),
             timer:sleep(1000),
@@ -154,7 +154,7 @@ get_csvs(API, TaskId, [CSV|CSVs]) ->
     get_csvs(API, TaskId, CSVs).
 
 get_csv(API, TaskId, CSV) ->
-    FetchResp = pqc_cb_tasks:fetch_csv(API, TaskId, CSV),
+    FetchResp = pqc_api_tasks:fetch_csv(API, TaskId, CSV),
     ?INFO("fetching ~s(~s): ~s", [TaskId, CSV, FetchResp]).
 
 -spec delete_rate(pqc_cb_api:state(), kz_term:ne_binary() | kzd_rates:doc()) -> pqc_cb_api:response().

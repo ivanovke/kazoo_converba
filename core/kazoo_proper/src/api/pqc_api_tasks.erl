@@ -4,7 +4,7 @@
 %%% @author James Aimonetti
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(pqc_cb_tasks).
+-module(pqc_api_tasks).
 
 -export([create/3
         ,execute/2
