@@ -151,7 +151,7 @@ global_test() ->
     ?INFO("FINISHED").
 
 test_vm_message(API, AccountId) ->
-    CreateBox = pqc_cb_vmboxes:create_box(API, AccountId, <<"1010">>),
+    CreateBox = pqc_api_vmboxes:create_box(API, AccountId, <<"1010">>),
     ?INFO("create VM box: ~p", [CreateBox]),
     BoxId = kz_json:get_value([<<"data">>, <<"id">>], kz_json:decode(CreateBox)),
 
@@ -172,17 +172,17 @@ test_vm_message(API, AccountId) ->
     %% pqc_httpd:update_req([<<?MODULE_STRING>>, AccountId, MediaId, AttachmentName], MP3),
     %% ?INFO("updating media to non-encoded MP3"),
 
-    MetadataResp = pqc_cb_vmboxes:fetch_message_metadata(API, AccountId, BoxId, MediaId),
+    MetadataResp = pqc_api_vmboxes:fetch_message_metadata(API, AccountId, BoxId, MediaId),
     ?INFO("message ~s meta: ~s", [MediaId, MetadataResp]),
     MediaId = kz_json:get_ne_binary_value([<<"data">>, <<"media_id">>], kz_json:decode(MetadataResp)),
 
-    MessageBin = pqc_cb_vmboxes:fetch_message_binary(API, AccountId, BoxId, MediaId),
+    MessageBin = pqc_api_vmboxes:fetch_message_binary(API, AccountId, BoxId, MediaId),
     ?INFO("message bin =:= MP3: ~p", [MessageBin =:= MP3]),
     MessageBin = MP3.
 
 create_voicemail(API, AccountId, BoxId, MP3) ->
     MessageJObj = default_message(),
-    pqc_cb_vmboxes:new_message(API, AccountId, BoxId, MessageJObj, MP3).
+    pqc_api_vmboxes:new_message(API, AccountId, BoxId, MessageJObj, MP3).
 
 default_message() ->
     kz_json:from_list([{<<"folder">>, <<"new">>}

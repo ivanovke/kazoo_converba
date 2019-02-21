@@ -3,7 +3,7 @@
 %%% @doc
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(pqc_cb_vmboxes).
+-module(pqc_api_vmboxes).
 
 -export([new_message/5
         ,fetch_message_metadata/4
