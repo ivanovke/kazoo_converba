@@ -97,7 +97,7 @@ assign_service_plan(_API, 'undefined', _RatedeckId) ->
 assign_service_plan(API, AccountId, RatedeckId) ->
     ?INFO("attempting to assign service plan for ~s to ~s", [RatedeckId, AccountId]),
     ServicePlanId = service_plan_id(RatedeckId),
-    pqc_cb_services:assign_service_plan(API, AccountId, ServicePlanId).
+    pqc_api_services:assign(API, AccountId, ServicePlanId).
 
 -spec rate_account_did(pqc_cb_api:state(), kz_term:ne_binary() | proper_types:type(), kz_term:ne_binary()) ->
                               kz_term:api_integer().
