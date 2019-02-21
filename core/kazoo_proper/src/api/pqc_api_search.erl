@@ -4,7 +4,7 @@
 %%% @author James Aimonetti
 %%% @end
 %%%-----------------------------------------------------------------------------
--module(pqc_cb_search).
+-module(pqc_api_search).
 
 -export([search_account_by_name/2]).
 

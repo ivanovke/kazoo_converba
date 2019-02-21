@@ -58,7 +58,7 @@ cleanup_accounts(API, AccountNames) ->
 
 -spec cleanup_account(pqc_cb_api:state(), kz_term:ne_binary()) -> 'ok'.
 cleanup_account(API, AccountName) ->
-    _Attempt = try pqc_cb_search:search_account_by_name(API, AccountName) of
+    _Attempt = try pqc_api_search:search_account_by_name(API, AccountName) of
                    ?FAILED_RESPONSE ->
                        ?ERROR("failed to search for account by name ~s~n", [AccountName]);
                    APIResp ->
