@@ -97,7 +97,19 @@ setup_system() ->
 initial_state() ->
     API = pqc_cb_api:authenticate(),
     ?INFO("state initialized to ~p", [API]),
+    init_system(),
+    init_modules(pqc_modules()),
     pqc_kazoo_model:new(API).
+
+init_system() ->
+    _ = kapps_controller:start_app('crossbar'),
+    'ok'.
+
+init_modules(Modules) ->
+    _ = [M:init() || M <- Modules,
+                     kz_module:is_exported(M, 'init', 0)
+        ],
+    'ok'.
 
 -spec command(pqc_kazoo_model:model()) -> proper_types:type().
 command(Model) ->
@@ -194,7 +206,6 @@ run_step({'set', Var, {'call', M, F, [_OldModel | As]}}, {Step, Model, QCVars}=A
     Args = proper_symb:eval(QCVars, [Model | As]),
 
     lager:info("~p: ~p:~p(~s): ", [Step, M, F, printable_args(Args)]),
-    lager:info("~p", [Args]),
     try apply(M, F, Args) of
         SUTResponse ->
             eval_step(Var, M, F, Args, Acc, SUTResponse)
@@ -223,7 +234,12 @@ eval_step(Var, M, F, Args, {Step, Model, QCVars}, SUTResponse) ->
     end.
 
 printable_args([Model | Args]) ->
-    kz_binary:join([printable_model(Model) | Args], <<", ">>).
+    kz_binary:join([printable_model(Model) | [printable_arg(Arg) || Arg <- Args]], <<", ">>).
+
+printable_arg(Tuple) when is_tuple(Tuple) ->
+    [Type, Arg | _]=tuple_to_list(Tuple),
+    [kz_term:to_binary(Type), ":", kz_term:to_binary(Arg)];
+printable_arg(Bin) when is_binary(Bin) -> Bin.
 
 printable_model(Model) ->
     pqc_kazoo_model:printable(Model).
@@ -233,4 +249,7 @@ printable_sut_response({'ok', _}=Resp) ->
 printable_sut_response({'error', Code, Body}) ->
     io_lib:format("error: ~p: ~s", [Code, Body]);
 printable_sut_response(Resp) ->
-    kz_json:encode(Resp).
+    case kz_json:is_json_object(Resp) of
+        'true' -> kz_json:encode(Resp);
+        'false' -> io_lib:format("~p", [Resp])
+    end.

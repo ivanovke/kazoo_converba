@@ -183,7 +183,8 @@ delete(<<_/binary>> = IP) ->
     end;
 delete(IP) ->
     'true' = is_dedicated_ip(IP),
-    kz_datamgr:del_doc(?KZ_DEDICATED_IP_DB, to_json(IP)).
+    lager:debug("deleting ~s", [ip(IP)]),
+    kz_datamgr:del_doc(?KZ_DEDICATED_IP_DB, ip(IP)).
 
 %%------------------------------------------------------------------------------
 %% @doc

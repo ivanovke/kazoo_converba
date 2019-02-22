@@ -340,13 +340,21 @@ additional_assignment_validations(Context, [], Assign, _Index) ->
     end;
 additional_assignment_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Assign, Index) ->
     AccountId = cb_context:account_id(Context),
+    Method = cb_context:method(Context),
+
     case kz_ip:assigned_to(JObj) of
         'undefined' ->
+            lager:debug("ip ~s not assigned, continuing", [kz_doc:id(JObj)]),
             additional_assignment_validations(Context, IPs, [JObj|Assign], Index + 1);
+        _AccountId when Method =:= ?HTTP_DELETE ->
+            lager:debug("ip ~s is assigned to ~s, but deleting so ok", [kz_doc:id(JObj), _AccountId]),
+            additional_assignment_validations(Context, IPs, Assign, Index + 1);
         AccountId ->
-            Context1 = validate_error_already_assigned(Context, Address, Index),
+            lager:debug("ip ~s already assigned to ~s", [kz_doc:id(JObj), AccountId]),
+            Context1 = validate_error_already_assigned(Context, Address, Index, AccountId),
             additional_assignment_validations(Context1, IPs, Assign, Index + 1);
         _Else ->
+            lager:debug("ip ~s assigned to another account: ~p, continuing", [kz_doc:id(JObj), _Else]),
             Context1 = validate_error_assigned(Context, IP, Index),
             additional_assignment_validations(Context1, IPs, Assign, Index + 1)
     end;
@@ -359,13 +367,14 @@ additional_assignment_validations(Context, [{_Address, {'error', Reason}}|_IPs],
                                ,Context
                                ).
 
--spec validate_error_already_assigned(cb_context:context(), kz_term:ne_binary(), non_neg_integer()) ->
+-spec validate_error_already_assigned(cb_context:context(), kz_term:ne_binary(), non_neg_integer(), kz_term:ne_binary()) ->
                                              cb_context:context().
-validate_error_already_assigned(Context, IP, Index) ->
+validate_error_already_assigned(Context, IP, Index, AccountId) ->
     Key = <<"ips.", (kz_term:to_binary(Index))/binary>>,
     Message = kz_json:from_list(
                 [{<<"message">>, <<"ip already assigned">>}
                 ,{<<"value">>, IP}
+                ,{<<"account_id">>, AccountId}
                 ]),
     cb_context:add_validation_error(Key, <<"superfluous">>, Message, Context).
 
@@ -461,12 +470,12 @@ additional_release_validations(Context) ->
                                             cb_context:context().
 additional_release_validations(Context, [], Release, _Index) ->
     cb_context:store(Context, 'release_ips', Release);
-additional_release_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Release, Index) ->
+additional_release_validations(Context, [{_Address, {'ok', JObj}}=IP|IPs], Release, Index) ->
     AccountId = cb_context:account_id(Context),
     case kz_ip:assigned_to(JObj) of
         'undefined' ->
-            Context1 = validate_error_not_assigned(Context, Address, Index),
-            additional_release_validations(Context1, IPs, Release, Index + 1);
+            lager:debug("ip ~s not assigned, removing", [_Address]),
+            additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
         AccountId ->
             additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
         _Else ->
@@ -481,16 +490,6 @@ additional_release_validations(Context, [{_Address, {'error', Reason}}|_IPs], _R
                                ,kz_json:from_list([{<<"cause">>, Reason}])
                                ,Context
                                ).
-
--spec validate_error_not_assigned(cb_context:context(), kz_term:ne_binary(), non_neg_integer()) ->
-                                         cb_context:context().
-validate_error_not_assigned(Context, IP, Index) ->
-    Key = <<"ips.", (kz_term:to_binary(Index))/binary>>,
-    Message = kz_json:from_list(
-                [{<<"message">>, <<"ip not assigned">>}
-                ,{<<"value">>, IP}
-                ]),
-    cb_context:add_validation_error(Key, <<"superfluous">>, Message, Context).
 
 %%------------------------------------------------------------------------------
 %% @doc

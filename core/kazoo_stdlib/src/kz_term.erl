@@ -441,6 +441,8 @@ is_empty('undefined') -> 'true';
 
 is_empty(Float) when is_float(Float), Float =:= 0.0 -> 'true';
 
+is_empty(#{}=Map) when map_size(Map) =:= 0 -> 'true';
+
 is_empty(MaybeJObj) ->
     case kz_json:is_json_object(MaybeJObj) of
         'false' -> 'false'; %% if not a json object, it's not empty

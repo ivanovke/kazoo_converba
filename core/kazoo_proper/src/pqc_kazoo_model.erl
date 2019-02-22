@@ -59,11 +59,11 @@
 -type account_data() :: #{'name' => kz_term:ne_binary()
                          ,'service_plans' => service_plans()
                          }.
-%% #{AccountId => AccountData}
+%% #{AccountName => AccountData}
 -type accounts() :: #{kz_term:ne_binary() => account_data()}.
 
 -type number_data() :: #{'number_state' => atom()
-                        ,'account_id' => kz_term:ne_binary()
+                        ,'account_name' => kz_term:ne_binary()
                         }.
 %% #{DID => NumberData}
 -type numbers() :: #{kz_term:ne_binary() => number_data()}.
@@ -72,7 +72,7 @@
 
 -type dedicated_ip() :: #{'host' => kz_term:ne_binary()
                          ,'zone' => kz_term:ne_binary()
-                         ,'assigned_to' => kz_term:api_ne_binary()
+                         ,'assigned_to' => kz_term:api_ne_binary() % Account Name
                          }.
 %% #{IP => #{...}}
 -type dedicated_ips() :: #{kz_term:ne_binary() => dedicated_ip()}.
@@ -106,20 +106,22 @@ pp(#kazoo_model{accounts=Account
                }
   ) ->
     props:filter_empty(
-      [{'accounts', Account}
+      [{'accounts', maps:keys(Account)}
       ,{'numbers', Numbers}
       ,{'ratedecks', Ratedecks}
       ,{'service_plans', ServicePlans}
-      ,{'dedicated_ips', IPs}
-      ,{'api', API}
+      ,{'dedicated_ips', maps:keys(IPs)}
+      ,{'request_id', maps:get('request_id', API, 'undefined')}
       ]).
 
 -spec printable(model()) -> iodata().
-printable(#kazoo_model{accounts=Accounts}) ->
-    io_lib:format("{accounts: ~s}"
-                 ,[kz_binary:join(maps:keys(Accounts), <<", ">>)]
-                 ).
-
+printable(#kazoo_model{}=Model) ->
+    ["{"
+    ,kz_binary:join([io_lib:format("~s: ~p", [Key, Value]) || {Key, Value} <- pp(Model)]
+                   ,<<",">>
+                   )
+    ,"}"
+    ].
 
 -spec api(model()) -> pqc_cb_api:state().
 api(#kazoo_model{'api'=API}) -> API.
@@ -160,10 +162,10 @@ dedicated_hosts(#kazoo_model{'dedicated_ips'=IPs}) ->
              ).
 
 -spec account_ips(model(), kz_term:ne_binary()) -> [{kz_term:ne_binary(), dedicated_ip()}].
-account_ips(#kazoo_model{'dedicated_ips'=IPs}, AccountId) ->
+account_ips(#kazoo_model{'dedicated_ips'=IPs}, AccountName) ->
     maps:fold(fun(IP, IPInfo, Acc) ->
                       case maps:get('assigned_to', IPInfo, 'undefined') of
-                          AccountId -> [{IP, IPInfo} | Acc];
+                          AccountName -> [{IP, IPInfo} | Acc];
                           _ -> Acc
                       end
               end
@@ -186,10 +188,10 @@ has_rate_matching(#kazoo_model{}=Model, RatedeckId, DID) ->
 has_service_plan_rate_matching(#kazoo_model{'accounts'=Accounts
                                            ,'service_plans'=SPs
                                            }=Model
-                              ,AccountId
+                              ,AccountName
                               ,DID
                               ) ->
-    Account = maps:get(AccountId, Accounts, #{}),
+    Account = maps:get(AccountName, Accounts, #{}),
     case maps:get('service_plans', Account, []) of
         [] ->
             ?DEBUG("no service plans for account, checking ~s", [?KZ_RATES_DB]),
@@ -225,29 +227,29 @@ account_id_by_name(#kazoo_model{'accounts'=Accounts}, Name) ->
     end.
 
 -spec does_account_exist(model() | map(), kz_term:ne_binary()) -> boolean().
-does_account_exist(#kazoo_model{'accounts'=Accounts}, AccountId) ->
-    does_account_exist(Accounts, AccountId);
-does_account_exist(Accounts, AccountId) ->
-    'undefined' =/= maps:get(AccountId, Accounts, 'undefined').
+does_account_exist(#kazoo_model{'accounts'=Accounts}, AccountName) ->
+    does_account_exist(Accounts, AccountName);
+does_account_exist(Accounts, AccountName) ->
+    'undefined' =/= maps:get(AccountName, Accounts, 'undefined').
 
 -spec is_account_missing(model(), kz_term:ne_binary()) -> boolean().
-is_account_missing(#kazoo_model{}=Model, Id) ->
-    not does_account_exist(Model, Id).
+is_account_missing(#kazoo_model{}=Model, Name) ->
+    not does_account_exist(Model, Name).
 
 -spec does_service_plan_exist(model(), kz_term:ne_binary()) -> boolean().
 does_service_plan_exist(#kazoo_model{'service_plans'=Plans}, PlanId) ->
     'false' =/= lists:keyfind(PlanId, 1, Plans).
 
 -spec is_number_in_account(model(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-is_number_in_account(#kazoo_model{}=Model, AccountId, Number) ->
+is_number_in_account(#kazoo_model{}=Model, AccountName, Number) ->
     case number_data(Model, Number) of
-        #{'account_id' := AccountId} -> 'true';
+        #{'account_name' := AccountName} -> 'true';
         _ -> 'false'
     end.
 
 -spec is_number_missing_in_account(model(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-is_number_missing_in_account(#kazoo_model{}=Model, AccountId, Number) ->
-    not is_number_in_account(Model, AccountId, Number).
+is_number_missing_in_account(#kazoo_model{}=Model, AccountName, Number) ->
+    not is_number_in_account(Model, AccountName, Number).
 
 -spec is_rate_missing(model(), kz_term:ne_binary(), kzd_rates:doc()) -> boolean().
 is_rate_missing(#kazoo_model{}=Model, RatedeckId, RateDoc) ->
@@ -275,9 +277,9 @@ is_ip_missing(Model, IP) ->
     'undefined' =:= dedicated_ip(Model, IP).
 
 -spec is_ip_assigned(model(), kz_term:ne_binary(), kz_term:ne_binary()) -> boolean().
-is_ip_assigned(Model, AccountId, IP) ->
+is_ip_assigned(Model, AccountName, IP) ->
     case dedicated_ip(Model, IP) of
-        #{'assigned_to' := AccountId} -> 'true';
+        #{'assigned_to' := AccountName} -> 'true';
         _ -> 'false'
     end.
 
@@ -314,9 +316,9 @@ remove_rate_from_ratedeck(#kazoo_model{'ratedecks'=Ratedecks}=Model, RatedeckId,
     Model#kazoo_model{'ratedecks'=Ratedecks#{RatedeckId => UpdatedDeck}}.
 
 -spec add_number_to_account(model(), kz_term:ne_binary(), kz_term:ne_binary(), pqc_cb_api:response()) -> model().
-add_number_to_account(#kazoo_model{'numbers'=Numbers}=Model, AccountId, Number, APIResp) ->
+add_number_to_account(#kazoo_model{'numbers'=Numbers}=Model, AccountName, Number, APIResp) ->
     NumberState = {'call', 'pqc_cb_response', 'number_state', [APIResp]},
-    NumberData = #{'account_id' => AccountId
+    NumberData = #{'account_name' => AccountName
                   ,'number_state' => NumberState
                   },
     Model#kazoo_model{'numbers'=Numbers#{Number => NumberData}}.
@@ -329,18 +331,18 @@ add_service_plan(Plans, ServicePlan) ->
     lists:ukeysort(1, [{Id, ServicePlan} | Plans]).
 
 -spec add_service_plan(model(), kz_term:ne_binary(), kzd_service_plan:doc()) -> model().
-add_service_plan(Model, AccountId, ServicePlan) ->
+add_service_plan(Model, AccountName, ServicePlan) ->
     add_service_plan_to_account(add_service_plan(Model, ServicePlan)
-                               ,AccountId
+                               ,AccountName
                                ,ServicePlan
                                ).
 
 -spec add_service_plan_to_account(model(), kz_term:ne_binary(), kzd_service_plan:doc()) -> model().
-add_service_plan_to_account(#kazoo_model{'accounts'=Accounts}=Model, AccountId, ServicePlan) ->
-    #{'service_plans' := Plans}=Account = maps:get(AccountId, Accounts),
+add_service_plan_to_account(#kazoo_model{'accounts'=Accounts}=Model, AccountName, ServicePlan) ->
+    #{'service_plans' := Plans}=Account = maps:get(AccountName, Accounts),
 
     Account1 = Account#{'service_plans' => add_service_plan(Plans, ServicePlan)},
-    Accounts1 = Accounts#{AccountId => Account1},
+    Accounts1 = Accounts#{AccountName => Account1},
     Model#kazoo_model{'accounts'=Accounts1}.
 
 -spec add_dedicated_ip(model(), kz_term:ne_binary(), kz_term:ne_binary(), kz_term:ne_binary()) ->
@@ -365,9 +367,9 @@ remove_dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}=Model, IP) ->
 
 -spec assign_dedicated_ip(model(), kz_term:ne_binary(), kz_term:ne_binary()) ->
                                  model().
-assign_dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}=Model, AccountId, IP) ->
+assign_dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}=Model, AccountName, IP) ->
     IPInfo = dedicated_ip(Model, IP),
-    Model#kazoo_model{'dedicated_ips'=IPs#{IP => IPInfo#{'assigned_to' => AccountId}}}.
+    Model#kazoo_model{'dedicated_ips'=IPs#{IP => IPInfo#{'assigned_to' => AccountName}}}.
 
 -spec unassign_dedicated_ip(model(), kz_term:ne_binary()) -> model().
 unassign_dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}=Model, IP) ->
