@@ -271,7 +271,7 @@ seq() ->
             {'ok', Created} = create_ip(API, IP),
             ?INFO("created ip ~p", [Created]),
 
-            AccountResp = pqc_cb_accounts:create_account(API, hd(?ACCOUNT_NAMES)),
+            AccountResp = pqc_cb_accounts:create_account(Model, hd(?ACCOUNT_NAMES)),
             AccountId = kz_json:get_value([<<"data">>, <<"id">>], kz_json:decode(AccountResp)),
             ?INFO("created account ~s", [AccountId]),
 
@@ -298,7 +298,9 @@ seq() ->
             _E:_R ->
                 ST = erlang:get_stacktrace(),
                 ?INFO("failed ~s: ~p", [_E, _R]),
-                [?INFO("st: ~p", [S]) || S <- ST]
+                [?INFO("st: ~p", [S]) || S <- ST],
+                lager:info("failed ~s: ~p", [_E, _R]),
+                [lager:info("st: ~p", [S]) || S <- ST]
         after
             pqc_cb_accounts:cleanup_accounts(API, ?ACCOUNT_NAMES),
             _ = delete_ip(API, IP),
