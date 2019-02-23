@@ -74,10 +74,12 @@ assigned() ->
                       {'error', any()}.
 assigned(Account) ->
     AccountId = kz_util:format_account_id(Account, 'raw'),
-    ViewOptions = [{'key', AccountId}],
+    ViewOptions = [{'key', AccountId}
+                  ,'include_docs'
+                  ],
     case fetch_assigned(ViewOptions) of
         {'ok', JObjs} ->
-            {'ok', sort_assigned([kz_json:get_value(<<"value">>, JObj) || JObj <- JObjs])};
+            {'ok', sort_assigned([kz_json:get_json_value(<<"doc">>, JObj) || JObj <- JObjs])};
         Else ->
             Else
     end.

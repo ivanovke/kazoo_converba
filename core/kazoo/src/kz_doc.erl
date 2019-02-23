@@ -694,22 +694,29 @@ update_pvt_modified(JObj) ->
 %% JSON proplist.
 %% @end
 %%------------------------------------------------------------------------------
--spec public_fields(doc() | kz_json:objects()) ->
-                           doc() | kz_json:objects().
+-spec public_fields(kz_json:json_term() | kz_json:json_terms()) ->
+                           kz_json:json_term() | kz_json:json_terms().
 public_fields(Thing) ->
     public_fields(Thing, 'true').
 
--spec public_fields(doc() | kz_json:objects(), boolean()) ->
-                           doc() | kz_json:objects().
+-spec public_fields(kz_json:json_term() | kz_json:json_terms(), boolean()) ->
+                           kz_json:json_term() | kz_json:json_terms().
 public_fields(JObjs, IncludeId) when is_list(JObjs) ->
     [public_fields(J, IncludeId) || J <- JObjs];
-public_fields(JObj, 'true') ->
-    kz_json:set_value(<<"id">>, id(JObj, 'null'), filter_public_fields(JObj));
-public_fields(JObj, 'false') ->
-    filter_public_fields(JObj).
+public_fields(JObj, IncludeId) ->
+    case kz_json:is_json_object(JObj) of
+        'true' -> public_json_fields(JObj, IncludeId);
+        'false' -> JObj
+    end.
 
--spec filter_public_fields(doc()) -> doc().
-filter_public_fields(JObj) ->
+-spec public_json_fields(doc(), boolean()) -> doc().
+public_json_fields(JObj, 'true') ->
+    kz_json:set_value(<<"id">>, id(JObj, 'null'), filter_public_json_fields(JObj));
+public_json_fields(JObj, 'false') ->
+    filter_public_json_fields(JObj).
+
+-spec filter_public_json_fields(doc()) -> doc().
+filter_public_json_fields(JObj) ->
     kz_json:filter(fun({K, _}) -> not is_private_key(K) end, JObj).
 
 %%------------------------------------------------------------------------------

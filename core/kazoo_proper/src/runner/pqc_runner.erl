@@ -113,7 +113,15 @@ init_modules(Modules) ->
 
 -spec command(pqc_kazoo_model:model()) -> proper_types:type().
 command(Model) ->
-    oneof(lists:flatten([Module:api_calls(Model) || Module <- pqc_modules()])).
+    frequency(lists:foldl(fun(M, Cs) -> add_api_calls(M, Cs, Model) end, [], pqc_modules())).
+
+add_api_calls(Module, Acc, Model) ->
+    case Module:api_calls(Model) of
+        [{'call', _, _, _}|_]=Calls ->
+            [{1, Call} || Call <- Calls] ++ Acc;
+        [{N, {'call', _, _, _}}|_]=Freqs when is_integer(N) ->
+            Freqs ++ Acc
+    end.
 
 -spec pqc_modules() -> kz_term:atoms().
 pqc_modules() ->
@@ -186,7 +194,7 @@ run_counterexample(Commands) when is_list(Commands) ->
     case run_counterexample(Model, Commands) of
         'ok' -> io:format("FAILURE~n");
         {_Step, _FinalModel, _QCVars} ->
-            io:format("final state: ~s~nSUCCESS~n", [printable_model(_FinalModel)])
+            io:format("FINAL STATE: ~s~nSUCCESS~n", [printable_model(_FinalModel)])
     end,
     cleanup().
 
@@ -239,6 +247,8 @@ printable_args([Model | Args]) ->
 printable_arg(Tuple) when is_tuple(Tuple) ->
     [Type, Arg | _]=tuple_to_list(Tuple),
     [kz_term:to_binary(Type), ":", kz_term:to_binary(Arg)];
+printable_arg(List) when is_list(List) ->
+    [printable_arg(El) || El <- List];
 printable_arg(Bin) when is_binary(Bin) -> Bin.
 
 printable_model(Model) ->

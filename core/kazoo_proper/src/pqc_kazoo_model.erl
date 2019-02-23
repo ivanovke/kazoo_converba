@@ -134,14 +134,14 @@ ratedeck(Model) ->
 ratedeck(#kazoo_model{'ratedecks'=Ratedecks}, Name) ->
     maps:get(Name, Ratedecks, #{}).
 
--spec dedicated_ips(model()) -> [{kz_term:ne_binary(), dedicated_ip()}].
+-type ips_acc() :: [{kz_term:ne_binary(), dedicated_ip()}].
+
+-spec dedicated_ips(model()) -> ips_acc().
 dedicated_ips(#kazoo_model{'dedicated_ips'=IPs}) ->
-    maps:fold(fun(IP, IPInfo, Acc) ->
-                      [{IP, IPInfo} | Acc]
-              end
-             ,[]
-             ,IPs
-             ).
+    maps:fold(fun add_ip_info/3, [], IPs).
+
+-spec add_ip_info(kz_term:ne_binary(), dedicated_ip(), ips_acc()) -> ips_acc().
+add_ip_info(IP, IPInfo, Acc) -> [{IP, IPInfo} | Acc].
 
 -spec dedicated_ip(model(), kz_term:ne_binary()) -> dedicated_ip() | 'undefined'.
 dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}, IP) ->
@@ -149,19 +149,17 @@ dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}, IP) ->
 
 -spec dedicated_zones(model()) -> kz_term:ne_binaries().
 dedicated_zones(#kazoo_model{'dedicated_ips'=IPs}) ->
-    maps:fold(fun(_IP, #{'zone' := Zone}, Zones) -> [Zone | Zones] end
-             ,[]
-             ,IPs
-             ).
+    maps:fold(fun fold_zone/3, [], IPs).
+
+fold_zone(_IP, #{'zone' := Zone}, Zones) -> [Zone | Zones].
 
 -spec dedicated_hosts(model()) -> kz_term:ne_binaries().
 dedicated_hosts(#kazoo_model{'dedicated_ips'=IPs}) ->
-    maps:fold(fun(_IP, #{'host' := Host}, Hosts) -> [Host | Hosts] end
-             ,[]
-             ,IPs
-             ).
+    maps:fold(fun fold_host/3, [], IPs).
 
--spec account_ips(model(), kz_term:ne_binary()) -> [{kz_term:ne_binary(), dedicated_ip()}].
+fold_host(_IP, #{'host' := Host}, Hosts) -> [Host | Hosts].
+
+-spec account_ips(model(), kz_term:ne_binary()) -> ips_acc().
 account_ips(#kazoo_model{'dedicated_ips'=IPs}, AccountName) ->
     maps:fold(fun(IP, IPInfo, Acc) ->
                       case maps:get('assigned_to', IPInfo, 'undefined') of
@@ -222,6 +220,8 @@ has_rate_matching(Ratedeck, Number) ->
 -spec account_id_by_name(model(), kz_term:ne_binary()) -> kz_term:api_ne_binary().
 account_id_by_name(#kazoo_model{'accounts'=Accounts}, Name) ->
     case maps:get(Name, Accounts, 'undefined') of
+        #{'id' := {'call', _M, _F, _As}=Call} ->
+            proper_symb:eval([], Call);
         #{'id' := AccountId} -> AccountId;
         _ -> 'undefined'
     end.

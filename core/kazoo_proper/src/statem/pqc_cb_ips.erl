@@ -128,7 +128,7 @@ assign_ip(#{}=API, AccountId, ?DEDICATED(IP, _, _)) ->
             ?DEBUG("assigning IP errored: ~p: ~p", [_Code, _E]),
             {'error', 'not_found'};
         Response ->
-            {'ok', kz_json:get_json_value(<<"data">>, kz_json:decode(Response))}
+            {'ok', kz_json:get_json_value([<<"data">>, <<"success">>, IP], kz_json:decode(Response))}
     end;
 assign_ip(Model, AccountName, Dedicated) ->
     assign_ip(pqc_kazoo_model:api(Model)
@@ -175,6 +175,7 @@ fetch_assigned(#{}=API, AccountId) ->
             ?DEBUG("fetch zones errored: ~p: ~p", [_Code, _E]),
             {'error', 'not_found'};
         Response ->
+            lager:info("fetch_assigned: ~s", [Response]),
             {'ok', kz_json:get_list_value(<<"data">>, kz_json:decode(Response))}
     end;
 fetch_assigned(Model, AccountName) ->
@@ -239,11 +240,18 @@ cleanup() ->
 cleanup(#{}=API) ->
     ?INFO("CLEANUP TIME, EVERYBODY HELPS"),
     _ = pqc_cb_accounts:cleanup_accounts(API, ?ACCOUNT_NAMES),
-    _ = [delete_ip(API, Dedicated) || Dedicated <- ?DEDICATED_IPS],
+    _ = [delete_ip(IP) || ?DEDICATED(IP, _, _) <- ?DEDICATED_IPS],
 
     kt_cleanup:cleanup_soft_deletes(?KZ_DEDICATED_IP_DB),
 
     pqc_cb_api:cleanup(API).
+
+delete_ip(IP) ->
+    case kz_datamgr:del_doc(?KZ_DEDICATED_IP_DB, IP) of
+        {'ok', _} -> ?INFO("deleted ip ~s from db", [IP]);
+        {'error', 'not_found'} -> 'ok';
+        {'error', _E} -> ?INFO("failed to delete ip ~s: ~p", [_E])
+    end.
 
 -spec init() -> 'ok'.
 init() ->
@@ -298,7 +306,7 @@ seq() ->
             _E:_R ->
                 ST = erlang:get_stacktrace(),
                 ?INFO("failed ~s: ~p", [_E, _R]),
-                [?INFO("st: ~p", [S]) || S <- ST],
+                _ = [?INFO("st: ~p", [S]) || S <- ST],
                 lager:info("failed ~s: ~p", [_E, _R]),
                 [lager:info("st: ~p", [S]) || S <- ST]
         after
@@ -311,26 +319,20 @@ seq() ->
 
 -spec api_calls(pqc_kazoo_model:model()) -> api_calls().
 api_calls(Model) ->
-    api_calls(Model, pqc_kazoo_model:has_accounts(Model)).
-
-api_calls(Model, 'false') ->
-    AccountName = account_name(),
-    [pqc_cb_accounts:command(Model, AccountName)];
-api_calls(Model, 'true') ->
     AccountName = account_name(),
 
-    oneof([{'call', ?MODULE, 'list_ips', [Model]}
-          ,{'call', ?MODULE, 'assign_ips', [Model, AccountName, ips()]}
-          ,{'call', ?MODULE, 'remove_ip', [Model, AccountName, ip()]}
-          ,{'call', ?MODULE, 'fetch_ip', [Model, AccountName, ip()]}
-          ,{'call', ?MODULE, 'assign_ip', [Model, AccountName, ip()]}
-          ,{'call', ?MODULE, 'fetch_hosts', [Model]}
-          ,{'call', ?MODULE, 'fetch_zones', [Model]}
-          ,{'call', ?MODULE, 'fetch_assigned', [Model, AccountName]}
-          ,{'call', ?MODULE, 'create_ip', [Model, ip()]}
-          ,{'call', ?MODULE, 'delete_ip', [Model, ip()]}
-          ]
-         ).
+    [pqc_cb_accounts:command(Model, AccountName)
+    ,{'call', ?MODULE, 'list_ips', [Model]}
+    ,{'call', ?MODULE, 'assign_ips', [Model, AccountName, ips()]}
+    ,{'call', ?MODULE, 'remove_ip', [Model, AccountName, ip()]}
+    ,{'call', ?MODULE, 'fetch_ip', [Model, AccountName, ip()]}
+    ,{'call', ?MODULE, 'assign_ip', [Model, AccountName, ip()]}
+    ,{'call', ?MODULE, 'fetch_hosts', [Model]}
+    ,{'call', ?MODULE, 'fetch_zones', [Model]}
+    ,{'call', ?MODULE, 'fetch_assigned', [Model, AccountName]}
+    ,{'call', ?MODULE, 'create_ip', [Model, ip()]}
+    ,{'call', ?MODULE, 'delete_ip', [Model, ip()]}
+    ].
 
 account_name() ->
     oneof(?ACCOUNT_NAMES).
@@ -339,13 +341,14 @@ ip() ->
     oneof(?DEDICATED_IPS).
 
 ips() ->
-    non_empty(ip()).
+    [ip()].
 
 -spec update_model(pqc_kazoo_model:model(), pqc_cb_api:response(), api_call()) ->
                           pqc_kazoo_model:model().
 update_model(Model, _MResp, {'call', ?MODULE, 'list_ips', [_M]}) ->
     Model;
 update_model(Model, _MResp, {'call', ?MODULE, 'assign_ips', [_M, AccountName, Dedicateds]}) ->
+    lager:info("dedicated IPs: ~p", [Dedicateds]),
     pqc_util:transition_if(Model
                           ,[{fun pqc_kazoo_model:does_account_exist/2, [AccountName]}
                            ,{fun do_dedicated_ips_exist/2, [Dedicateds]}
@@ -401,12 +404,13 @@ check_response(Model, {'call', ?MODULE, 'list_ips', [_M]}, {'error', 'not_found'
     [] =:= pqc_kazoo_model:dedicated_ips(Model);
 
 check_response(Model, {'call', ?MODULE, 'assign_ips', [_M, AccountName, Dedicateds]}, {'ok', ListedIPs}) ->
+    lager:info("checking listed IPs: ~p", [ListedIPs]),
     lists:all(fun({IP, IPInfo}) ->
                       not is_ip_listed(IP, IPInfo, ListedIPs)
               end
              ,pqc_kazoo_model:account_ips(Model, AccountName)
              )
-        andalso all_requested_are_listed(AccountName, Dedicateds, ListedIPs);
+        andalso all_requested_are_listed(Model, AccountName, Dedicateds, ListedIPs);
 check_response(_Model, {'call', ?MODULE, 'assign_ips', [_M, _AccountName, _Dedicateds]}, {'error', 'not_found'}) -> 'true';
 check_response(Model, {'call', ?MODULE, 'remove_ip', [_M, AccountName, ?DEDICATED(IP, Host, Zone)]}, {'ok', RemovedIP}) ->
     pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP)
@@ -418,16 +422,19 @@ check_response(Model, {'call', ?MODULE, 'remove_ip', [_M, AccountName, ?DEDICATE
     not pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP);
 check_response(Model, {'call', ?MODULE, 'fetch_ip', [_M, AccountName, ?DEDICATED(IP, _Host, _Zone)=Dedicated]}, {'ok', FetchedIP}) ->
     pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP)
-        andalso is_assigned(AccountName, Dedicated, FetchedIP);
+        andalso is_assigned(Model, AccountName, Dedicated, FetchedIP);
 check_response(Model, {'call', ?MODULE, 'fetch_ip', [_M, AccountName, ?DEDICATED(IP, _Host, _Zone)]}, {'error', 'not_found'}) ->
     not pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP);
 check_response(Model, {'call', ?MODULE, 'assign_ip', [_M, AccountName, ?DEDICATED(_, _, _)=Dedicated]}, {'ok', AssignedIP}) ->
+    lager:info("assigning ip ~p", [AssignedIP]),
+    AccountIPs = pqc_kazoo_model:account_ips(Model, AccountName),
+    lager:info("Account IPs: ~p", [AccountIPs]),
     lists:all(fun({IP, IPInfo}) ->
                       not is_ip_listed(IP, IPInfo, [AssignedIP])
               end
-             ,pqc_kazoo_model:account_ips(Model, AccountName)
+             ,AccountIPs
              )
-        andalso all_requested_are_listed(AccountName, [Dedicated], [AssignedIP]);
+        andalso all_requested_are_listed(Model, AccountName, [Dedicated], [AssignedIP]);
 check_response(_Model, {'call', ?MODULE, 'assign_ip', [_M, _AccountName, _Dedicated]}, {'error', 'not_found'}) -> 'true';
 check_response(Model, {'call', ?MODULE, 'fetch_zones', [_M]}, {'ok', Zones}) ->
     lists:usort(Zones) =:= lists:usort(pqc_kazoo_model:dedicated_zones(Model));
@@ -443,6 +450,7 @@ check_response(_Model, {'call', ?MODULE, 'fetch_assigned', [_M, 'undefined']}, {
 check_response(Model, {'call', ?MODULE, 'fetch_assigned', [_M, AccountName]}, {'ok', []}) ->
     [] =:= pqc_kazoo_model:account_ips(Model, AccountName);
 check_response(Model, {'call', ?MODULE, 'fetch_assigned', [_M, AccountName]}, {'ok', ListedIPs}) ->
+    lager:info("listing assigned IPs: ~p", [ListedIPs]),
     lists:all(fun({IP, IPInfo}) ->
                       is_ip_listed(IP, IPInfo, ListedIPs)
               end
@@ -462,21 +470,23 @@ check_response(Model, {'call', ?MODULE, 'delete_ip', [_M, ?DEDICATED(IP, _, _)]}
 %%% Helpers
 -spec do_dedicated_ips_exist(pqc_kazoo_model:model(), [dedicated()]) ->
                                     boolean().
-do_dedicated_ips_exist(Model, Dedicateds) ->
+do_dedicated_ips_exist(Model, [_|_]=Dedicateds) ->
+    lager:info("do IPs exist in model"),
     lists:all(fun(?DEDICATED(IP, _, _)) -> pqc_kazoo_model:does_ip_exist(Model, IP) end
              ,Dedicateds
              ).
 
 -spec are_dedicated_ips_unassigned(pqc_kazoo_model:model(), [dedicated()]) ->
                                           boolean().
-are_dedicated_ips_unassigned(Model, Dedicateds) ->
+are_dedicated_ips_unassigned(Model, [_|_]=Dedicateds) ->
+    lager:info("are IPs unassigned"),
     lists:all(fun(?DEDICATED(IP, _, _)) -> pqc_kazoo_model:is_ip_unassigned(Model, IP) end
              ,Dedicateds
              ).
 
 -spec assign_dedicated_ips(pqc_kazoo_model:model(), pqc_cb_accounts:account_id(), [dedicated()]) ->
                                   pqc_kazoo_model:model().
-assign_dedicated_ips(Model, AccountName, Dedicateds) ->
+assign_dedicated_ips(Model, AccountName, [_|_]=Dedicateds) ->
     lists:foldl(fun(?DEDICATED(IP, _, _), Mdl) ->
                         pqc_kazoo_model:assign_dedicated_ip(Mdl, AccountName, IP)
                 end
@@ -489,7 +499,8 @@ assign_dedicated_ips(Model, AccountName, Dedicateds) ->
 are_all_ips_listed([], [], _CheckHost) -> 'true';
 are_all_ips_listed(_ModelIPs, [], _CheckHost) -> 'false';
 are_all_ips_listed([], _ListedIPs, _CheckHost) -> 'false';
-are_all_ips_listed(ModelIPs, ListedIPs, CheckHost) ->
+are_all_ips_listed([_|_]=ModelIPs, ListedIPs, CheckHost) ->
+    lager:info("are all IPs listed"),
     lists:all(fun({IP, IPInfo}) ->
                       is_ip_listed(IP, IPInfo, ListedIPs, CheckHost)
               end
@@ -505,6 +516,10 @@ is_ip_listed(IP, IPInfo, ListedIPs, CheckHost) ->
     Host = maps:get('host', IPInfo, 'undefined'),
     Zone = maps:get('zone', IPInfo, 'undefined'),
 
+    lager:info("is ip ~s listed in ~p", [IP, ListedIPs]),
+    lager:info("host: ~s", [Host]),
+    lager:info("zone: ~s", [Zone]),
+
     lists:any(fun(ListedIP) ->
                       IP =:= kz_json:get_ne_binary_value(<<"ip">>, ListedIP)
                           andalso Zone =:= kz_json:get_ne_binary_value(<<"zone">>, ListedIP)
@@ -515,15 +530,19 @@ is_ip_listed(IP, IPInfo, ListedIPs, CheckHost) ->
              ,ListedIPs
              ).
 
--spec all_requested_are_listed(kz_term:ne_binary(), [dedicated()], kz_json:objects()) -> boolean().
-all_requested_are_listed(AccountName, Dedicateds, ListedIPs) ->
+-spec all_requested_are_listed(pqc_kazoo_model:model(), kz_term:ne_binary(), [dedicated()], kz_json:objects()) -> boolean().
+all_requested_are_listed(Model, AccountName, Dedicateds, ListedIPs) ->
+    lager:info("are all requested also listed"),
+    lager:info("listed: ~p", [ListedIPs]),
+    lager:info("ded: ~p", [Dedicateds]),
+
     [] =:= lists:foldl(fun(ListedIP, Ds) ->
                                IP = kz_json:get_ne_binary_value(<<"ip">>, ListedIP),
 
                                case lists:keytake(IP, #dedicated.ip, Dedicateds) of
                                    'false' -> Ds;
                                    {'value', D, Ds1} ->
-                                       case is_assigned(AccountName, D, ListedIP) of
+                                       case is_assigned(Model, AccountName, D, ListedIP) of
                                            'true' -> Ds1;
                                            'false' -> Ds
                                        end
@@ -533,15 +552,18 @@ all_requested_are_listed(AccountName, Dedicateds, ListedIPs) ->
                       ,ListedIPs
                       ).
 
--spec is_assigned(kz_term:ne_binary(), dedicated(), kz_json:object()) -> boolean().
-is_assigned(AccountName, ?DEDICATED(DIP, DHost, DZone), ListedIP) ->
+-spec is_assigned(pqc_kazoo_model:model(), kz_term:ne_binary(), dedicated(), kz_json:object()) -> boolean().
+is_assigned(Model, AccountName, ?DEDICATED(DIP, DHost, DZone), ListedIP) ->
     IP = kz_json:get_ne_binary_value(<<"ip">>, ListedIP),
     Host = kz_json:get_ne_binary_value(<<"host">>, ListedIP),
     Zone = kz_json:get_ne_binary_value(<<"zone">>, ListedIP),
     AssignedTo = kz_json:get_ne_binary_value(<<"assigned_to">>, ListedIP),
     Status = kz_json:get_ne_binary_value(<<"status">>, ListedIP),
 
-    AccountName =:= AssignedTo
+    AccountId = pqc_kazoo_model:account_id_by_name(Model, AccountName),
+    lager:info("account ~s(~s): assigned: ~s", [AccountName, AccountId, AssignedTo]),
+
+    AccountId =:= AssignedTo
         andalso <<"assigned">> =:= Status
         andalso IP =:= DIP
         andalso Host =:= DHost

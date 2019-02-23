@@ -10,7 +10,7 @@
     "language": "javascript",
     "views": {
         "assigned_to_listing": {
-            "map": "function(doc) { if (doc.pvt_type != 'dedicated_ip' || doc.pvt_deleted || doc.pvt_status != 'assigned') return; emit(doc.pvt_assigned_to, {'ip': doc._id, 'zone': doc.pvt_zone}); }"
+            "map": "function(doc) { if (doc.pvt_type != 'dedicated_ip' || doc.pvt_deleted || doc.pvt_status != 'assigned') return; emit(doc.pvt_assigned_to, {'ip': doc._id, 'zone': doc.pvt_zone, 'host': doc.pvt_host}); }"
         },
         "available_listing": {
             "map": "function(doc) { if (doc.pvt_type != 'dedicated_ip' || doc.pvt_deleted || doc.pvt_status != 'available') return; emit(doc.pvt_zone, {'ip': doc._id, 'zone': doc.pvt_zone}); }"

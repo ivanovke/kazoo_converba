@@ -34,8 +34,8 @@ command(Model, Name) ->
 
 -spec api_calls(pqc_kazoo_model:model()) -> api_calls().
 api_calls(Model) ->
-    [command(Model, <<?MODULE_STRING>>)
-    ,{'call', ?MODULE, 'delete_account', [Model, <<?MODULE_STRING>>]}
+    [{1, command(Model, <<?MODULE_STRING>>)}
+    ,{1, {'call', ?MODULE, 'delete_account', [Model, <<?MODULE_STRING>>]}}
     ].
 
 -spec symbolic_account_id(pqc_kazoo_model:model(), kz_term:ne_binary() | proper_types:type()) ->
