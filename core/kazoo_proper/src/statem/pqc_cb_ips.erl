@@ -536,21 +536,27 @@ all_requested_are_listed(Model, AccountName, Dedicateds, ListedIPs) ->
     lager:info("listed: ~p", [ListedIPs]),
     lager:info("ded: ~p", [Dedicateds]),
 
-    [] =:= lists:foldl(fun(ListedIP, Ds) ->
-                               IP = kz_json:get_ne_binary_value(<<"ip">>, ListedIP),
+    case lists:foldl(fun(ListedIP, Ds) ->
+                             IP = kz_json:get_ne_binary_value(<<"ip">>, ListedIP),
 
-                               case lists:keytake(IP, #dedicated.ip, Dedicateds) of
-                                   'false' -> Ds;
-                                   {'value', D, Ds1} ->
-                                       case is_assigned(Model, AccountName, D, ListedIP) of
-                                           'true' -> Ds1;
-                                           'false' -> Ds
-                                       end
-                               end
-                       end
-                      ,Dedicateds
-                      ,ListedIPs
-                      ).
+                             case lists:keytake(IP, #dedicated.ip, Dedicateds) of
+                                 'false' -> Ds;
+                                 {'value', D, Ds1} ->
+                                     case is_assigned(Model, AccountName, D, ListedIP) of
+                                         'true' -> Ds1;
+                                         'false' -> Ds
+                                     end
+                             end
+                     end
+                    ,Dedicateds
+                    ,ListedIPs
+                    )
+    of
+        [] -> 'true';
+        Ds ->
+            lager:info("failed to find ~p", [Ds]),
+            'false'
+    end.
 
 -spec is_assigned(pqc_kazoo_model:model(), kz_term:ne_binary(), dedicated(), kz_json:object()) -> boolean().
 is_assigned(Model, AccountName, ?DEDICATED(DIP, DHost, DZone), ListedIP) ->

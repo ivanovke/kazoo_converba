@@ -280,7 +280,7 @@ is_ip_missing(Model, IP) ->
 is_ip_assigned(Model, AccountName, IP) ->
     case dedicated_ip(Model, IP) of
         #{'assigned_to' := AccountName} -> 'true';
-        _ -> 'false'
+        _E -> lager:info("ip ~s not assigned to ~s: ~p", [IP, AccountName, _E]), 'false'
     end.
 
 -spec is_ip_unassigned(model(), kz_term:ne_binary()) -> boolean().
