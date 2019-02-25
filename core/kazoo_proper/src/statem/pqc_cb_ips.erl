@@ -179,8 +179,6 @@ fetch_hosts(Model, AccountName) ->
 -spec fetch_zones(pqc_cb_api:state(), kz_term:api_ne_binary()) ->
                          {'ok', kz_term:ne_binaries()} |
                          {'error', 'not_found'}.
-fetch_zones(#{}=_API, 'undefined') ->
-    {'error', 'not_found'};
 fetch_zones(#{}=API, AccountId) ->
     case pqc_api_ips:fetch_zones(API, AccountId) of
         {'error', _Code, _E} ->
@@ -479,7 +477,9 @@ check_response(Model, {'call', ?MODULE, 'assign_ip', [_M, AccountName, ?DEDICATE
         andalso all_requested_are_listed(Model, AccountName, [Dedicated], [AssignedIP]);
 check_response(_Model, {'call', ?MODULE, 'assign_ip', [_M, _AccountName, _Dedicated]}, {'error', 'not_found'}) -> 'true';
 check_response(Model, {'call', ?MODULE, 'fetch_zones', [_M, _AccountName]}, {'ok', Zones}) ->
-    lists:usort(Zones) =:= lists:usort(pqc_kazoo_model:dedicated_zones(Model));
+    ModelZones = lists:usort(pqc_kazoo_model:dedicated_zones(Model)),
+    lager:info("model zones: ~p zones: ~p", [ModelZones, Zones]),
+    lists:usort(Zones) =:= ModelZones;
 check_response(Model, {'call', ?MODULE, 'fetch_zones', [_M, _AccountName]}, {'error', 'not_found'}) ->
     [] =:= pqc_kazoo_model:dedicated_zones(Model);
 check_response(Model, {'call', ?MODULE, 'fetch_hosts', [_M, _AccountName]}, {'ok', Hosts}) ->
