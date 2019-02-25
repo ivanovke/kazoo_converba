@@ -39,6 +39,7 @@
                              ,'queued' => non_neg_integer() %% remaining dbs to be compacted
                              ,'skipped' => non_neg_integer() %% dbs skipped because not data_size nor disk-data's ratio thresholds are met.
                              ,'current_db' => 'undefined' | kz_term:ne_binary()
+                             ,'processed' => kz_term:ne_binaries()
                               %% Storage
                              ,'disk_start' => non_neg_integer() %% disk_size sum of all dbs in bytes before compaction (for history command)
                              ,'disk_end' => non_neg_integer() %% disk_size sum of all dbs in bytes after compaction (for history command)
@@ -207,6 +208,7 @@ handle_cast({'new_job', Pid, Node, CallId, DbsAndSizes}, State) ->
              ,'node' => Node
              ,'started' => kz_time:now_s()
              ,'finished' => 'undefined'
+             ,'processed' => []
              },
     {'noreply', State#{CallId => Stats}};
 
@@ -245,19 +247,21 @@ handle_cast({'set_job_dbs', CallId, DbsAndSizes}, State) ->
 handle_cast({'current_db', CallId, Db}, State) ->
     NewState =
         case maps:get(CallId, State, 'undefined') of
-            'undefined' ->
-                State;
-            Stats ->
-                State#{CallId => Stats#{'current_db' => Db}}
+            'undefined' -> State;
+            Stats -> State#{CallId => Stats#{'current_db' => Db}}
         end,
     {'noreply', NewState};
 
 handle_cast({'finished_db', CallId, Db, [FRow | _]}, State) ->
+    Stats = maps:get(CallId, State, 'undefined'),
+    Processed = maps:get('processed', Stats, 'undefined'),
     NewState =
-        case maps:get(CallId, State, 'undefined') of
-            'undefined' ->
+        case Stats =/= 'undefined'
+             andalso not lists:member(Db, Processed)
+        of
+            'false' ->
                 State;
-            Stats ->
+            'true' ->
                 #{'recovered_disk' := CurrentRec
                  ,'disk_end' := DiskEnd
                  ,'data_end' := DataEnd
@@ -275,19 +279,22 @@ handle_cast({'finished_db', CallId, Db, [FRow | _]}, State) ->
                                        ,'compacted' => Found - NewQueued - Skipped
                                        ,'queued' => NewQueued
                                        ,'current_db' => 'undefined'
+                                       ,'processed' => [Db | Processed]
                                        }}
         end,
     {'noreply', NewState};
 
 handle_cast({'skipped_db', CallId, Db}, State) ->
+    Stats = maps:get(CallId, State, 'undefined'),
     NewState =
-        case maps:get(CallId, State, 'undefined') of
-            'undefined' ->
+        case Stats =/= 'undefined'
+             andalso not lists:member(Db, maps:get('processed', Stats))
+        of
+            'false' ->
                 State;
-            Stats ->
+            'true' ->
                 lager:debug("~p db does not need compaction, skipped", [Db]),
-                Skipped = maps:get('skipped', Stats),
-                State#{CallId => Stats#{'skipped' => Skipped + 1}}
+                State#{CallId => Stats#{'skipped' => maps:get('skipped', Stats) + 1}}
         end,
     {'noreply', NewState};
 
