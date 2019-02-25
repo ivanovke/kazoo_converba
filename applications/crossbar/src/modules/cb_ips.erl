@@ -464,11 +464,11 @@ additional_release_validations(Context, [], Release, _Index) ->
 additional_release_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Release, Index) ->
     AccountId = cb_context:account_id(Context),
     case kz_ip:assigned_to(JObj) of
-        'undefined' ->
-            lager:info("address ~s(~p) not assigned", [Address, Index]),
+        'undefined' when is_binary(AccountId) ->
+            lager:info("address ~s(~p) not assigned", [Address]),
             Context1 = validate_error_not_assigned(Context, Address, Index),
             additional_release_validations(Context1, IPs, Release, Index + 1);
-        AccountId ->
+        AccountId -> % handles when assigned to the account or when deleting
             lager:info("releasing address ~s from ~s", [Address, AccountId]),
             additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
         _Else ->
