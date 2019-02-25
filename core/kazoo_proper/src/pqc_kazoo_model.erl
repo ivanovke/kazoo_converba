@@ -9,9 +9,10 @@
 -export([new/1
         ,pp/1 % pretty print kazoo model
         ,printable/1
+        ]).
 
-         %% Getters
-        ,api/1
+%% Getters
+-export([api/1
         ,account_id_by_name/2
         ,number_data/2
         ,ratedeck/1, ratedeck/2
@@ -19,23 +20,34 @@
         ,dedicated_zones/1
         ,dedicated_hosts/1
         ,account_ips/2
+        ]).
 
-         %% Predicates
-        ,has_accounts/1
+%% Predicates
+-export([%% - Accounts
+         has_accounts/1
         ,does_account_exist/2
-        ,does_service_plan_exist/2
         ,is_account_missing/2
+
+         %% Services
+        ,does_service_plan_exist/2
+
+         %% Phone Numbers
         ,is_number_in_account/3
         ,is_number_missing_in_account/3
+
+         %% Ratedecks
         ,is_rate_missing/3, does_rate_exist/3
         ,does_ratedeck_exist/2
         ,has_rate_matching/3, has_service_plan_rate_matching/3
+
+         %% Dedicated IPs
         ,does_ip_exist/2, is_ip_missing/2
         ,is_ip_unassigned/2
         ,is_ip_assigned/3
+        ]).
 
-         %% Model manipulations
-        ,add_service_plan/2, add_service_plan/3
+%% Model manipulations
+-export([add_service_plan/2, add_service_plan/3
         ,add_account/3
         ,remove_account/2
         ,add_service_plan_to_account/3
@@ -47,6 +59,7 @@
         ,remove_dedicated_ip/2
         ,assign_dedicated_ip/3
         ,unassign_dedicated_ip/2
+        ,unassign_dedicated_ips/2
         ]).
 
 -include("kazoo_proper.hrl").
@@ -300,7 +313,6 @@ remove_account(#kazoo_model{accounts=Accounts}=State, Name) ->
         {_, NewAccounts} -> State#kazoo_model{accounts=NewAccounts}
     end.
 
-
 -spec add_rate_to_ratedeck(model(), kz_term:ne_binary(), kzd_rates:doc()) -> model().
 add_rate_to_ratedeck(#kazoo_model{'ratedecks'=Ratedecks}=Model, RatedeckId, RateDoc) ->
     Ratedeck = ratedeck(Model, RatedeckId),
@@ -375,6 +387,17 @@ assign_dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}=Model, AccountName, IP) ->
 unassign_dedicated_ip(#kazoo_model{'dedicated_ips'=IPs}=Model, IP) ->
     IPInfo = dedicated_ip(Model, IP),
     Model#kazoo_model{'dedicated_ips'=IPs#{IP => IPInfo#{'assigned_to' => 'undefined'}}}.
+
+-spec unassign_dedicated_ips(model(), kz_term:ne_binary()) -> model().
+unassign_dedicated_ips(#kazoo_model{'dedicated_ips'=IPs}=Model, AccountName) ->
+    UpdatedIPs = maps:fold(fun(IP, #{'assigned_to' := AssignedTo}=IPInfo, IPsAcc) when AssignedTo =:= AccountName ->
+                                   IPsAcc#{IP => IPInfo#{'assigned_to' => 'undefined'}};
+                              (_IP, _IPInfo, IPsAcc) -> IPsAcc
+                           end
+                          ,IPs
+                          ,IPs
+                          ),
+    Model#kazoo_model{'dedicated_ips'=UpdatedIPs}.
 
 -spec remove_number_from_account(model(), kz_term:ne_binary()) -> model().
 remove_number_from_account(#kazoo_model{'numbers'=Numbers}=Model

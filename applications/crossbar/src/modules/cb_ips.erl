@@ -465,18 +465,23 @@ additional_release_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Releas
     AccountId = cb_context:account_id(Context),
     case kz_ip:assigned_to(JObj) of
         'undefined' ->
+            lager:info("address ~s(~p) not assigned", [Address, Index]),
             Context1 = validate_error_not_assigned(Context, Address, Index),
             additional_release_validations(Context1, IPs, Release, Index + 1);
         AccountId ->
+            lager:info("releasing address ~s from ~s", [Address, AccountId]),
             additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
         _Else ->
+            lager:info("address ~s assigned to ~s, not ~s", [Address, _Else, AccountId]),
             Context1 = validate_error_assigned(Context, IP, Index),
             additional_assignment_validations(Context1, IPs, Release, Index + 1)
     end;
 additional_release_validations(Context, [{Address, {'error', 'not_found'}}|IPs], Release, Index) ->
+    lager:info("failed to find address ~s", [Address]),
     Context1 = validate_error_not_found(Context, Address, Index),
     additional_release_validations(Context1, IPs, Release, Index + 1);
 additional_release_validations(Context, [{_Address, {'error', Reason}}|_IPs], _Release, _Index) ->
+    lager:info("failed to open ~s: ~p", [_Address, Reason]),
     cb_context:add_system_error('datastore_fault'
                                ,kz_json:from_list([{<<"cause">>, Reason}])
                                ,Context

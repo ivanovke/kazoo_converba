@@ -14,8 +14,8 @@ IP addresses assigned to the account
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`ips.[]` |   | `string()|string()` |   |   |  
-`ips` | List of IP addresses | `array()` |   | `false` |  
+`ips.[]` |   | `string()|string()` |   |   |
+`ips` | List of IP addresses | `array()` |   | `false` |
 
 
 
@@ -61,7 +61,8 @@ curl -v -X POST \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "ips": ["1.2.3.4", "5.6.7.8"]
+        "success":{"1.2.3.4":{"id":"1.2.3.4",...}}
+        ,"error":{"5.6.7.8":{"message":"{REASON}"}}
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -105,12 +106,17 @@ curl -v -X DELETE \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "host": "proxy1.us-east.myswitch.com",
-        "id": "1.2.3.4",
-        "ip": "{IP_ADDRESS}",
-        "status": "available",
-        "type": "dedicated_ip",
-        "zone": "us-east"
+        "success":{
+            "{IP_ADDRESS}":{
+                "host": "proxy1.us-east.myswitch.com",
+                "id": "{IP_ADDRESS}",
+                "ip": "{IP_ADDRESS}",
+                "status": "available",
+                "type": "dedicated_ip",
+                "zone": "us-east"
+            }
+        },
+        "error":{}
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -269,11 +275,51 @@ Once you've added IPs to the system, you can assign those to different customer 
 !!! note
     This requires a super duper admin access:
 
+### Create a new IP
+
 > PUT /v2/ips
 
 ```shell
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
     -d '{"data":{"ip":"1.2.3.4", "zone":"us-east", "host":"proxy1.us-east.myswitch.com"}}'
-    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/ips
+    http://{SERVER}:8000/v2/ips
+```
+
+```json
+{"data":{
+    "_read_only":{
+        "id":"{IP_ADDRESS}"
+        ,"vsn":"1"
+        ,"status":"available"
+        ,"type":"dedicated_ip"
+        ,"zone":"zone-1"
+        ,"host":"a.host.com"
+        ,"modified":63718347920
+        ,"created":63718347920
+        ,"rev":"56-9f6e3268b00203d54a12f0725076a69d"
+    }
+    ,"timestamp":"{TIMESTAMP}"
+    ,"version":"{KAZOO_VERSION}"
+    ,"node":"{NODE_HASH}"
+    ,"request_id":"{REQUEST_ID}"
+    ,"status":"success"
+    ,"auth_token":"{AUTH_TOKEN}"
+}
+
+
+
+
+```
+
+### Delete an IP
+
+The IP must not be assigned to an account. Unassign it from the account first before deleting.
+
+> DELETE /v2/ips/{IP_ADDRESS}
+
+```shell
+curl -v -X PUT \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    http://{SERVER}:8000/v2/ips/{IP_ADDRESS}
 ```

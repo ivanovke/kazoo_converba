@@ -11,11 +11,12 @@
 %% Crossbar API requests
 -export([list/1
         ,assign_ips/3
-        ,remove/3
+        ,remove_ips/2
         ,fetch/3
         ,assign_ip/3
-        ,fetch_hosts/1
-        ,fetch_zones/1
+        ,remove_ip/3
+        ,fetch_hosts/2
+        ,fetch_zones/2
         ,fetch_assigned/2
         ,create/2
         ,delete/2
@@ -34,7 +35,8 @@ list(API) ->
 -spec assign_ips(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binaries()) ->
                         pqc_cb_api:response().
 assign_ips(API, AccountId, [_|_]=IPs) ->
-    Envelope = pqc_cb_api:create_envelope(IPs),
+    Data = kz_json:from_list([{<<"ips">>, IPs}]),
+    Envelope = pqc_cb_api:create_envelope(Data),
 
     pqc_cb_api:make_request([200]
                            ,fun kz_http:post/3
@@ -54,10 +56,19 @@ assign_ip(API, AccountId, IP) ->
                            ,kz_json:encode(Envelope)
                            ).
 
--spec remove(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binary()) ->
-                    pqc_cb_api:response().
-remove(API, AccountId, IP) ->
-    pqc_cb_api:make_request([200, 404]
+-spec remove_ips(pqc_cb_api:state(), kz_term:ne_binary()) ->
+                        pqc_cb_api:response().
+remove_ips(API, AccountId) ->
+    pqc_cb_api:make_request([200]
+                           ,fun kz_http:delete/2
+                           ,ips_url(AccountId)
+                           ,pqc_cb_api:request_headers(API)
+                           ).
+
+-spec remove_ip(pqc_cb_api:state(), kz_term:ne_binary(), kz_term:ne_binary()) ->
+                       pqc_cb_api:response().
+remove_ip(API, AccountId, IP) ->
+    pqc_cb_api:make_request([200]
                            ,fun kz_http:delete/2
                            ,ip_url(AccountId, IP)
                            ,pqc_cb_api:request_headers(API)
@@ -72,19 +83,19 @@ fetch(API, AccountId, IP) ->
                            ,pqc_cb_api:request_headers(API)
                            ).
 
--spec fetch_hosts(pqc_cb_api:state()) -> pqc_cb_api:response().
-fetch_hosts(API) ->
+-spec fetch_hosts(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
+fetch_hosts(API, AccountId) ->
     pqc_cb_api:make_request([200]
                            ,fun kz_http:get/2
-                           ,ip_url("hosts")
+                           ,ip_url(AccountId, "hosts")
                            ,pqc_cb_api:request_headers(API)
                            ).
 
--spec fetch_zones(pqc_cb_api:state()) -> pqc_cb_api:response().
-fetch_zones(API) ->
+-spec fetch_zones(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
+fetch_zones(API, AccountId) ->
     pqc_cb_api:make_request([200]
                            ,fun kz_http:get/2
-                           ,ip_url("zones")
+                           ,ip_url(AccountId, "zones")
                            ,pqc_cb_api:request_headers(API)
                            ).
 
