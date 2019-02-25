@@ -19,7 +19,7 @@
 
 -export([register_views/0]).
 
-%% Compaction Reporter
+%% kt_compaction_reporter and kt_compactor mirror functions
 -export([compaction/1
         ,compaction/2
         ]).
@@ -157,6 +157,7 @@ compaction(<<"status">>) ->
               StatsRows)
     end,
     'no_return';
+
 compaction(<<"history">>) ->
     maybe_print_compaction_history(kt_compaction_reporter:history()).
 
@@ -166,8 +167,15 @@ compaction(<<"history">>, <<Year:4/binary, Month:2/binary>>) ->
     maybe_print_compaction_history(compaction_history(Year, Month));
 compaction(<<"history">>, <<Year:4/binary, Month:1/binary>>) ->
     maybe_print_compaction_history(compaction_history(Year, Month));
-compaction(<<"history">>, Else) ->
-    print_error(<<"invalid argument *", Else/binary, "*">>).
+
+compaction(<<"history">>, <<JobId/binary>>) ->
+    job_info(JobId);
+
+compaction(<<"compact_db">>, <<Db/binary>>) ->
+    kt_compactor:compact_db(Db);
+
+compaction(<<"compact_node">>, <<Node/binary>>) ->
+    kt_compactor:compact_node(Node).
 
 %%% Internals
 
@@ -229,6 +237,16 @@ handle_new_task_error(JObj, _, _) ->
 compaction_history(Year, Month) ->
     kt_compaction_reporter:history(kz_term:to_integer(Year), kz_term:to_integer(Month)).
 
+-spec job_info(kz_term:ne_binary()) -> 'no_return'.
+job_info(JobId) ->
+    case kt_compaction_reporter:job_info(JobId) of
+        Prop when is_list(Prop) ->
+            lists:foreach(fun({Key, Val}) -> io:format("~s: ~s~n", [Key, Val]) end, Prop);
+        Reason when is_atom(Reason) ->
+            io:format("failed to get info for job ~s with reason: ~p", [JobId, Reason])
+    end,
+    'no_return'.
+
 -spec maybe_print_compaction_history({'ok', kz_json:json_terms()} | {'error', atom()}) ->
                                             'no_return'.
 maybe_print_compaction_history({'ok', []}) ->
@@ -258,16 +276,16 @@ maybe_print_compaction_history({'error', Reason}) ->
 -spec print_compaction_history_row(kz_json:object(), string()) -> 'ok'.
 print_compaction_history_row(JObj, FStr) ->
     Doc = kz_json:get_json_value(<<"doc">>, JObj),
-    Str = fun(K, From) -> kz_json:get_string_value(K, From) end,
-    Int = fun(K, From) -> kz_json:get_integer_value(K, From) end,
-    StartInt = Int([<<"worker">>, <<"started">>], Doc),
-    EndInt = Int([<<"worker">>, <<"finished">>], Doc),
-    DiskStartInt = Int([<<"storage">>, <<"disk">>, <<"start">>], Doc),
-    DiskEndInt = Int([<<"storage">>, <<"disk">>, <<"end">>], Doc),
-    Row = [Str(<<"_id">>, Doc)
-          ,Str([<<"databases">>, <<"found">>], Doc)
-          ,Str([<<"databases">>, <<"compacted">>], Doc)
-          ,Str([<<"databases">>, <<"skipped">>], Doc)
+    Str = fun(K) -> kz_json:get_string_value(K, Doc) end,
+    Int = fun(K) -> kz_json:get_integer_value(K, Doc) end,
+    StartInt = Int([<<"worker">>, <<"started">>]),
+    EndInt = Int([<<"worker">>, <<"finished">>]),
+    DiskStartInt = Int([<<"storage">>, <<"disk">>, <<"start">>]),
+    DiskEndInt = Int([<<"storage">>, <<"disk">>, <<"end">>]),
+    Row = [kz_doc:id(Doc)
+          ,Str([<<"databases">>, <<"found">>])
+          ,Str([<<"databases">>, <<"compacted">>])
+          ,Str([<<"databases">>, <<"skipped">>])
           ,kz_util:pretty_print_bytes(DiskStartInt - DiskEndInt)
           ,kz_term:to_list(kz_time:pretty_print_datetime(StartInt))
           ,kz_term:to_list(kz_time:pretty_print_datetime(EndInt))

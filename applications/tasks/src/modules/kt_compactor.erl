@@ -61,15 +61,18 @@
 -spec init() -> 'ok'.
 init() ->
     AdminNodes = kazoo_couch:get_admin_nodes(),
+    %% Refresh `nodes | _nodes' db
     kapps_maintenance:refresh(AdminNodes),
+    %% Refresh `dbs | _dbs' db needed for the compactor/listing_by_node view.
+    kapps_maintenance:refresh(kazoo_couch:get_admin_dbs()),
     set_node_defaults(AdminNodes),
 
     case ?COMPACT_AUTOMATICALLY of
         'false' -> lager:info("node ~s not configured to compact automatically", [node()]);
         'true' ->
             lager:info("node ~s configured to compact automatically", [node()]),
-            %% TODO: change this binding to include the `?HEUR_RATIO' as the Heuristic to use
-            _ = tasks_bindings:bind(?TRIGGER_ALL_DBS, ?MODULE, 'compact_db')
+            %% By default, `do_compact_db/1' sets `?HEUR_RATIO' as the Heuristic to use.
+            _ = tasks_bindings:bind(?TRIGGER_ALL_DBS, ?MODULE, 'do_compact_db')
     end,
 
     _ = tasks_bindings:bind(<<"tasks.help">>, ?MODULE, 'help'),
@@ -198,13 +201,11 @@ maybe_track_compact_db(Db, Heur, <<"sup_", _/binary>> = SupId) ->
     %% If callid starts with `sup_', then this function was called via a SUP command
     %% so it creates a new callid (remove the `@' sign + anything at the right of it) to
     %% track this db-only compaction job.
-    %% For example: SupId = <<"sup_0351@fqdn.hostname.com">>, CallId = <<"sup_0351">>.
-    CallId = hd(binary:split(SupId, <<"@">>)),
+    CallId = supid_to_callid(SupId),
     track_job(CallId, fun do_compact_db/2, [Db, Heur], get_dbs_sizes([Db]));
 maybe_track_compact_db(Db, Heur, _CallId) ->
-    %% If there is already a callid defined it may be because this function was triggered
-    %% by kz_tasks_trigger:cleanup/1 as part of the auto compaction or maybe another
-    %% process issued a db event that matched the one this module is listening to.
+    %% If there is already a callid defined, then do_compact_db/2 will use it for updating
+    %% the corresponding compaction's job stats.
     do_compact_db(Db, Heur).
 
 -spec print_csv(iolist()) -> 'ok'.
@@ -245,19 +246,19 @@ do_compact_all() ->
 -spec compact_node(kz_term:ne_binary()) -> 'ok'.
 compact_node(Node) ->
     %% Same as compact_db/1 but for nodes instead of dbs.
-    Heuristic = ?HEUR_NONE,
-    Rows =
-        case kz_util:get_callid() of
-            'undefined' ->
-                %% Dbs to be compacted will be set at `do_compact_node/4'
-                track_job(<<"compact_node_", (kz_binary:rand_hex(4))/binary>>
-                         ,fun do_compact_node/2
-                         ,[Node, Heuristic]
-                         );
-            _CallId ->
-                do_compact_node(Node, Heuristic)
-        end,
-    print_csv(Rows).
+    CallId = kz_term:to_binary(kz_util:get_callid()),
+    print_csv(maybe_track_compact_node(Node, ?HEUR_NONE, CallId)).
+
+-spec maybe_track_compact_node(kz_term:ne_binary(), heuristic(), kz_term:ne_binary()) -> rows().
+maybe_track_compact_node(Node, Heur, <<"undefined">>) ->
+    %% Dbs to be compacted will be set at `do_compact_node/4'
+    CallId = <<"compact_node_", (kz_binary:rand_hex(4))/binary>>,
+    track_job(CallId, fun do_compact_node/2, [Node, Heur]);
+maybe_track_compact_node(Node, Heur, <<"sup_", _/binary>> = SupId) ->
+    %% Triggered via SUP command
+    track_job(supid_to_callid(SupId), fun do_compact_node/2, [Node, Heur]);
+maybe_track_compact_node(Node, Heur, _CallId) ->
+    do_compact_node(Node, Heur).
 
 -spec do_compact_node(kz_term:ne_binary(), heuristic()) ->
                              rows().
@@ -497,3 +498,8 @@ track_job(CallId, Fun, Args, Dbs) when is_function(Fun)
     'ok' = kt_compaction_reporter:stop_tracking_job(CallId),
     kz_util:put_callid('undefined'), % Reset callid
     Rows.
+
+%% SupId = <<"sup_0351@fqdn.hostname.com">>, CallId = <<"sup_0351">>.
+-spec supid_to_callid(kz_term:ne_binary()) -> kz_term:ne_binary().
+supid_to_callid(SupId) ->
+    hd(binary:split(SupId, <<"@">>)).

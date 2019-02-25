@@ -17,8 +17,7 @@
         ,skipped_db/2
         ]).
 %% "Mirrors" for SUP commands
-%% TODO: add history command that accepts a Job id and return the full info for the job with that id if any.
--export([status/0, history/0, history/2]).
+-export([status/0, history/0, history/2, job_info/1]).
 
 %% gen_server's callbacks
 -export([init/1
@@ -160,6 +159,42 @@ history(Year, Month) when is_integer(Year)
     {'ok', AccountId} = kapps_util:get_master_account_id(),
     Opts = [{'year', Year}, {'month', Month}, 'include_docs'],
     kazoo_modb:get_results(AccountId, ?COMPACTION_VIEW, Opts).
+
+%%------------------------------------------------------------------------------
+%% @doc Return the information for the given job id
+%% @end
+%%------------------------------------------------------------------------------
+-spec job_info(kz_term:ne_binary()) -> kz_term:proplist() | atom().
+job_info(<<JobId/binary>>) ->
+    {'ok', AccountId} = kapps_util:get_master_account_id(),
+    case kazoo_modb:open_doc(AccountId, JobId) of
+        {'ok', JObj} ->
+            Int = fun(Key) -> kz_json:get_integer_value(Key, JObj) end,
+            Str = fun(Key) -> kz_json:get_string_value(Key, JObj) end,
+            DiskStart = Int([<<"storage">>, <<"disk">>, <<"start">>]),
+            DiskEnd = Int([<<"storage">>, <<"disk">>, <<"end">>]),
+            Start = Int([<<"worker">>, <<"started">>]),
+            End = Int([<<"worker">>, <<"finished">>]),
+            [{<<"id">>, kz_doc:id(JObj)}
+            ,{<<"found">>, Str([<<"databases">>, <<"found">>])}
+            ,{<<"compacted">>, Str([<<"databases">>, <<"compacted">>])}
+            ,{<<"skipped">>, Str([<<"databases">>, <<"skipped">>])}
+            ,{<<"disk_start">>, kz_term:to_binary(DiskStart)}
+            ,{<<"disk_end">>, kz_term:to_binary(DiskEnd)}
+            ,{<<"data_start">>, Str([<<"storage">>, <<"data">>, <<"start">>])}
+            ,{<<"data_end">>, Str([<<"storage">>, <<"data">>, <<"end">>])}
+            ,{<<"recovered_disk">>, kz_util:pretty_print_bytes(DiskStart - DiskEnd)}
+            ,{<<"node">>, Str([<<"worker">>, <<"node">>])}
+            ,{<<"pid">>, Str([<<"worker">>, <<"pid">>])}
+            ,{<<"started">>, kz_term:to_list(kz_time:pretty_print_datetime(Start))}
+            ,{<<"finished">>, kz_term:to_list(kz_time:pretty_print_datetime(End))}
+            ,{<<"exec_time">>
+             ,kz_term:to_list(kz_time:pretty_print_elapsed_s(End - Start))
+             }
+            ];
+        {'error', Reason} ->
+            Reason
+    end.
 
 %%%=============================================================================
 %%% gen_server callbacks
@@ -370,12 +405,22 @@ start_sizes_and_total_dbs_fold({_Db, _}, {DiAcc, DaAcc, Counter}) ->
 %%------------------------------------------------------------------------------
 -spec stats_to_status_fold(kz_term:ne_binary(), compaction_stats(), [kz_term:proplist()]) ->
                                   [kz_term:proplist()].
-stats_to_status_fold(_Key, Stats, Acc) ->
+stats_to_status_fold(_CallId, Stats = #{'queued' := Queued}, Acc) ->
     Keys = ['id', 'found', 'compacted', 'queued', 'skipped', 'current_db',
             'recovered_disk', 'pid', 'node', 'started'],
-    [[{kz_term:to_binary(Key), kz_term:to_binary(maps:get(Key, Stats))}
-      || Key <- Keys
-     ] | Acc].
+    ToBin = fun(Something) -> kz_term:to_binary(Something) end,
+    StatsProp = [{ToBin(Key), ToBin(maps:get(Key, Stats))} || Key <- Keys],
+    case Queued =:= 0 of
+        'true' ->
+            %% This happens when it finishes compacting on the first node so now
+            %% `found = compacted + skipped' which means `queued = 0' and also it means
+            %% it is still compacting on other nodes otherwise this status were not
+            %% being build.
+            MsgProp = [{<<"msg">>, <<"Still compacting on other nodes">>}],
+            [StatsProp ++ MsgProp | Acc];
+        'false' ->
+            [StatsProp | Acc]
+    end.
 
 %%------------------------------------------------------------------------------
 %% @doc Save compaction job stats on db.
