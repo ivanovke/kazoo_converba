@@ -118,7 +118,7 @@ command(Model) ->
 add_api_calls(Module, Acc, Model) ->
     case Module:api_calls(Model) of
         [{'call', _, _, _}|_]=Calls ->
-            [{1, Call} || Call <- Calls] ++ Acc;
+            [{10, Call} || Call <- Calls] ++ Acc;
         [{N, {'call', _, _, _}}|_]=Freqs when is_integer(N) ->
             Freqs ++ Acc
     end.
