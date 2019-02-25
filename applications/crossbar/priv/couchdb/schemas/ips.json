@@ -2,19 +2,24 @@
     "$schema": "http://json-schema.org/draft-04/schema#",
     "_id": "ips",
     "description": "IP addresses assigned to the account",
-    "items": {
-        "description": "IP address",
-        "oneOf": [
-            {
-                "format": "ipv4",
-                "type": "string"
+    "properties": {
+        "ips": {
+            "description": "List of IP addresses",
+            "items": {
+                "description": "IP address",
+                "oneOf": [
+                    {
+                        "format": "ipv4",
+                        "type": "string"
+                    },
+                    {
+                        "format": "ipv6",
+                        "type": "string"
+                    }
+                ]
             },
-            {
-                "format": "ipv6",
-                "type": "string"
-            }
-        ]
-    },
-    "minItems": 1,
-    "type": "array"
+            "minItems": 1,
+            "type": "array"
+        }
+    }
 }

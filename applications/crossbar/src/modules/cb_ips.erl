@@ -212,7 +212,7 @@ load_assigned(Context) ->
     case kz_ips:assigned(AccountId) of
         {'ok', JObjs} ->
             cb_context:set_resp_data(cb_context:set_resp_status(Context, 'success')
-                                    ,[clean_ip(JObj) || JObj <- JObjs]
+                                    ,JObjs
                                     );
         {'error', 'not_found'} ->
             cb_context:add_system_error('not_found'
@@ -318,12 +318,13 @@ validate_assign_ips(Context) ->
 
 -spec validate_assign_ip(cb_context:context(), path_token()) -> cb_context:context().
 validate_assign_ip(Context, IP) ->
-    validate_assign_ips(cb_context:set_req_data(Context, [IP])).
+    ReqData = kz_json:from_list([{<<"ips">>, [IP]}]),
+    validate_assign_ips(cb_context:set_req_data(Context, ReqData)).
 
 -spec additional_assignment_validations(cb_context:context()) -> cb_context:context().
 additional_assignment_validations(Context) ->
     IPs = [{IP, kz_ip:fetch(IP)}
-           || IP <- cb_context:req_data(Context)
+           || IP <- cb_context:req_value(Context, <<"ips">>, [])
           ],
     additional_assignment_validations(Context, IPs, [], 0).
 
@@ -339,21 +340,13 @@ additional_assignment_validations(Context, [], Assign, _Index) ->
     end;
 additional_assignment_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Assign, Index) ->
     AccountId = cb_context:account_id(Context),
-    Method = cb_context:method(Context),
-
     case kz_ip:assigned_to(JObj) of
         'undefined' ->
-            lager:debug("ip ~s not assigned, continuing", [kz_doc:id(JObj)]),
             additional_assignment_validations(Context, IPs, [JObj|Assign], Index + 1);
-        _AccountId when Method =:= ?HTTP_DELETE ->
-            lager:debug("ip ~s is assigned to ~s, but deleting so ok", [kz_doc:id(JObj), _AccountId]),
-            additional_assignment_validations(Context, IPs, Assign, Index + 1);
         AccountId ->
-            lager:debug("ip ~s already assigned to ~s", [kz_doc:id(JObj), AccountId]),
-            Context1 = validate_error_already_assigned(Context, Address, Index, AccountId),
+            Context1 = validate_error_already_assigned(Context, Address, Index),
             additional_assignment_validations(Context1, IPs, Assign, Index + 1);
         _Else ->
-            lager:debug("ip ~s assigned to another account: ~p, continuing", [kz_doc:id(JObj), _Else]),
             Context1 = validate_error_assigned(Context, IP, Index),
             additional_assignment_validations(Context1, IPs, Assign, Index + 1)
     end;
@@ -366,14 +359,13 @@ additional_assignment_validations(Context, [{_Address, {'error', Reason}}|_IPs],
                                ,Context
                                ).
 
--spec validate_error_already_assigned(cb_context:context(), kz_term:ne_binary(), non_neg_integer(), kz_term:ne_binary()) ->
+-spec validate_error_already_assigned(cb_context:context(), kz_term:ne_binary(), non_neg_integer()) ->
                                              cb_context:context().
-validate_error_already_assigned(Context, IP, Index, AccountId) ->
+validate_error_already_assigned(Context, IP, Index) ->
     Key = <<"ips.", (kz_term:to_binary(Index))/binary>>,
     Message = kz_json:from_list(
                 [{<<"message">>, <<"ip already assigned">>}
                 ,{<<"value">>, IP}
-                ,{<<"account_id">>, AccountId}
                 ]),
     cb_context:add_validation_error(Key, <<"superfluous">>, Message, Context).
 
@@ -455,12 +447,13 @@ validate_release_ips(Context) ->
 
 -spec validate_release_ip(cb_context:context(), path_token()) -> cb_context:context().
 validate_release_ip(Context, IP) ->
-    validate_release_ips(cb_context:set_req_data(Context, [IP])).
+    ReqData = kz_json:from_list([{<<"ips">>, [IP]}]),
+    validate_release_ips(cb_context:set_req_data(Context, ReqData)).
 
 -spec additional_release_validations(cb_context:context()) -> cb_context:context().
 additional_release_validations(Context) ->
     IPs = [{IP, kz_ip:fetch(IP)}
-           || IP <- cb_context:req_data(Context)
+           || IP <- cb_context:req_value(Context, <<"ips">>, [])
           ],
     additional_release_validations(Context, IPs, [], 0).
 
@@ -471,27 +464,19 @@ additional_release_validations(Context, [], Release, _Index) ->
 additional_release_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Release, Index) ->
     AccountId = cb_context:account_id(Context),
     case kz_ip:assigned_to(JObj) of
-        'undefined' when is_binary(AccountId) ->
-            lager:debug("ip ~s not assigned while account id is '~p'", [Address, AccountId]),
+        'undefined' ->
             Context1 = validate_error_not_assigned(Context, Address, Index),
             additional_release_validations(Context1, IPs, Release, Index + 1);
-        'undefined' ->
-            lager:debug("releasing unassigned ip ~s", [Address]),
-            additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
         AccountId ->
-            lager:debug("adding ~s to be released from account ~s", [AccountId]),
             additional_release_validations(Context, IPs, [JObj|Release], Index + 1);
         _Else ->
-            lager:debug("address ~s assigned to ~s (not ~s), not releasing", [Address, _Else, AccountId]),
             Context1 = validate_error_assigned(Context, IP, Index),
             additional_assignment_validations(Context1, IPs, Release, Index + 1)
     end;
 additional_release_validations(Context, [{Address, {'error', 'not_found'}}|IPs], Release, Index) ->
-    lager:debug("failed to find address ~s", [Address]),
     Context1 = validate_error_not_found(Context, Address, Index),
     additional_release_validations(Context1, IPs, Release, Index + 1);
 additional_release_validations(Context, [{_Address, {'error', Reason}}|_IPs], _Release, _Index) ->
-    lager:debug("error finding address ~s: ~p", [_Address, Reason]),
     cb_context:add_system_error('datastore_fault'
                                ,kz_json:from_list([{<<"cause">>, Reason}])
                                ,Context

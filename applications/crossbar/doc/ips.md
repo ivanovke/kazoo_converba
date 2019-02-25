@@ -14,8 +14,8 @@ IP addresses assigned to the account
 
 Key | Description | Type | Default | Required | Support Level
 --- | ----------- | ---- | ------- | -------- | -------------
-`ips.[]` |   | `string()|string()` |   |   |
-`ips` | List of IP addresses | `array()` |   | `false` |
+`ips.[]` |   | `string()|string()` |   |   |  
+`ips` | List of IP addresses | `array()` |   | `false` |  
 
 
 
@@ -53,7 +53,7 @@ curl -v -X GET \
 ```shell
 curl -v -X POST \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
-    -d '{"data": ["1.2.3.4", "5.6.7.8"]}' \
+    -d '{"data": {"ips" :["1.2.3.4", "5.6.7.8"]}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/ips
 ```
 
@@ -61,7 +61,7 @@ curl -v -X POST \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        ["1.2.3.4", "5.6.7.8"]
+        "ips": ["1.2.3.4", "5.6.7.8"]
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
@@ -82,7 +82,9 @@ curl -v -X DELETE \
 ```json
 {
     "auth_token": "{AUTH_TOKEN}",
-    "data": ["1.2.3.4", "5.6.7.8"],
+    "data": {
+        "ips": ["1.2.3.4", "5.6.7.8"]
+    },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",
     "status": "success"
