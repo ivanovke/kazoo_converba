@@ -163,8 +163,6 @@ assign_ip(Model, AccountName, Dedicated) ->
 -spec fetch_hosts(pqc_cb_api:state(), kz_term:api_ne_binary()) ->
                          {'ok', kz_term:ne_binaries()} |
                          {'error', 'not_found'}.
-fetch_hosts(#{}=_API, 'undefined') ->
-    {'error', 'not_found'};
 fetch_hosts(#{}=API, AccountId) ->
     case pqc_api_ips:fetch_hosts(API, AccountId) of
         {'error', _Code, _E} ->

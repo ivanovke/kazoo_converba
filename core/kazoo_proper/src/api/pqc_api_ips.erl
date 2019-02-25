@@ -83,7 +83,13 @@ fetch(API, AccountId, IP) ->
                            ,pqc_cb_api:request_headers(API)
                            ).
 
--spec fetch_hosts(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
+-spec fetch_hosts(pqc_cb_api:state(), kz_term:api_ne_binary()) -> pqc_cb_api:response().
+fetch_hosts(API, 'undefined') ->
+    pqc_cb_api:make_request([200]
+                           ,fun kz_http:get/2
+                           ,ip_url("hosts")
+                           ,pqc_cb_api:request_headers(API)
+                           );
 fetch_hosts(API, AccountId) ->
     pqc_cb_api:make_request([200]
                            ,fun kz_http:get/2
@@ -91,7 +97,13 @@ fetch_hosts(API, AccountId) ->
                            ,pqc_cb_api:request_headers(API)
                            ).
 
--spec fetch_zones(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
+-spec fetch_zones(pqc_cb_api:state(), kz_term:api_ne_binary()) -> pqc_cb_api:response().
+fetch_zones(API, 'undefined') ->
+    pqc_cb_api:make_request([200]
+                           ,fun kz_http:get/2
+                           ,ip_url("zones")
+                           ,pqc_cb_api:request_headers(API)
+                           );
 fetch_zones(API, AccountId) ->
     pqc_cb_api:make_request([200]
                            ,fun kz_http:get/2
@@ -110,7 +122,7 @@ fetch_assigned(API, AccountId) ->
 -spec create(pqc_cb_api:state(), kz_json:object()) -> pqc_cb_api:response().
 create(API, IPObj) ->
     Envelope = pqc_cb_api:create_envelope(IPObj),
-    pqc_cb_api:make_request([201, 409]
+    pqc_cb_api:make_request([201]
                            ,fun kz_http:put/3
                            ,ips_url()
                            ,pqc_cb_api:request_headers(API)
@@ -119,7 +131,7 @@ create(API, IPObj) ->
 
 -spec delete(pqc_cb_api:state(), kz_term:ne_binary()) -> pqc_cb_api:response().
 delete(API, IP) ->
-    pqc_cb_api:make_request([200, 404]
+    pqc_cb_api:make_request([200]
                            ,fun kz_http:delete/2
                            ,ip_url(IP)
                            ,pqc_cb_api:request_headers(API)
