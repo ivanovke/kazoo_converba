@@ -212,7 +212,7 @@ load_assigned(Context) ->
     case kz_ips:assigned(AccountId) of
         {'ok', JObjs} ->
             cb_context:set_resp_data(cb_context:set_resp_status(Context, 'success')
-                                    ,JObjs
+                                    ,[clean_ip(JObj) || JObj <- JObjs]
                                     );
         {'error', 'not_found'} ->
             cb_context:add_system_error('not_found'

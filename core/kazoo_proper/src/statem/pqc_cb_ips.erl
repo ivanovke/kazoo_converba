@@ -422,6 +422,7 @@ update_model(Model, _MResp, {'call', ?MODULE, 'create_ip', [_M, ?DEDICATED(IP, H
 update_model(Model, _MResp, {'call', ?MODULE, 'delete_ip', [_M, ?DEDICATED(IP, _Host, _Zone)]}) ->
     pqc_util:transition_if(Model
                           ,[{fun pqc_kazoo_model:does_ip_exist/2, [IP]}
+                           ,{fun pqc_kazoo_model:is_ip_unassigned/2, [IP]}
                            ,{fun pqc_kazoo_model:remove_dedicated_ip/2, [IP]}
                            ]
                           ).
@@ -482,7 +483,9 @@ check_response(Model, {'call', ?MODULE, 'fetch_zones', [_M, _AccountName]}, {'ok
 check_response(Model, {'call', ?MODULE, 'fetch_zones', [_M, _AccountName]}, {'error', 'not_found'}) ->
     [] =:= pqc_kazoo_model:dedicated_zones(Model);
 check_response(Model, {'call', ?MODULE, 'fetch_hosts', [_M, _AccountName]}, {'ok', Hosts}) ->
-    lists:usort(Hosts) =:= lists:usort(pqc_kazoo_model:dedicated_hosts(Model));
+    ModelHosts = lists:usort(pqc_kazoo_model:dedicated_hosts(Model)),
+    lager:info("model hosts: ~p hosts: ~p", [ModelHosts, Hosts]),
+    lists:usort(Hosts) =:= ModelHosts;
 check_response(Model, {'call', ?MODULE, 'fetch_hosts', [_M, _AccountName]}, {'error', 'not_found'}) ->
     [] =:= pqc_kazoo_model:dedicated_hosts(Model);
 
@@ -507,7 +510,13 @@ check_response(Model, {'call', ?MODULE, 'delete_ip', [_M, ?DEDICATED(IP, _, _)]}
 check_response(Model, {'call', ?MODULE, 'delete_ip', [_M, ?DEDICATED(IP, _, _)]}, {'error', 'not_found'}) ->
     case pqc_kazoo_model:dedicated_ip(Model, IP) of
         'undefined' -> 'true';
-        #{'assigned_to' := AssignedTo} -> 'undefined' =/= AssignedTo
+        IPInfo ->
+            case maps:get('assigned_to', IPInfo, 'undefined') of
+                'undefined' ->
+                    lager:info("failed to delete unassigned IP ~s: ~p", [IP, IPInfo]),
+                    'false';
+                _AssignedTo -> 'true'
+            end
     end.
 
 %%% Helpers
