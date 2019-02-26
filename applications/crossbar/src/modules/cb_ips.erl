@@ -140,6 +140,11 @@ post(Context, _IP) ->
 
 -spec delete(cb_context:context()) -> cb_context:context().
 delete(Context) ->
+    delete_ips(Context, cb_context:req_nouns(Context)).
+
+delete_ips(Context, [{<<"ips">>, []}]) ->
+    delete_ips_from_db(Context, cb_context:fetch(Context, 'release_ips', []));
+delete_ips(Context, [{<<"ips">>, []}, {<<"accounts">>, _Account}]) ->
     release_ips(Context).
 
 -spec delete(cb_context:context(), path_token()) -> cb_context:context().
@@ -434,6 +439,12 @@ assign_ips(Context, [JObj|JObjs]) ->
 %%------------------------------------------------------------------------------
 -spec validate_release_ips(cb_context:context()) -> cb_context:context().
 validate_release_ips(Context) ->
+    validate_release_ips(Context, kz_ips:assigned(cb_context:account_id(Context))).
+
+-spec validate_release_ips(cb_context:context(), {'ok', kz_json:objects()} | {'error', any()}) -> cb_context:context().
+validate_release_ips(Context, {'ok', []}) ->
+    lager:info("account ~s has no IPs to release", [cb_context:account_id(Context)]),
+
     Resp = kz_json:from_list(
              [{<<"success">>, kz_json:new()}
              ,{<<"error">>, kz_json:new()}
@@ -442,8 +453,25 @@ validate_release_ips(Context) ->
     Setters = [{fun cb_context:set_resp_status/2, 'success'}
               ,{fun cb_context:set_resp_data/2, Resp}
               ],
+    cb_context:setters(Context, Setters);
+validate_release_ips(Context, {'ok', Assigned}) ->
+    ReqData = kz_json:from_list([{<<"ips">>, [kz_doc:id(IP) || IP <- Assigned]}]),
+
+    Resp = kz_json:from_list(
+             [{<<"success">>, kz_json:new()}
+             ,{<<"error">>, kz_json:new()}
+             ]
+            ),
+    Setters = [{fun cb_context:set_resp_status/2, 'success'}
+              ,{fun cb_context:set_resp_data/2, Resp}
+              ,{fun cb_context:set_req_data/2, ReqData}
+              ],
     Context1 = cb_context:setters(Context, Setters),
-    cb_context:validate_request_data(<<"ips">>, Context1, fun additional_release_validations/1).
+
+    cb_context:validate_request_data(<<"ips">>, Context1, fun additional_release_validations/1);
+validate_release_ips(Context, {'error', Error}) ->
+    lager:info("failed to get assigned IPs: ~p", [Error]),
+    crossbar_doc:handle_datamgr_errors(Error, 'undefined', Context).
 
 -spec validate_release_ip(cb_context:context(), path_token()) -> cb_context:context().
 validate_release_ip(Context, IP) ->
@@ -460,6 +488,7 @@ additional_release_validations(Context) ->
 -spec additional_release_validations(cb_context:context(), kz_term:proplist(), kz_json:objects(), non_neg_integer()) ->
                                             cb_context:context().
 additional_release_validations(Context, [], Release, _Index) ->
+    lager:debug("to release: ~p", [Release]),
     cb_context:store(Context, 'release_ips', Release);
 additional_release_validations(Context, [{Address, {'ok', JObj}}=IP|IPs], Release, Index) ->
     AccountId = cb_context:account_id(Context),
@@ -508,18 +537,21 @@ release_ips(Context) ->
 
 -spec release_ips(cb_context:context(), kz_json:objects()) -> cb_context:context().
 release_ips(Context, []) ->
+    lager:debug("finished releasing IPs"),
     _ = crossbar_services:reconcile(cb_context:account_id(Context)),
     Context;
 release_ips(Context, [JObj|JObjs]) ->
     Context1 =
         case kz_ip:release(kz_doc:id(JObj)) of
             {'ok', ReleasedJObj} ->
+                lager:debug("released ~s", [kz_doc:id(JObj)]),
                 Resp = kz_json:set_value([<<"success">>, kz_doc:id(JObj)]
                                         ,clean_ip(kz_ip:to_json(ReleasedJObj))
                                         ,cb_context:resp_data(Context)
                                         ),
                 cb_context:set_resp_data(Context, Resp);
             {'error', Reason} ->
+                lager:debug("failed to released ~s: ~p", [kz_doc:id(JObj), Reason]),
                 Message = kz_json:from_list(
                             [{<<"message">>, Reason}]
                            ),
@@ -535,12 +567,31 @@ release_ips(Context, [JObj|JObjs]) ->
 %% @doc
 %% @end
 %%------------------------------------------------------------------------------
+-spec delete_ips_from_db(cb_context:context(), kz_term:ne_binaries()) -> cb_context:context().
+delete_ips_from_db(Context, IPs) ->
+    lists:foldl(fun(IP, ContextAcc) -> delete_ip(ContextAcc, IP) end
+               ,Context
+               ,IPs
+               ).
+
 -spec delete_ip(cb_context:context(), kz_term:ne_binary()) -> cb_context:context().
 delete_ip(Context, IP) ->
     %% _ = crossbar_services:reconcile(cb_context:account_id(Context)),
     case kz_ip:delete(IP) of
-        {'ok', Deleted} -> crossbar_doc:handle_json_success(Deleted, Context);
-        {'error', Error} -> crossbar_doc:handle_datamgr_errors(Error, IP, Context)
+        {'ok', Deleted} ->
+            Resp = kz_json:set_value([<<"success">>, IP]
+                                    ,clean_ip(kz_ip:to_json(Deleted))
+                                    ,cb_context:resp_data(Context)
+                                    ),
+            cb_context:set_resp_data(Context, Resp);
+        {'error', Error} ->
+            Message = kz_json:from_list([{<<"message">>, Error}]),
+
+            Resp = kz_json:set_value([<<"error">>, IP]
+                                    ,Message
+                                    ,cb_context:resp_data(Context)
+                                    ),
+            cb_context:set_resp_data(Context, Resp)
     end.
 
 %%------------------------------------------------------------------------------

@@ -84,7 +84,14 @@ curl -v -X DELETE \
 {
     "auth_token": "{AUTH_TOKEN}",
     "data": {
-        "ips": ["1.2.3.4", "5.6.7.8"]
+        "success":{
+            "{IP_ADDRESS}":{
+                "id":"{IP_ADDRESS}"
+                ,"ip":"{IP_ADDRESS}"
+                ,...
+            }
+        }
+        ,"error":{}
     },
     "request_id": "{REQUEST_ID}",
     "revision": "{REVISION}",

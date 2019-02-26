@@ -94,7 +94,10 @@ remove_ips(#{}=API, AccountId) ->
             lager:info("removing IPs errored: ~p: ~p", [_Code, _E]),
             {'error', 'not_found'};
         Response ->
-            {'ok', kz_json:get_list_value([<<"data">>, <<"ips">>], kz_json:decode(Response))}
+            lager:info("remove ips: ~s", [Response]),
+            Success = kz_json:get_json_value([<<"data">>, <<"success">>], kz_json:decode(Response)),
+            {Values, _} = kz_json:get_values(Success),
+            {'ok', Values}
     end;
 remove_ips(Model, AccountName) ->
     remove_ips(pqc_kazoo_model:api(Model)
@@ -445,7 +448,8 @@ check_response(Model, {'call', ?MODULE, 'assign_ips', [_M, AccountName, Dedicate
 check_response(_Model, {'call', ?MODULE, 'assign_ips', [_M, _AccountName, _Dedicateds]}, {'error', 'not_found'}) -> 'true';
 check_response(Model, {'call', ?MODULE, 'remove_ips', [_M, AccountName]}, {'ok', RemovedIPs}) ->
     AccountIPs = pqc_kazoo_model:account_ips(Model, AccountName),
-    lists:all(fun(AccountIP) -> lists:member(AccountIP, RemovedIPs) end, AccountIPs);
+    lager:info("account IPs: ~p removed: ~p", [AccountIPs, RemovedIPs]),
+    are_all_ips_listed(AccountIPs, RemovedIPs, 'false');
 check_response(Model, {'call', ?MODULE, 'remove_ips', [_M, AccountName]}, {'error', 'not_found'}) ->
     [] =:= pqc_kazoo_model:account_ips(Model, AccountName);
 check_response(Model, {'call', ?MODULE, 'remove_ip', [_M, AccountName, ?DEDICATED(IP, Host, Zone)=_Ded]}, {'ok', RemovedIP}) ->
