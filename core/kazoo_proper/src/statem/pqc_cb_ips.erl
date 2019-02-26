@@ -64,6 +64,7 @@ list_ips(Model) ->
                         {'ok', kz_json:objects()} |
                         {'error', 'not_found'}.
 assign_ips(_API, 'undefined', _Dedicateds) ->
+    lager:info("failed to find account id"),
     {'error', 'not_found'};
 assign_ips(#{}=API, AccountId, Dedicateds) ->
     IPs = [IP || ?DEDICATED(IP, _, _) <- Dedicateds],
@@ -87,6 +88,7 @@ assign_ips(Model, AccountName, Dedicateds) ->
                         {'ok', kz_json:objects()} |
                         {'error', 'not_found'}.
 remove_ips(_API, 'undefined') ->
+    lager:info("failed to find account id"),
     {'error', 'not_found'};
 remove_ips(#{}=API, AccountId) ->
     case pqc_api_ips:remove_ips(API, AccountId) of
@@ -108,6 +110,7 @@ remove_ips(Model, AccountName) ->
                        {'ok', kz_json:object()} |
                        {'error', 'not_found'}.
 remove_ip(_API, 'undefined', _Dedicated) ->
+    lager:info("failed to find account id"),
     {'error', 'not_found'};
 remove_ip(#{}=API, AccountId, ?DEDICATED(IP, _, _)) ->
     case pqc_api_ips:remove_ip(API, AccountId, IP) of
@@ -132,6 +135,7 @@ remove_ip(Model, AccountName, Dedicated) ->
                       {'ok', kz_json:object()} |
                       {'error', 'not_found'}.
 fetch_ip(_API, 'undefined', _Dedicated) ->
+    lager:info("failed to find account id"),
     {'error', 'not_found'};
 fetch_ip(#{}=API, AccountId, ?DEDICATED(IP, _, _)) ->
     case pqc_api_ips:fetch(API, AccountId, IP) of
@@ -151,6 +155,7 @@ fetch_ip(Model, AccountName, Dedicated) ->
                        {'ok', kz_json:object()} |
                        {'error', 'not_found'}.
 assign_ip(_API, 'undefined', _Dedicated) ->
+    lager:info("failed to find account id"),
     {'error', 'not_found'};
 assign_ip(#{}=API, AccountId, ?DEDICATED(IP, _, _)) ->
     case pqc_api_ips:assign_ip(API, AccountId, IP) of
@@ -202,6 +207,7 @@ fetch_zones(Model, AccountName) ->
                             {'ok', kz_json:objects()} |
                             {'error', 'not_found'}.
 fetch_assigned(_API, 'undefined') ->
+    lager:info("failed to find account id"),
     {'error', 'not_found'};
 fetch_assigned(#{}=API, AccountId) ->
     case pqc_api_ips:fetch_assigned(API, AccountId) of
