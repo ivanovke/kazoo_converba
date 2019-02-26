@@ -246,9 +246,9 @@ delete_ip(#{}=API, ?DEDICATED(IP, _Host, _Zone)) ->
         Response ->
             JObj = kz_json:decode(Response),
             lager:info("delete_ip ~s: ~s", [IP, Response]),
-            case kz_json:get_integer_value(<<"error">>, JObj) of
-                'undefined' -> {'ok', kz_json:get_list_value(<<"data">>, JObj)};
-                _ -> {'error', 'not_found'}
+            case kz_json:get_json_value([<<"data">>, <<"success">>, IP], JObj) of
+                'undefined' -> {'error', 'not_found'};
+                IPInfo -> {'ok', IPInfo}
             end
     end;
 delete_ip(Model, Dedicated) ->
