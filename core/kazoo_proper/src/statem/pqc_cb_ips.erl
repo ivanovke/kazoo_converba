@@ -116,7 +116,7 @@ remove_ip(#{}=API, AccountId, ?DEDICATED(IP, _, _)) ->
             {'error', 'not_found'};
         Response ->
             lager:info("remove ~s: ~s", [IP, Response]),
-            Removed = kz_json:get_json_value([<<"data">>, <<"success">>, IP], kz_json:decode(Response)),
+            Removed = kz_json:get_json_value([<<"data">>, <<"success">>, IP], kz_json:decode(Response), kz_json:new()),
             {'ok', Removed}
     end;
 remove_ip(Model, AccountName, Dedicated) ->
@@ -452,12 +452,19 @@ check_response(Model, {'call', ?MODULE, 'remove_ips', [_M, AccountName]}, {'ok',
     are_all_ips_listed(AccountIPs, RemovedIPs, 'false');
 check_response(Model, {'call', ?MODULE, 'remove_ips', [_M, AccountName]}, {'error', 'not_found'}) ->
     [] =:= pqc_kazoo_model:account_ips(Model, AccountName);
-check_response(Model, {'call', ?MODULE, 'remove_ip', [_M, AccountName, ?DEDICATED(IP, Host, Zone)=_Ded]}, {'ok', RemovedIP}) ->
-    pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP)
-        andalso IP =:= kz_json:get_ne_binary_value(<<"ip">>, RemovedIP)
-        andalso Host =:= kz_json:get_ne_binary_value(<<"host">>, RemovedIP)
-        andalso Zone =:= kz_json:get_ne_binary_value(<<"zone">>, RemovedIP)
-        andalso <<"available">> =:= kz_json:get_ne_binary_value(<<"status">>, RemovedIP);
+check_response(Model
+              ,{'call', ?MODULE, 'remove_ip', [_M, AccountName, ?DEDICATED(IP, Host, Zone)=_Ded]}
+              ,{'ok', RemovedIP}
+              ) ->
+    case pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP) of
+        'true' ->
+            IP =:= kz_json:get_ne_binary_value(<<"ip">>, RemovedIP)
+                andalso Host =:= kz_json:get_ne_binary_value(<<"host">>, RemovedIP)
+                andalso Zone =:= kz_json:get_ne_binary_value(<<"zone">>, RemovedIP)
+                andalso <<"available">> =:= kz_json:get_ne_binary_value(<<"status">>, RemovedIP);
+        'false' ->
+            kz_json:is_empty(RemovedIP)
+    end;
 check_response(Model, {'call', ?MODULE, 'remove_ip', [_M, AccountName, ?DEDICATED(IP, _Host, _Zone)]}, {'error', 'not_found'}) ->
     not pqc_kazoo_model:is_ip_assigned(Model, AccountName, IP);
 check_response(Model, {'call', ?MODULE, 'fetch_ip', [_M, AccountName, ?DEDICATED(IP, _Host, _Zone)=Dedicated]}, {'ok', FetchedIP}) ->
