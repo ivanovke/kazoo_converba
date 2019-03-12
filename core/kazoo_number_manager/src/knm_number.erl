@@ -62,12 +62,12 @@
 
 -define(KNM_NUMBERS_CLAUSES(Num)
        ,{'false', #{'ok' := [Number]}} ->
-            {'ok', Number};
-        {'true', #{'ok' := [_Number], 'quotes' := Quotes}} ->
-            {'dry_run', Quotes};
-        {_, #{'ko' := ErrorM}} ->
-            {'error', hd(maps:values(ErrorM))}
-       ).
+               {'ok', Number};
+            {'true', #{'ok' := [_Number], 'quotes' := Quotes}} ->
+               {'dry_run', Quotes};
+            {_, #{'ko' := ErrorM}} ->
+               {'error', hd(maps:values(ErrorM))}
+                   ).
 
 -define(RUN_KNM_NUMBERS_FUN(F, Num, Options)
        ,case {knm_number_options:dry_run(Options)
