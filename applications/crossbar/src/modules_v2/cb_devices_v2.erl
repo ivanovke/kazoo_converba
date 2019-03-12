@@ -903,16 +903,28 @@ update_provision(Context) ->
     sync_sip_data(Context, 'false').
 
 %%------------------------------------------------------------------------------
-%% @doc
+%% @doc There are only 2 possible scenarios for adding/updating a mdm:
+%% 1. When the request is to create a new device (add).
+%% 2. When the mdm has changed and the requester is a superduper admin (update).
 %% @end
 %%------------------------------------------------------------------------------
 -spec maybe_add_mdn(kz_term:api_binary(), cb_context:context()) -> cb_context:context().
 maybe_add_mdn(_DeviceId, Context) ->
-    MDN = get_mdn(cb_context:doc(Context)),
+    DbDoc = cb_context:fetch(Context, 'db_doc'),
+    NewMDN = get_mdn(cb_context:doc(Context)),
+    %% Since the next 2 values are only used in 1 place each, get their values only if
+    %% they are actually going to be used. Otherwise, no need to calculate them ;)
+    OldMDN = fun() -> kz_json:get_ne_value(?KEY_MDN, DbDoc) end,
+    IsSuperAdmin = fun() -> cb_context:is_superduper_admin(Context) end,
     case get_device_type(Context) =:= <<"mobile">>
-        andalso kz_term:is_not_empty(MDN)
+        andalso kz_term:is_not_empty(NewMDN)
+        andalso (kz_term:is_empty(DbDoc) %% Request is to create a device
+                 orelse (OldMDN() =/= NewMDN    %% mdn has been changed.
+                         andalso IsSuperAdmin() %% only superduper admins can change the mdn once created.
+                        )
+                )
     of
-        'true' -> add_mdn(MDN, Context);
+        'true' -> add_mdn(NewMDN, Context);
         'false' -> Context
     end.
 
