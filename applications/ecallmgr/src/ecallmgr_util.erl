@@ -682,9 +682,12 @@ get_fs_key_and_value(<<"Auto-Answer-Suppress-Notify">> = Key, Value, _UUID) ->
     ,{get_fs_key(<<"Auto-Answer">>), maybe_sanitize_fs_value(<<"Auto-Answer">>, <<"true">>)}
     ,{get_fs_key(Key), maybe_sanitize_fs_value(Key, Value)}
     ];
-get_fs_key_and_value(<<"ringback">>=Key, Value, _UUID) ->
-    [{<<"ringback">>, maybe_sanitize_fs_value(Key, Value)}
-    ,{<<"transfer_ringback">>, maybe_sanitize_fs_value(<<"transfer_ringback">>, Value)}
+get_fs_key_and_value(<<"ringback">>=_Key, _Value, _UUID) ->
+    %IKE no ringback
+    lager:notice("IKE3 noringback  : ",[]),  
+    [
+    %[{<<"ringback">>, maybe_sanitize_fs_value(Key, Value)}
+    %,{<<"transfer_ringback">>, maybe_sanitize_fs_value(<<"transfer_ringback">>, Value)}
     ];
 get_fs_key_and_value(?CCV(Key), Val, UUID) ->
     get_fs_key_and_value(Key, Val, UUID);

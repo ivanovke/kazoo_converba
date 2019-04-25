@@ -11,6 +11,11 @@
         ,unbridge/2
         ,maybe_b_leg_events/3
         ,try_create_bridge_string/2
+
+        %IKE
+        ,handle_ringback/3
+        ,maybe_early_media/4
+        ,maybe_early_media_separator/4
         ]).
 
 -include("ecallmgr.hrl").
@@ -34,8 +39,10 @@ call_command(Node, UUID, JObj) ->
 
             {'ok', Channel} = ecallmgr_fs_channel:fetch(UUID, 'record'),
 
-            _ = handle_ringback(Node, UUID, JObj),
-            _ = maybe_early_media(Node, UUID, JObj, Endpoints),
+            lager:notice("IKE3 noringback  : ~p",[UUID]),  
+            % IKE no ringback - maybe early media OFF
+            %_ = handle_ringback(Node, UUID, JObj),
+            %_ = maybe_early_media(Node, UUID, JObj, Endpoints),
             _ = maybe_b_leg_events(Node, UUID, JObj),
             BridgeJObj = add_endpoints_channel_actions(Node, UUID, JObj),
 

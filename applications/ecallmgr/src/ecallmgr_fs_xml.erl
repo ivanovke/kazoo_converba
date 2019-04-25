@@ -274,18 +274,31 @@ should_bypass_media(RouteJObj) ->
     end.
 
 -spec route_resp_xml(kz_term:ne_binary(), kz_json:objects(), kz_json:object(), kz_term:proplist()) -> {'ok', iolist()}.
+%route_resp_xml(<<"bridge">>, Routes, JObj, Props) ->
+%    lager:debug("creating a bridge XML response"),
+%    LogEl = route_resp_log_winning_node(),
+%    RingbackEl = route_resp_ringback(JObj),
+%    TransferEl = route_resp_transfer_ringback(JObj),
+%    %% format the Route based on protocol
+%    {_Idx, Extensions} = lists:foldr(fun route_resp_fold/2, {1, []}, Routes),
+%    FailRespondEl = action_el(<<"respond">>, <<"${bridge_hangup_cause}">>),
+%    FailConditionEl = condition_el(FailRespondEl),
+%    FailExtEl = extension_el(<<"failed_bridge">>, <<"false">>, [FailConditionEl]),
+%    Context = context(JObj, Props),
+%    ContextEl = context_el(Context, [LogEl, RingbackEl, TransferEl] ++ unset_custom_sip_headers(Props) ++ Extensions ++ [FailExtEl]),
+%    SectionEl = section_el(<<"dialplan">>, <<"Route Bridge Response">>, ContextEl),
+%    {'ok', xmerl:export([SectionEl], 'fs_xml')};
+
+%IKE no ringback
 route_resp_xml(<<"bridge">>, Routes, JObj, Props) ->
-    lager:debug("creating a bridge XML response"),
+    lager:debug("creating a bridge XML response IKE"),
     LogEl = route_resp_log_winning_node(),
-    RingbackEl = route_resp_ringback(JObj),
-    TransferEl = route_resp_transfer_ringback(JObj),
-    %% format the Route based on protocol
     {_Idx, Extensions} = lists:foldr(fun route_resp_fold/2, {1, []}, Routes),
     FailRespondEl = action_el(<<"respond">>, <<"${bridge_hangup_cause}">>),
     FailConditionEl = condition_el(FailRespondEl),
     FailExtEl = extension_el(<<"failed_bridge">>, <<"false">>, [FailConditionEl]),
     Context = context(JObj, Props),
-    ContextEl = context_el(Context, [LogEl, RingbackEl, TransferEl] ++ unset_custom_sip_headers(Props) ++ Extensions ++ [FailExtEl]),
+    ContextEl = context_el(Context, [LogEl] ++ unset_custom_sip_headers(Props) ++ Extensions ++ [FailExtEl]),
     SectionEl = section_el(<<"dialplan">>, <<"Route Bridge Response">>, ContextEl),
     {'ok', xmerl:export([SectionEl], 'fs_xml')};
 
@@ -293,8 +306,8 @@ route_resp_xml(<<"park">>, _Routes, JObj, Props) ->
     Exten = [route_resp_log_winning_node()
             ,route_resp_set_winning_node()
             ,route_resp_bridge_id()
-            ,route_resp_ringback(JObj)
-            ,route_resp_transfer_ringback(JObj)
+            %,route_resp_ringback(JObj)
+            %,route_resp_transfer_ringback(JObj)
             ,route_resp_pre_park_action(JObj)
             ,maybe_start_dtmf_action(Props)
              | route_resp_ccvs(JObj)
