@@ -131,6 +131,7 @@
                                      ,<<"Route-Error-Message">>
                                      ,<<"Routes">>
                                      ,<<"Transfer-Media">>
+                                     ,<<"No-Session-Progress">>
                                      ]).
 -define(ROUTE_RESP_VALUES, [{<<"Event-Category">>, ?EVENT_CATEGORY}
                            ,{<<"Event-Name">>, <<"route_resp">>}

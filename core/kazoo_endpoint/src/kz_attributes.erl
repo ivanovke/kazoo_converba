@@ -26,6 +26,7 @@
 -export([process_dynamic_flags/2
         ,process_dynamic_flags/3
         ]).
+-export([no_session_progress/1]).
 
 -include("kazoo_endpoint.hrl").
 
@@ -723,4 +724,20 @@ get_cid_or_default(Attribute, Property, Endpoint) ->
     case kz_json:get_ne_value([<<"caller_id">>, Attribute, Property], Endpoint) of
         'undefined' -> kz_json:get_ne_value([<<"default">>, Property], Endpoint);
         Value -> Value
+    end.
+
+%%------------------------------------------------------------------------------
+%% @doc
+%% @end
+%%------------------------------------------------------------------------------
+
+-spec no_session_progress(kapps_call:call()) ->  boolean().
+no_session_progress(Call) ->
+    case kz_endpoint:get(Call) of
+        {'error', _R} -> 'false';
+        {'ok', Endpoint} ->
+            case kz_json:get_ne_value([<<"no_session_progress">>], Endpoint) of 
+                'true' -> 'true';
+                _ -> 'false'
+            end
     end.

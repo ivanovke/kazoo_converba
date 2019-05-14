@@ -1132,6 +1132,7 @@ bridge_command(Endpoints, Timeout, Strategy, IgnoreEarlyMedia, Ringback, SIPHead
     ,{<<"Custom-SIP-Headers">>, SIPHeaders}
     ,{<<"Ignore-Forward">>, IgnoreForward}
     ,{<<"Export-Bridge-Variables">>, ?BRIDGE_EXPORT_VARS}
+    ,{<<"No-Session-Progress">>, kz_attributes:no_session_progress(Call)}
     ].
 
 -spec bridge(kz_json:objects(), kapps_call:call()) -> 'ok'.

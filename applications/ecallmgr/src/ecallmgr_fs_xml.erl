@@ -400,11 +400,16 @@ route_resp_set_winning_node() ->
 
 -spec route_resp_ringback(kz_json:object()) -> kz_types:xml_el().
 route_resp_ringback(JObj) ->
-    case kz_json:get_value(<<"Ringback-Media">>, JObj) of
-        'undefined' ->
+    % if No-Session-Progress:true on device 
+    % cutting ringback tone for changing 183 to 180
+    % (at some some softphones does not work video with 183 message)
+    case {kz_json:get_value(<<"Ringback-Media">>, JObj)
+         ,kz_json:get_value(<<"No-Session-Progress">>, JObj)} of
+        {_, 'true'} -> 'undefined';
+        {'undefined', _} ->
             {'ok', RBSetting} = ecallmgr_util:get_setting(<<"default_ringback">>),
             action_el(<<"set">>, <<"ringback=", (kz_term:to_binary(RBSetting))/binary>>);
-        Media ->
+        {Media, _} ->
             MsgId = kz_json:get_value(<<"Msg-ID">>, JObj),
             Stream = ecallmgr_util:media_path(Media, 'extant', MsgId, JObj),
             action_el(<<"set">>, <<"ringback=", (kz_term:to_binary(Stream))/binary>>)
