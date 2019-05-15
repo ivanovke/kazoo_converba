@@ -48,6 +48,9 @@
         "Other-Leg": {
             "type": "string"
         },
+        "Queue-DTMF": {
+            "type": "string"
+        },
         "Target-Call-ID": {
             "type": "string"
         }

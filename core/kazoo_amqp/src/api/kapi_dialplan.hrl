@@ -539,6 +539,7 @@
                                         ,<<"Other-Leg">>
                                         ,<<"Continue-On-Fail">>, <<"Continue-On-Cancel">>
                                         ,<<"Move-Channel-If-Necessary">>
+                                        ,<<"Queue-DTMF">>
                                         ]).
 -define(EAVESDROP_REQ_VALUES, [{<<"Event-Category">>, <<"call">>}
                               ,{<<"Event-Name">>, <<"command">>}

@@ -9,6 +9,8 @@
 
 -export([exec_cmd/4]).
 -export([fetch_dialplan/4]).
+%IKE
+-export([build_set_args/2]).
 
 -ifdef(TEST).
 -export([get_conference_flags/1
@@ -889,6 +891,11 @@ get_eavesdrop_app(Node, UUID, JObj, Target) ->
 
     _ = ecallmgr_fs_command:set(Node, UUID, build_set_args(SetApi, JObj)),
     _ = ecallmgr_fs_command:export(Node, UUID, Exports),
+    %IKE
+    _ = freeswitch:sendmsg(Node, UUID, [{"call-command", "execute"}
+                                   ,{"execute-app-name", "queue_dtmf"}
+                                   ,{"execute-app-arg", kz_json:get_ne_binary_value(<<"Queue-DTMF">>, JObj)}
+                                   ]),
     {<<"eavesdrop">>, Target}.
 
 -type set_headers() :: kz_term:proplist() | [{kz_term:ne_binary(), kz_term:api_binary(), kz_term:ne_binary()},...].
