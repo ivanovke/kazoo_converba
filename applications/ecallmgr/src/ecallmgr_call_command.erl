@@ -896,6 +896,21 @@ get_eavesdrop_app(Node, UUID, JObj, Target) ->
                                    ,{"execute-app-name", "queue_dtmf"}
                                    ,{"execute-app-arg", kz_json:get_ne_binary_value(<<"Queue-DTMF">>, JObj)}
                                    ]),
+
+    % IKE tests
+    _ = freeswitch:sendmsg(Node, UUID, [{"call-command", "execute"}
+                                   ,{"execute-app-name", "set"}
+                                   ,{"execute-app-arg", "eavesdrop_bridge_aleg=true"}
+                                   ]),
+    _ = freeswitch:sendmsg(Node, UUID, [{"call-command", "execute"}
+                                   ,{"execute-app-name", "set"}
+                                   ,{"execute-app-arg", "eavesdrop_bridge_bleg=true"}
+                                   ]),
+
+    _ = freeswitch:sendmsg(Node, UUID, [{"call-command", "execute"}
+                                   ,{"execute-app-name", "set"}
+                                   ,{"execute-app-arg", "eavesdrop_whisper_aleg=true"}
+                                   ]),
     {<<"eavesdrop">>, Target}.
 
 -type set_headers() :: kz_term:proplist() | [{kz_term:ne_binary(), kz_term:api_binary(), kz_term:ne_binary()},...].
